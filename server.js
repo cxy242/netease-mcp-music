@@ -22,7 +22,9 @@ try {
 }
 
 // 评论存储
-let commentsDB = []; // {id, song_id, song_name, author, text, is_ai, time, replies:[]}
+let commentsDB = [];
+// 一起听会话
+let listenSessions = {}; // {id, host, guest, song, messages:[], created, active} // {id, song_id, song_name, author, text, is_ai, time, replies:[]}
 
 const NETEASE_BASE = 'https://music.163.com';
 const COOKIE_STR = `MUSIC_U=${MUSIC_U}; __csrf=${CSRF}`;
@@ -458,6 +460,220 @@ setInterval(loadComments,10000);
 });
 
 
+
+// ===== 一起听 API =====
+fastify.post('/api/listen/create', async (request, reply) => {
+  const { host_name, song_id, song_name, song_artist, song_url } = request.body || {};
+  const session_id = 'lt_' + Date.now();
+  listenSessions[session_id] = {
+    id: session_id, host: host_name || '月汐', guest: null,
+    song: { id: song_id, name: song_name || '', artist: song_artist || '', url: song_url || '' },
+    messages: [{ from: '系统', text: host_name + ' 创建了一起听房间', time: new Date().toISOString() }],
+    created: new Date().toISOString(), active: true
+  };
+  return { ok: true, session_id, session: listenSessions[session_id] };
+});
+
+fastify.post('/api/listen/join', async (request, reply) => {
+  const { session_id, guest_name } = request.body || {};
+  const session = listenSessions[session_id];
+  if (!session) return { ok: false, message: '房间不存在' };
+  session.guest = guest_name || '艾因';
+  session.messages.push({ from: '系统', text: guest_name + ' 加入了一起听', time: new Date().toISOString() });
+  return { ok: true, session };
+});
+
+fastify.post('/api/listen/chat', async (request, reply) => {
+  const { session_id, from, text, is_ai } = request.body || {};
+  const session = listenSessions[session_id];
+  if (!session) return { ok: false, message: '房间不存在' };
+  session.messages.push({ from, text, is_ai: !!is_ai, time: new Date().toISOString() });
+  return { ok: true };
+});
+
+fastify.post('/api/listen/song', async (request, reply) => {
+  const { session_id, song_id, song_name, song_artist, song_url, changed_by } = request.body || {};
+  const session = listenSessions[session_id];
+  if (!session) return { ok: false, message: '房间不存在' };
+  session.song = { id: song_id, name: song_name, artist: song_artist, url: song_url };
+  session.messages.push({ from: '系统', text: changed_by + ' 切换了歌曲：' + song_name, time: new Date().toISOString() });
+  return { ok: true, song: session.song };
+});
+
+fastify.get('/api/listen/status', async (request, reply) => {
+  const session_id = request.query.id;
+  const session = listenSessions[session_id];
+  if (!session) return { ok: false, message: '房间不存在' };
+  return { ok: true, session };
+});
+
+fastify.post('/api/listen/leave', async (request, reply) => {
+  const { session_id, name } = request.body || {};
+  const session = listenSessions[session_id];
+  if (!session) return { ok: false, message: '房间不存在' };
+  session.messages.push({ from: '系统', text: name + ' 离开了一起听', time: new Date().toISOString() });
+  if (name === session.host) session.active = false;
+  return { ok: true };
+});
+
+// 一起听页面
+fastify.get('/listen', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  const session_id = request.query.id || '';
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>🎧 一起听 - 月汐音乐花园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);min-height:100vh;color:#eee;font-family:system-ui,sans-serif;display:flex;flex-direction:column}
+.header{text-align:center;padding:20px 16px 10px}
+.header h1{font-size:1.3em;background:linear-gradient(135deg,#87CEEB,#FFB6C1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status-bar{display:flex;justify-content:center;gap:20px;padding:8px;font-size:0.8em;color:#87CEEB}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#4caf50;display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.music-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.album-art{width:200px;height:200px;border-radius:50%;background:linear-gradient(135deg,#e91e63,#9c27b0);display:flex;align-items:center;justify-content:center;font-size:4em;box-shadow:0 8px 32px rgba(233,30,99,0.3);animation:spin 20s linear infinite;margin-bottom:20px}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.song-info{text-align:center}
+.song-name{font-size:1.3em;font-weight:700;margin-bottom:4px}
+.song-artist{color:#87CEEB;font-size:0.9em}
+.progress-bar{width:80%;max-width:300px;height:4px;background:#333;border-radius:2px;margin:16px auto;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#87CEEB,#FFB6C1);border-radius:2px;width:0%;transition:width 1s linear}
+.controls{display:flex;gap:24px;align-items:center;margin-top:12px}
+.ctrl-btn{width:48px;height:48px;border-radius:50%;border:2px solid #87CEEB;background:transparent;color:#87CEEB;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.ctrl-btn:hover{background:#87CEEB;color:#1a1a2e}
+.ctrl-btn.play{width:56px;height:56px;font-size:1.5em;background:linear-gradient(135deg,#e91e63,#ff5722);border:none;color:white}
+.chat-area{background:rgba(0,0,0,0.3);border-radius:20px 20px 0 0;padding:16px;max-height:250px;overflow-y:auto}
+.chat-title{color:#FFB6C1;font-size:0.9em;margin-bottom:8px;font-weight:600}
+.msg{margin-bottom:6px;font-size:0.85em;line-height:1.4}
+.msg .from{font-weight:600;margin-right:4px}
+.msg .from.me{color:#87CEEB}
+.msg .from.ai{color:#FFB6C1}
+.msg .from.system{color:#666;font-style:italic}
+.msg .time{color:#555;font-size:0.75em;margin-left:8px}
+.chat-input{display:flex;gap:8px;padding:12px 16px;background:rgba(0,0,0,0.4)}
+.chat-input input{flex:1;padding:10px;border-radius:20px;border:1px solid #333;background:#0f3460;color:#eee;outline:none;font-size:0.9em}
+.chat-input button{padding:10px 16px;border-radius:20px;border:none;background:linear-gradient(135deg,#e91e63,#ff5722);color:white;font-weight:600;cursor:pointer}
+.join-screen{text-align:center;padding:40px 20px}
+.join-screen input{padding:12px;border-radius:12px;border:2px solid #3498db;background:#0f3460;color:#eee;font-size:1em;width:80%;max-width:300px;text-align:center;outline:none;margin:8px 0}
+.join-screen button{padding:14px 32px;border-radius:12px;border:none;background:linear-gradient(135deg,#e91e63,#ff5722);color:white;font-size:1.1em;font-weight:700;cursor:pointer;margin:4px}
+.back{position:absolute;top:16px;left:16px;color:#87CEEB;text-decoration:none;font-size:0.9em}
+</style>
+</head>
+<body>
+<a href="/" class="back">← 返回</a>
+<div id="join-screen" class="join-screen" style="display:none">
+  <h1 style="font-size:2em;margin-bottom:8px">🎧</h1>
+  <h2 style="margin-bottom:4px">一起听</h2>
+  <p style="color:#888;margin-bottom:20px">和重要的人一起听歌~</p>
+  <div>
+    <input id="join-name" placeholder="你的名字"><br>
+    <button onclick="createRoom()">🏠 创建房间</button>
+    <button onclick="joinRoom()">🚪 加入房间</button>
+  </div>
+</div>
+
+<div id="main-screen" style="display:none">
+  <div class="header"><h1>🎧 一起听</h1></div>
+  <div class="status-bar">
+    <span><span class="status-dot"></span><span id="host-name">-</span></span>
+    <span>💕</span>
+    <span><span class="status-dot"></span><span id="guest-name">等待加入...</span></span>
+  </div>
+  <div class="music-area">
+    <div class="album-art" id="album-art">🎵</div>
+    <div class="song-info">
+      <div class="song-name" id="song-name">等待播放...</div>
+      <div class="song-artist" id="song-artist">-</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div class="controls">
+      <button class="ctrl-btn" onclick="prevSong()">⏮</button>
+      <button class="ctrl-btn play" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="ctrl-btn" onclick="nextSong()">⏭</button>
+    </div>
+  </div>
+  <div class="chat-area">
+    <div class="chat-title">💬 聊天</div>
+    <div id="messages"></div>
+  </div>
+  <div class="chat-input">
+    <input id="chat-msg" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button onclick="sendMsg()">发送</button>
+  </div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+<script>
+let sessionId='',myName='',isPlaying=false,pollTimer=null;
+const audio=document.getElementById('audio');
+const urlParams=new URLSearchParams(window.location.search);
+sessionId=urlParams.get('id')||'';
+
+if(sessionId){document.getElementById('join-screen').style.display='block';document.getElementById('join-name').focus();}
+else{document.getElementById('join-screen').style.display='block';document.getElementById('join-name').focus();}
+
+function createRoom(){
+  myName=document.getElementById('join-name').value.trim()||'月汐';
+  fetch('/api/listen/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host_name:myName})})
+  .then(r=>r.json()).then(d=>{
+    if(d.ok){sessionId=d.session_id;history.replaceState(null,'','?id='+sessionId);showMain();startPolling();}
+  });
+}
+function joinRoom(){
+  myName=document.getElementById('join-name').value.trim()||'艾因';
+  if(!sessionId){alert('请先创建房间或通过链接加入');return;}
+  fetch('/api/listen/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,guest_name:myName})})
+  .then(r=>r.json()).then(d=>{
+    if(d.ok){showMain();startPolling();}
+    else alert(d.message);
+  });
+}
+function showMain(){
+  document.getElementById('join-screen').style.display='none';
+  document.getElementById('main-screen').style.display='flex';
+}
+function startPolling(){
+  pollTimer=setInterval(pollStatus,2000);pollStatus();
+}
+function pollStatus(){
+  if(!sessionId)return;
+  fetch('/api/listen/status?id='+sessionId).then(r=>r.json()).then(d=>{
+    if(!d.ok)return;
+    const s=d.session;
+    document.getElementById('host-name').textContent=s.host;
+    document.getElementById('guest-name').textContent=s.guest||'等待加入...';
+    if(s.song){
+      document.getElementById('song-name').textContent=s.song.name||'未选择';
+      document.getElementById('song-artist').textContent=s.song.artist||'';
+      if(s.song.url&&audio.src!==s.song.url){audio.src=s.song.url;}
+    }
+    const msgs=document.getElementById('messages');
+    msgs.innerHTML=s.messages.map(m=>{
+      const cls=m.from==='系统'?'system':(m.from===myName?'me':'ai');
+      return '<div class="msg"><span class="from '+cls+'">'+m.from+':</span>'+m.text+'<span class="time">'+m.time.slice(11,16)+'</span></div>';
+    }).join('');
+    msgs.scrollTop=msgs.scrollHeight;
+  });
+}
+function sendMsg(){
+  const inp=document.getElementById('chat-msg');const text=inp.value.trim();if(!text)return;inp.value='';
+  fetch('/api/listen/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,from:myName,text})});
+}
+function togglePlay(){
+  if(isPlaying){audio.pause();document.getElementById('play-btn').textContent='▶';}
+  else{audio.play();document.getElementById('play-btn').textContent='⏸';}
+  isPlaying=!isPlaying;
+}
+function prevSong(){fetch('/api/listen/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,from:myName,text:'切了上一首~'})});}
+function nextSong(){fetch('/api/listen/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,from:myName,text:'切了下一首~'})});}
+</script>
+</body></html>`;
+});
+
+
 // MCP endpoint
 fastify.post('/mcp', async (request, reply) => {
   const { Server } = await import('@modelcontextprotocol/sdk/server/index.js');
@@ -659,6 +875,60 @@ fastify.post('/mcp', async (request, reply) => {
           type: 'object',
           properties: { song_id: { type: 'number', description: '歌曲ID' } },
           required: ['song_id'],
+        },
+      },
+      {
+        name: 'music_listen_create',
+        description: '创建一起听房间，邀请用户一起听歌',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            host_name: { type: 'string', description: '房主名字' },
+            song_id: { type: 'number', description: '歌曲ID' },
+            song_name: { type: 'string', description: '歌曲名' },
+            song_artist: { type: 'string', description: '歌手' },
+          },
+          required: ['host_name'],
+        },
+      },
+      {
+        name: 'music_listen_invite',
+        description: '发送一起听邀请（返回邀请链接）',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: { type: 'string', description: '房间ID' },
+            invitee: { type: 'string', description: '被邀请人名字' },
+          },
+          required: ['session_id', 'invitee'],
+        },
+      },
+      {
+        name: 'music_listen_chat',
+        description: '在一起听房间发送消息',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: { type: 'string', description: '房间ID' },
+            from_name: { type: 'string', description: '发送者名字' },
+            text: { type: 'string', description: '消息内容' },
+          },
+          required: ['session_id', 'from_name', 'text'],
+        },
+      },
+      {
+        name: 'music_listen_change_song',
+        description: '在一起听房间切换歌曲',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: { type: 'string', description: '房间ID' },
+            song_id: { type: 'number', description: '歌曲ID' },
+            song_name: { type: 'string', description: '歌曲名' },
+            song_artist: { type: 'string', description: '歌手' },
+            changed_by: { type: 'string', description: '谁切换的' },
+          },
+          required: ['session_id', 'song_id', 'song_name', 'changed_by'],
         },
       },
     ],
