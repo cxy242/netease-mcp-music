@@ -197,7 +197,7 @@ fastify.post('/api/set_cookie', async (request, reply) => {
   return { ok: true, message: 'Cookie已更新' };
 });
 
-fastify.post('/api/refresh_urls', async () => {
+fastify.post('/api/refresh_urls', async (request) => {
   try {
     const songsPath = join(__dirname, 'songs_data.js');
     const songsContent = readFileSync(songsPath, 'utf-8');
