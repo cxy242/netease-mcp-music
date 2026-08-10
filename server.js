@@ -226,7 +226,8 @@ fastify.post('/api/refresh_urls', async (request) => {
           for (const item of result.data) {
             const song = songs.find(s => s.i === item.id);
             if (song && item.url) {
-              song.u = item.url;
+              // 存代理URL格式，播放时实时获取
+              song.u = '/api/proxy_play?id=' + song.i;
               refreshed++;
             } else if (song) {
               failed++;
