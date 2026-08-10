@@ -1554,6 +1554,39 @@ fastify.get('/api/song/play_url', async (request, reply) => {
 // 重定向到最新歌曲URL（302重定向，浏览器直接请求CDN）
 fastify.get('/api/proxy_play', async (request, reply) => {
   const { id } = request.query;
+  if (!id) return reply.status(400).send('Missing song id');
+  try {
+    const data = await neteaseApi('/api/song/enhance/player/url', {
+      method: 'POST',
+      body: new URLSearchParams({ ids: '[' + id + ']', br: '320000' }).toString(),
+      contentType: 'application/x-www-form-urlencoded'
+    });
+    if (!data.data || !data.data[0] || !data.data[0].url) {
+      return reply.status(404).send('Song not found');
+    }
+    const songUrl = data.data[0].url;
+    const cdnResp = await fetch(songUrl, {
+      headers: {
+        'Referer': 'https://music.163.com/',
+        'User-Agent': UA,
+        'Accept': '*/*',
+        'Accept-Encoding': 'identity'
+      }
+    });
+    if (!cdnResp.ok) {
+      return reply.status(cdnResp.status).send('CDN error: ' + cdnResp.status);
+    }
+    reply.header('Content-Type', cdnResp.headers.get('content-type') || 'audio/mpeg');
+    reply.header('Content-Length', cdnResp.headers.get('content-length'));
+    reply.header('Accept-Ranges', 'bytes');
+    reply.header('Access-Control-Allow-Origin', '*');
+    const buffer = await cdnResp.arrayBuffer();
+    return reply.send(Buffer.from(buffer));
+  } catch (e) {
+    return reply.status(500).send(e.message);
+  }
+});'/api/proxy_play', async (request, reply) => {
+  const { id } = request.query;
   console.log('[Proxy] id:', id);
   if (!id) return reply.status(400).send('Missing song id');
   try {
