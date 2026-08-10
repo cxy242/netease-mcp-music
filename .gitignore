@@ -1,3 +1,7 @@
 node_modules/
 .env
+*.pid
 *.log
+backups/
+deploy.cjs
+deploy.sh
