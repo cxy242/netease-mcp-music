@@ -21,6 +21,9 @@ try {
   console.warn('[Cookie] Failed to load netease_cookie.json:', e.message);
 }
 
+// 评论存储
+let commentsDB = []; // {id, song_id, song_name, author, text, is_ai, time, replies:[]}
+
 const NETEASE_BASE = 'https://music.163.com';
 const COOKIE_STR = `MUSIC_U=${MUSIC_U}; __csrf=${CSRF}`;
 
@@ -342,6 +345,119 @@ fastify.get('/music', async (request, reply) => {
   return injected;
 });
 
+
+// ===== 评论API =====
+fastify.post('/api/comment', async (request, reply) => {
+  const { song_id, song_name, author, text, is_ai } = request.body || {};
+  if (!song_id || !author || !text) return { ok: false, message: '需要 song_id, author, text' };
+  const comment = { id: Date.now(), song_id, song_name: song_name || '', author, text, is_ai: !!is_ai, time: new Date().toISOString(), replies: [] };
+  commentsDB.push(comment);
+  return { ok: true, comment };
+});
+
+fastify.get('/api/comments', async (request, reply) => {
+  const song_id = request.query.song_id;
+  if (song_id) return { ok: true, comments: commentsDB.filter(c => c.song_id == song_id) };
+  return { ok: true, comments: commentsDB.slice(-50).reverse() };
+});
+
+fastify.post('/api/comment/reply', async (request, reply) => {
+  const { comment_id, author, text, is_ai } = request.body || {};
+  const comment = commentsDB.find(c => c.id == comment_id);
+  if (!comment) return { ok: false, message: '评论不存在' };
+  const replyObj = { author, text, is_ai: !!is_ai, time: new Date().toISOString() };
+  comment.replies.push(replyObj);
+  return { ok: true, reply: replyObj };
+});
+
+// 评论页面
+fastify.get('/comments', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>💬 评论广场 - 月汐音乐花园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#e8f5e9,#c8e6c9);min-height:100vh;font-family:system-ui,sans-serif;padding:16px}
+.header{text-align:center;padding:20px 0}
+.header h1{font-size:1.5em;margin-bottom:4px}
+.header p{color:#666;font-size:0.9em}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.comment-author{font-weight:700;color:#e91e63}
+.comment-song{color:#4caf50;font-size:0.85em}
+.comment-text{color:#333;line-height:1.6;margin-bottom:8px}
+.comment-time{color:#999;font-size:0.75em}
+.reply{margin-left:20px;padding:8px 12px;background:#f5f5f5;border-radius:8px;margin-top:6px;font-size:0.9em}
+.reply .author{color:#2196f3;font-weight:600}
+.form{background:white;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.form input,.form textarea{width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:10px;font-size:0.95em;margin-bottom:8px;outline:none}
+.form input:focus,.form textarea:focus{border-color:#4caf50}
+.form textarea{height:60px;resize:vertical}
+.btn{padding:10px 20px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.95em}
+.btn-green{background:linear-gradient(135deg,#4caf50,#2e7d32);color:white}
+.back{display:inline-block;color:#4caf50;text-decoration:none;margin-bottom:12px}
+</style>
+</head>
+<body>
+<a href="/" class="back">← 返回音乐花园</a>
+<div class="header"><h1>💬 评论广场</h1><p>分享你对歌曲的感受~</p></div>
+<div class="form">
+  <input id="c-author" placeholder="你的名字" value="">
+  <input id="c-song" placeholder="歌曲名（可选）">
+  <input id="c-song-id" placeholder="歌曲ID（可选）" style="display:none">
+  <textarea id="c-text" placeholder="写下你的感想..."></textarea>
+  <button class="btn btn-green" onclick="postComment()">💬 发表评论</button>
+</div>
+<div id="comments-list"></div>
+<script>
+const saved=localStorage.getItem('draw-player')||localStorage.getItem('playerName')||'';
+if(saved)document.getElementById('c-author').value=saved;
+
+function loadComments(){
+  fetch('/api/comments').then(r=>r.json()).then(d=>{
+    const list=document.getElementById('comments-list');
+    if(!d.comments.length){list.innerHTML='<div class="card" style="text-align:center;color:#999">还没有评论~</div>';return;}
+    list.innerHTML=d.comments.map(c=>{
+      const replies=c.replies.map(r=>'<div class="reply"><span class="author">'+(r.is_ai?'🤖 ':'')+r.author+':</span> '+r.text+'</div>').join('');
+      return '<div class="card">'+
+        '<div class="comment-header"><span class="comment-author">'+(c.is_ai?'🤖 ':'')+c.author+'</span>'+(c.song_name?'<span class="comment-song">🎵 '+c.song_name+'</span>':'')+'</div>'+
+        '<div class="comment-text">'+c.text+'</div>'+
+        '<div class="comment-time">'+c.time.slice(0,16)+'</div>'+
+        replies+
+        '<div style="margin-top:8px;display:flex;gap:4px"><input id="reply-'+c.id+'" placeholder="回复..." style="flex:1;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85em"><button onclick="replyComment('+c.id+')" style="padding:6px 10px;border:none;background:#2196f3;color:white;border-radius:6px;font-size:0.85em;cursor:pointer">回复</button></div>'+
+      '</div>';
+    }).join('');
+  });
+}
+
+function postComment(){
+  const author=document.getElementById('c-author').value.trim();
+  const text=document.getElementById('c-text').value.trim();
+  const song_name=document.getElementById('c-song').value.trim();
+  if(!author||!text){alert('请输入名字和评论');return;}
+  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id:0,song_name,author,text,is_ai:false})})
+  .then(()=>{document.getElementById('c-text').value='';loadComments();});
+}
+
+function replyComment(id){
+  const input=document.getElementById('reply-'+id);
+  const text=input.value.trim();
+  if(!text)return;
+  const author=document.getElementById('c-author').value.trim()||'匿名';
+  fetch('/api/comment/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comment_id:id,author,text,is_ai:false})})
+  .then(()=>{input.value='';loadComments();});
+}
+
+loadComments();
+setInterval(loadComments,10000);
+</script>
+</body></html>`;
+});
+
+
 // MCP endpoint
 fastify.post('/mcp', async (request, reply) => {
   const { Server } = await import('@modelcontextprotocol/sdk/server/index.js');
@@ -488,6 +604,60 @@ fastify.post('/mcp', async (request, reply) => {
           properties: {
             song_id: { type: 'number', description: '歌曲ID' },
           },
+          required: ['song_id'],
+        },
+      },
+      {
+        name: 'music_comment',
+        description: '对歌曲发表评论/感想（AI也可以发）',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            song_id: { type: 'number', description: '歌曲ID' },
+            song_name: { type: 'string', description: '歌曲名' },
+            author: { type: 'string', description: '评论者名字' },
+            text: { type: 'string', description: '评论内容' },
+          },
+          required: ['song_id', 'author', 'text'],
+        },
+      },
+      {
+        name: 'music_read_comments',
+        description: '查看歌曲的评论列表',
+        inputSchema: {
+          type: 'object',
+          properties: { song_id: { type: 'number', description: '歌曲ID（0=查看全部）' } },
+        },
+      },
+      {
+        name: 'music_reply_comment',
+        description: '回复一条评论',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            comment_id: { type: 'number', description: '评论ID' },
+            author: { type: 'string', description: '回复者名字' },
+            text: { type: 'string', description: '回复内容' },
+          },
+          required: ['comment_id', 'author', 'text'],
+        },
+      },
+      {
+        name: 'music_daily_recommend',
+        description: '获取每日推荐歌曲',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'music_personal_fm',
+        description: '获取私人FM歌曲',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'music_share_song',
+        description: '生成歌曲分享链接',
+        inputSchema: {
+          type: 'object',
+          properties: { song_id: { type: 'number', description: '歌曲ID' } },
           required: ['song_id'],
         },
       },
