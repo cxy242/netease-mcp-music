@@ -62,6 +62,34 @@ fastify.options('*', async (request, reply) => {
 
 // Static files
 fastify.get('/', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
+  const themeName = request.query.theme || localStorage.getItem('music-theme') || 'sakura';
+  let injected = raw.replace('</head>', '<style>\n/* 🌸 樱花物语 */\n.theme-sakura body { background: linear-gradient(135deg, #FFF0F5, #FFE4E1, #FFF5EE, #FFFAF0) !important; color: #4A2040 !important; }\n.theme-sakura .header, .theme-sakura header { background: rgba(255,240,245,0.95) !important; }\n.theme-sakura .card, .theme-sakura [class*="card"] { background: rgba(255,255,255,0.92) !important; box-shadow: 0 8px 32px rgba(255,105,180,0.15) !important; border: 1px solid rgba(255,182,193,0.3) !important; border-radius: 16px !important; }\n.theme-sakura button, .theme-sakura .btn { background: linear-gradient(135deg, #FF69B4, #DDA0DD) !important; color: white !important; border: none !important; border-radius: 12px !important; }\n.theme-sakura input, .theme-sakura textarea { background: rgba(255,255,255,0.9) !important; border: 2px solid #FFB6C1 !important; border-radius: 12px !important; color: #4A2040 !important; }\n.theme-sakura a { color: #FF69B4 !important; }\n.theme-sakura .active, .theme-sakura .playing { background: rgba(255,105,180,0.15) !important; }\n\n/* 🌊 星海幻境 */\n.theme-ocean body { background: linear-gradient(135deg, #0A1628, #0D2137, #1A237E, #0D1B2A) !important; color: #E3F2FD !important; }\n.theme-ocean .header, .theme-ocean header { background: rgba(10,22,40,0.95) !important; }\n.theme-ocean .card, .theme-ocean [class*="card"] { background: rgba(13,35,55,0.85) !important; box-shadow: 0 8px 32px rgba(74,144,217,0.2) !important; border: 1px solid rgba(74,144,217,0.25) !important; border-radius: 16px !important; backdrop-filter: blur(10px) !important; }\n.theme-ocean button, .theme-ocean .btn { background: linear-gradient(135deg, #4A90D9, #00BCD4) !important; color: white !important; border: none !important; border-radius: 12px !important; }\n.theme-ocean input, .theme-ocean textarea { background: rgba(13,35,55,0.9) !important; border: 2px solid rgba(74,144,217,0.4) !important; border-radius: 12px !important; color: #E3F2FD !important; }\n.theme-ocean a { color: #FFD700 !important; }\n.theme-ocean .active, .theme-ocean .playing { background: rgba(74,144,217,0.2) !important; }\n\n/* 🌻 阳光花园 */\n.theme-sun body { background: linear-gradient(135deg, #FFFDE7, #FFF8E1, #FFF3E0, #F1F8E9) !important; color: #3E2723 !important; }\n.theme-sun .header, .theme-sun header { background: rgba(255,253,231,0.95) !important; }\n.theme-sun .card, .theme-sun [class*="card"] { background: rgba(255,255,255,0.92) !important; box-shadow: 0 8px 32px rgba(255,167,38,0.12) !important; border: 1px solid rgba(255,224,130,0.5) !important; border-radius: 16px !important; }\n.theme-sun button, .theme-sun .btn { background: linear-gradient(135deg, #FFA726, #FF7043) !important; color: white !important; border: none !important; border-radius: 12px !important; }\n.theme-sun input, .theme-sun textarea { background: rgba(255,255,255,0.9) !important; border: 2px solid #FFE082 !important; border-radius: 12px !important; color: #3E2723 !important; }\n.theme-sun a { color: #E65100 !important; }\n.theme-sun .active, .theme-sun .playing { background: rgba(255,167,38,0.15) !important; }\n\n/* 主题切换器 */\n.theme-switcher-music { position:fixed; bottom:80px; right:16px; z-index:99998; display:flex; flex-direction:column; gap:8px; }\n.theme-dot { width:36px; height:36px; border-radius:50%; border:3px solid rgba(255,255,255,0.5); cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,0.2); transition:all 0.3s; }\n.theme-dot:hover { transform:scale(1.15); }\n.theme-dot.active { border-color:#FFD700; box-shadow:0 0 20px rgba(255,215,0,0.5); }\n</style></head>');
+  injected = injected.replace('<body', '<body class="theme-' + themeName + '"');
+  injected = injected.replace('</body>', `
+<div class="theme-switcher-music">
+  <div class="theme-dot active" style="background:linear-gradient(135deg,#FF69B4,#DDA0DD)" onclick="setMusicTheme(\'sakura\')" title="🌸 樱花物语"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#4A90D9,#00BCD4)" onclick="setMusicTheme(\'ocean\')" title="🌊 星海幻境"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#FFA726,#66BB6A)" onclick="setMusicTheme(\'sun\')" title="🌻 阳光花园"></div>
+</div>
+` + '
+<script>
+function setMusicTheme(name){
+  document.body.className=\'theme-\'+name;
+  localStorage.setItem(\'music-theme\',name);
+  document.querySelectorAll(\'.theme-dot\').forEach(d=>{
+    d.classList.toggle(\'active\',d.getAttribute(\'onclick\').includes("\'"+name+"\'"));
+  });
+}
+(function(){
+  var t=localStorage.getItem(\'music-theme\')||\'sakura\';
+  document.body.className=\'theme-\'+t;
+})();
+</script>
+' + '</body>');
+  return injected;
+});'/', async (request, reply) => {
   return reply.type('text/html').sendFile('index.html');
 });
 
