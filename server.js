@@ -1554,14 +1554,20 @@ fastify.get('/api/song/play_url', async (request, reply) => {
 // 重定向到最新歌曲URL（302重定向，浏览器直接请求CDN）
 fastify.get('/api/proxy_play', async (request, reply) => {
   const { id } = request.query;
+  console.log('[Proxy] id:', id);
   if (!id) return reply.status(400).send('Missing song id');
   try {
+    console.log('[Proxy] Fetching URL...');
     const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
+    console.log('[Proxy] Data:', JSON.stringify(data).substring(0, 200));
     if (data.data && data.data[0] && data.data[0].url) {
-      return reply.redirect(302, data.data[0].url);
+      console.log('[Proxy] Redirecting to:', data.data[0].url.substring(0, 80));
+      return reply.redirect(data.data[0].url, 302);
     }
+    console.log('[Proxy] No URL found');
     return reply.status(404).send('Song not found');
   } catch (e) {
+    console.log('[Proxy] Error:', e.message);
     return reply.status(500).send(e.message);
   }
 });
