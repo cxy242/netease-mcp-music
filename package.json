@@ -1,0 +1,18 @@
+{
+  "name": "netease-mcp-music",
+  "version": "1.0.0",
+  "description": "NetEase Cloud Music MCP Server + Music Garden",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "fastify": "^5.3.3",
+    "zod": "^3.24.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
