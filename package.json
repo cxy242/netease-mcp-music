@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "fastify": "^5.3.3",
+    "fastify": "^4.28.0",
     "zod": "^3.24.4"
   },
   "engines": {
