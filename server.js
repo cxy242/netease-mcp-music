@@ -210,23 +210,42 @@ fastify.post('/api/refresh_urls', async (request) => {
     if (!songsMatch) return { ok: false, message: '无法解析歌曲数据' };
 
     const songs = JSON.parse(songsMatch[1]);
-    const songsWithoutUrl = songs.filter(s => !s.u && s.i);
+    const songsWithId = songs.filter(s => s.i);
     let refreshed = 0;
+    let failed = 0;
 
-    for (const song of songsWithoutUrl.slice(0, 50)) {
+    // 批量刷新，每批20首，间隔500ms
+    const batchSize = 20;
+    for (let i = 0; i < songsWithId.length; i += batchSize) {
+      const batch = songsWithId.slice(i, i + batchSize);
+      const ids = batch.map(s => s.i).join(',');
+      
       try {
-        const result = await neteaseApi(`/api/song/enhance/player/url?ids=[${song.i}]&br=320000`);
-        if (result.data && result.data[0] && result.data[0].url) {
-          song.u = result.data[0].url;
-          refreshed++;
+        const result = await neteaseApi(`/api/song/enhance/player/url?ids=[${ids}]&br=320000`);
+        if (result.data) {
+          for (const item of result.data) {
+            const song = songs.find(s => s.i === item.id);
+            if (song && item.url) {
+              song.u = item.url;
+              refreshed++;
+            } else if (song) {
+              failed++;
+            }
+          }
         }
-      } catch (e) { /* skip */ }
+      } catch (e) { failed += batch.length; }
+      
+      // 每批之间间隔500ms避免限流
+      if (i + batchSize < songsWithId.length) {
+        await new Promise(r => setTimeout(r, 500));
+      }
     }
 
+    // 保存更新后的歌曲数据
     const newContent = 'const SONGS = ' + JSON.stringify(songs, null, 0) + ';';
     writeFileSync(songsPath, newContent, 'utf-8');
 
-    return { ok: true, count: refreshed, total: songsWithoutUrl.length };
+    return { ok: true, count: refreshed, failed: failed, total: songsWithId.length };
   } catch (e) {
     return { ok: false, message: e.message };
   }
