@@ -1677,4 +1677,57 @@ fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
   console.log(`   Comments:     ${address}/comments`);
   console.log(`   Listen:       ${address}/listen`);
   console.log(`   Cookie:       ${address}/cookie`);
+
+  
+  // 定时刷新歌曲URL（每10分钟）
+  async function refreshAllUrls() {
+    try {
+      const songsPath = join(__dirname, 'songs_data.js');
+      const songsContent = readFileSync(songsPath, 'utf-8');
+      const songsMatch = songsContent.match(/const SONGS = (\[.*\])/s);
+      if (!songsMatch) return;
+      
+      const songs = JSON.parse(songsMatch[1]);
+      const songsWithId = songs.filter(s => s.i);
+      let refreshed = 0;
+      
+      const batchSize = 20;
+      for (let i = 0; i < songsWithId.length; i += batchSize) {
+        const batch = songsWithId.slice(i, i + batchSize);
+        const ids = batch.map(s => s.i).join(',');
+        
+        try {
+          const data = await neteaseApi('/api/song/enhance/player/url', {
+            method: 'POST',
+            body: new URLSearchParams({ ids: '[' + ids + ']', br: '320000' }).toString(),
+            contentType: 'application/x-www-form-urlencoded'
+          });
+          if (data.data) {
+            for (const item of data.data) {
+              const song = songs.find(s => s.i === item.id);
+              if (song && item.url) {
+                song.u = item.url;
+                refreshed++;
+              }
+            }
+          }
+        } catch (e) {}
+        
+        if (i + batchSize < songsWithId.length) {
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+      
+      const newContent = 'const SONGS = ' + JSON.stringify(songs, null, 0) + ';';
+      writeFileSync(songsPath, newContent, 'utf-8');
+      console.log(`[Refresh] 刷新了 ${refreshed}/${songsWithId.length} 首歌曲URL`);
+    } catch (e) {
+      console.log('[Refresh] Error:', e.message);
+    }
+  }
+  
+  // 启动后立即刷新一次
+  refreshAllUrls();
+  // 每10分钟刷新一次
+  setInterval(refreshAllUrls, 10 * 60 * 1000);
 });
