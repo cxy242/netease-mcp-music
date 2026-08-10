@@ -70,7 +70,15 @@ fastify.options('*', async (request, reply) => {
 
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
-  return readFileSync(join(__dirname, 'index.html'), 'utf-8');
+  const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
+  const nav = `
+<div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:99999;display:flex;gap:6px;flex-wrap:wrap;max-width:280px;justify-content:flex-end">
+  <a href="/netease" style="padding:8px 14px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(233,30,99,0.3)">🎵 网易云</a>
+  <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
+  <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
+  <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
+</div>`;
+  return raw.replace('</body>', nav + '</body>');
 });
 
 fastify.get('/songs_data.js', async (request, reply) => {
@@ -86,8 +94,6 @@ fastify.get('/all_liked_songs.json', async (request, reply) => {
 // ═════════════════════════════════════════════════════════════════════
 // 2. NETEASE API PROXY (15 routes)
 // ═════════════════════════════════════════════════════════════════════
-
-// --- GET routes ---
 
 fastify.get('/api/search', async (request, reply) => {
   const { q, limit = 10 } = request.query;
@@ -147,6 +153,7 @@ fastify.get('/api/cookie/status', async () => {
     hasCookie: !!MUSIC_U,
     nickname: cookieData ? cookieData.nickname : '未知',
     vipType: cookieData ? cookieData.vipType : 0,
+    uid: DEFAULT_UID,
   };
 });
 
@@ -155,9 +162,7 @@ fastify.get('/api/cookie/status', async () => {
 fastify.post('/api/like', async (request, reply) => {
   const { id, like = true } = request.body || {};
   if (!id) return reply.status(400).send({ error: 'Missing id' });
-  return neteaseApi(`/api/radio/like?trackId=${id}&like=${like}`, {
-    method: 'GET',
-  });
+  return neteaseApi(`/api/radio/like?trackId=${id}&like=${like}`, { method: 'GET' });
 });
 
 fastify.post('/api/playlist/create', async (request, reply) => {
@@ -228,7 +233,7 @@ fastify.post('/api/refresh_urls', async (request) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════
-// 3. COMMENT SYSTEM (4 routes)
+// 3. COMMENT SYSTEM
 // ═════════════════════════════════════════════════════════════════════
 
 fastify.post('/api/comment', async (request, reply) => {
@@ -257,95 +262,8 @@ fastify.post('/api/comment/reply', async (request, reply) => {
   return { ok: true, reply: replyObj };
 });
 
-fastify.get('/comments', async (request, reply) => {
-  reply.type('text/html; charset=utf-8');
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>💬 评论广场 - 月汐音乐花园</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh;font-family:system-ui,-apple-system,sans-serif;padding:16px}
-.header{text-align:center;padding:24px 0}
-.header h1{font-size:1.6em;margin-bottom:4px;color:#c2185b}
-.header p{color:#888;font-size:0.9em}
-.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
-.comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.comment-author{font-weight:700;color:#e91e63}
-.comment-song{color:#4caf50;font-size:0.85em}
-.comment-text{color:#333;line-height:1.6;margin-bottom:8px}
-.comment-time{color:#999;font-size:0.75em}
-.reply{margin-left:20px;padding:8px 12px;background:#fce4ec;border-radius:8px;margin-top:6px;font-size:0.9em}
-.reply .author{color:#e91e63;font-weight:600}
-.form{background:white;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
-.form input,.form textarea{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.95em;margin-bottom:8px;outline:none}
-.form input:focus,.form textarea:focus{border-color:#e91e63}
-.form textarea{height:60px;resize:vertical}
-.btn{padding:10px 20px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.95em}
-.btn-pink{background:linear-gradient(135deg,#e91e63,#f06292);color:white}
-.back{display:inline-block;color:#e91e63;text-decoration:none;margin-bottom:12px;font-weight:600}
-.back:hover{text-decoration:underline}
-</style>
-</head>
-<body>
-<a href="/" class="back">← 返回音乐花园</a>
-<div class="header"><h1>💬 评论广场</h1><p>分享你对歌曲的感受~</p></div>
-<div class="form">
-  <input id="c-author" placeholder="你的名字">
-  <input id="c-song" placeholder="歌曲名（可选）">
-  <input id="c-song-id" placeholder="歌曲ID（可选）" style="display:none">
-  <textarea id="c-text" placeholder="写下你的感想..."></textarea>
-  <button class="btn btn-pink" onclick="postComment()">💬 发表评论</button>
-</div>
-<div id="comments-list"></div>
-<script>
-const saved=localStorage.getItem('draw-player')||localStorage.getItem('playerName')||'';
-if(saved)document.getElementById('c-author').value=saved;
-
-function loadComments(){
-  fetch('/api/comments').then(r=>r.json()).then(d=>{
-    const list=document.getElementById('comments-list');
-    if(!d.comments.length){list.innerHTML='<div class="card" style="text-align:center;color:#999">还没有评论~</div>';return;}
-    list.innerHTML=d.comments.map(c=>{
-      const replies=c.replies.map(r=>'<div class="reply"><span class="author">'+(r.is_ai?'🤖 ':'')+r.author+':</span> '+r.text+'</div>').join('');
-      return '<div class="card">'+
-        '<div class="comment-header"><span class="comment-author">'+(c.is_ai?'🤖 ':'')+c.author+'</span>'+(c.song_name?'<span class="comment-song">🎵 '+c.song_name+'</span>':'')+'</div>'+
-        '<div class="comment-text">'+c.text+'</div>'+
-        '<div class="comment-time">'+c.time.slice(0,16)+'</div>'+
-        replies+
-        '<div style="margin-top:8px;display:flex;gap:4px"><input id="reply-'+c.id+'" placeholder="回复..." style="flex:1;padding:6px;border:1px solid #f8bbd0;border-radius:6px;font-size:0.85em"><button onclick="replyComment('+c.id+')" style="padding:6px 10px;border:none;background:#e91e63;color:white;border-radius:6px;font-size:0.85em;cursor:pointer">回复</button></div>'+
-      '</div>';
-    }).join('');
-  });
-}
-
-function postComment(){
-  const author=document.getElementById('c-author').value.trim();
-  const text=document.getElementById('c-text').value.trim();
-  const song_name=document.getElementById('c-song').value.trim();
-  if(!author||!text){alert('请输入名字和评论');return;}
-  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id:0,song_name,author,text,is_ai:false})})
-  .then(()=>{document.getElementById('c-text').value='';loadComments();});
-}
-
-function replyComment(id){
-  const input=document.getElementById('reply-'+id);
-  const text=input.value.trim();
-  if(!text)return;
-  const author=document.getElementById('c-author').value.trim()||'匿名';
-  fetch('/api/comment/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comment_id:id,author,text,is_ai:false})})
-  .then(()=>{input.value='';loadComments();});
-}
-
-loadComments();
-setInterval(loadComments,10000);
-</script>
-</body></html>`;
-});
-
 // ═════════════════════════════════════════════════════════════════════
-// 4. LISTEN TOGETHER SYSTEM (7 routes)
+// 4. LISTEN TOGETHER SYSTEM
 // ═════════════════════════════════════════════════════════════════════
 
 fastify.post('/api/listen/create', async (request) => {
@@ -402,6 +320,11 @@ fastify.post('/api/listen/leave', async (request) => {
   return { ok: true };
 });
 
+// ═════════════════════════════════════════════════════════════════════
+// 5. HTML PAGES
+// ═════════════════════════════════════════════════════════════════════
+
+// --- /listen page ---
 fastify.get('/listen', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   return `<!DOCTYPE html>
@@ -627,10 +550,95 @@ audio.addEventListener('ended',()=>{document.getElementById('play-btn').textCont
 </body></html>`;
 });
 
-// ═════════════════════════════════════════════════════════════════════
-// 5. PAGES (2 routes)
-// ═════════════════════════════════════════════════════════════════════
+// --- /comments page ---
+fastify.get('/comments', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>💬 评论广场 - 月汐音乐花园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh;font-family:system-ui,-apple-system,sans-serif;padding:16px}
+.header{text-align:center;padding:24px 0}
+.header h1{font-size:1.6em;margin-bottom:4px;color:#c2185b}
+.header p{color:#888;font-size:0.9em}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
+.comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.comment-author{font-weight:700;color:#e91e63}
+.comment-song{color:#4caf50;font-size:0.85em}
+.comment-text{color:#333;line-height:1.6;margin-bottom:8px}
+.comment-time{color:#999;font-size:0.75em}
+.reply{margin-left:20px;padding:8px 12px;background:#fce4ec;border-radius:8px;margin-top:6px;font-size:0.9em}
+.reply .author{color:#e91e63;font-weight:600}
+.form{background:white;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
+.form input,.form textarea{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.95em;margin-bottom:8px;outline:none}
+.form input:focus,.form textarea:focus{border-color:#e91e63}
+.form textarea{height:60px;resize:vertical}
+.btn{padding:10px 20px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.95em}
+.btn-pink{background:linear-gradient(135deg,#e91e63,#f06292);color:white}
+.back{display:inline-block;color:#e91e63;text-decoration:none;margin-bottom:12px;font-weight:600}
+.back:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<a href="/" class="back">← 返回音乐花园</a>
+<div class="header"><h1>💬 评论广场</h1><p>分享你对歌曲的感受~</p></div>
+<div class="form">
+  <input id="c-author" placeholder="你的名字">
+  <input id="c-song" placeholder="歌曲名（可选）">
+  <input id="c-song-id" placeholder="歌曲ID（可选）" style="display:none">
+  <textarea id="c-text" placeholder="写下你的感想..."></textarea>
+  <button class="btn btn-pink" onclick="postComment()">💬 发表评论</button>
+</div>
+<div id="comments-list"></div>
+<script>
+const saved=localStorage.getItem('draw-player')||localStorage.getItem('playerName')||'';
+if(saved)document.getElementById('c-author').value=saved;
 
+function loadComments(){
+  fetch('/api/comments').then(r=>r.json()).then(d=>{
+    const list=document.getElementById('comments-list');
+    if(!d.comments.length){list.innerHTML='<div class="card" style="text-align:center;color:#999">还没有评论~</div>';return;}
+    list.innerHTML=d.comments.map(c=>{
+      const replies=c.replies.map(r=>'<div class="reply"><span class="author">'+(r.is_ai?'🤖 ':'')+r.author+':</span> '+r.text+'</div>').join('');
+      return '<div class="card">'+
+        '<div class="comment-header"><span class="comment-author">'+(c.is_ai?'🤖 ':'')+c.author+'</span>'+(c.song_name?'<span class="comment-song">🎵 '+c.song_name+'</span>':'')+'</div>'+
+        '<div class="comment-text">'+c.text+'</div>'+
+        '<div class="comment-time">'+c.time.slice(0,16)+'</div>'+
+        replies+
+        '<div style="margin-top:8px;display:flex;gap:4px"><input id="reply-'+c.id+'" placeholder="回复..." style="flex:1;padding:6px;border:1px solid #f8bbd0;border-radius:6px;font-size:0.85em"><button onclick="replyComment('+c.id+')" style="padding:6px 10px;border:none;background:#e91e63;color:white;border-radius:6px;font-size:0.85em;cursor:pointer">回复</button></div>'+
+      '</div>';
+    }).join('');
+  });
+}
+
+function postComment(){
+  const author=document.getElementById('c-author').value.trim();
+  const text=document.getElementById('c-text').value.trim();
+  const song_name=document.getElementById('c-song').value.trim();
+  if(!author||!text){alert('请输入名字和评论');return;}
+  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id:0,song_name,author,text,is_ai:false})})
+  .then(()=>{document.getElementById('c-text').value='';loadComments();});
+}
+
+function replyComment(id){
+  const input=document.getElementById('reply-'+id);
+  const text=input.value.trim();
+  if(!text)return;
+  const author=document.getElementById('c-author').value.trim()||'匿名';
+  fetch('/api/comment/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comment_id:id,author,text,is_ai:false})})
+  .then(()=>{input.value='';loadComments();});
+}
+
+loadComments();
+setInterval(loadComments,10000);
+</script>
+</body></html>`;
+});
+
+// --- /cookie page (single, no duplicate) ---
 fastify.get('/cookie', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   return `<!DOCTYPE html>
@@ -641,93 +649,150 @@ fastify.get('/cookie', async (request, reply) => {
 <title>🍪 Cookie管理 - 月汐音乐花园</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#fce4ec,#f8bbd0);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
-.card{background:white;border-radius:20px;padding:40px;max-width:450px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
-h1{text-align:center;margin-bottom:8px;font-size:1.5em}
-p{color:#888;text-align:center;margin-bottom:24px;font-size:0.9em}
+body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh;font-family:system-ui,sans-serif;padding:16px}
+.header{text-align:center;padding:20px 0}
+.header h1{font-size:1.5em;background:linear-gradient(135deg,#e91e63,#9c27b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:#888;font-size:0.9em}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+.card h3{color:#e91e63;margin-bottom:12px;font-size:1.1em}
 label{display:block;margin-bottom:6px;font-weight:600;color:#555;font-size:0.9em}
-input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:1em;outline:none;transition:border-color 0.2s}
+textarea{width:100%;padding:12px;border:2px solid #f8bbd0;border-radius:12px;font-size:0.85em;outline:none;resize:vertical;font-family:monospace}
+textarea:focus{border-color:#e91e63}
+input{width:100%;padding:12px;border:2px solid #f8bbd0;border-radius:12px;font-size:0.95em;outline:none}
 input:focus{border-color:#e91e63}
-.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:1.1em;font-weight:700;cursor:pointer;margin-top:16px;transition:all 0.2s}
-.btn-pink{background:linear-gradient(135deg,#e91e63,#ff5722);color:white}
-.btn-pink:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(233,30,99,0.3)}
-.btn-green{background:linear-gradient(135deg,#4caf50,#2e7d32);color:white;margin-top:8px}
-.status{margin-top:16px;padding:12px;border-radius:10px;text-align:center;font-size:0.9em;display:none}
-.status.ok{background:#e8f5e9;color:#2e7d32;display:block}
-.status.err{background:#ffebee;color:#c62828;display:block}
-.info{background:#f5f5f5;border-radius:10px;padding:12px;margin-top:16px;font-size:0.8em;color:#666}
-.back{display:inline-block;color:#e91e63;text-decoration:none;margin-bottom:16px;font-size:0.9em}
-.back:hover{text-decoration:underline}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:1.05em;font-weight:700;cursor:pointer;margin-top:12px;transition:all 0.2s}
+.btn:hover{transform:translateY(-2px)}
+.btn-pink{background:linear-gradient(135deg,#e91e63,#ff5722);color:white;box-shadow:0 4px 12px rgba(233,30,99,0.3)}
+.btn-green{background:linear-gradient(135deg,#4caf50,#2e7d32);color:white;box-shadow:0 4px 12px rgba(76,175,80,0.3)}
+.btn-blue{background:linear-gradient(135deg,#2196f3,#1565c0);color:white;box-shadow:0 4px 12px rgba(33,150,243,0.3)}
+.status{margin-top:12px;padding:12px;border-radius:10px;font-size:0.9em;display:none}
+.status.show{display:block}
+.status.ok{background:#e8f5e9;color:#2e7d32}
+.status.err{background:#ffebee;color:#c62828}
+.info{background:#f5f5f5;border-radius:12px;padding:14px;margin-top:16px;font-size:0.85em;color:#666;line-height:1.6}
+.info code{background:#e8e8e8;padding:2px 6px;border-radius:4px;font-size:0.85em}
+.nav-links{text-align:center;margin-bottom:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.nav-links a{padding:8px 16px;background:rgba(255,255,255,0.8);border-radius:20px;text-decoration:none;color:#e91e63;font-size:0.85em;font-weight:600}
+.cookie-preview{background:#f8f8f8;border-radius:10px;padding:12px;margin-top:12px;font-size:0.8em;font-family:monospace;max-height:150px;overflow-y:auto;word-break:break-all;display:none}
+.cookie-preview.show{display:block}
+.parsed{margin-top:12px}
+.parsed-item{padding:6px 0;border-bottom:1px solid #fce4ec;font-size:0.85em}
+.parsed-key{font-weight:600;color:#e91e63}
+.parsed-val{color:#333;word-break:break-all}
 </style>
 </head>
 <body>
-<div class="card">
-  <a href="/" class="back">← 返回音乐花园</a>
+<div class="header">
   <h1>🍪 Cookie管理</h1>
-  <p>设置网易云音乐Cookie，让歌曲能正常播放</p>
-  
-  <label>MUSIC_U（必须）</label>
-  <input id="music_u" placeholder="从浏览器Cookie中复制MUSIC_U的值" style="margin-bottom:12px">
-  
-  <label>__csrf（可选，自动生成）</label>
-  <input id="csrf" placeholder="留空自动生成" style="margin-bottom:12px">
-  
-  <button class="btn btn-pink" onclick="saveCookie()">💾 保存Cookie</button>
-  <button class="btn btn-green" onclick="refreshUrls()">🔄 刷新歌曲链接</button>
-  
-  <div id="status" class="status"></div>
-  
-  <div class="info">
-    <strong>如何获取MUSIC_U：</strong><br>
-    1. 在浏览器登录 <a href="https://music.163.com" target="_blank">music.163.com</a><br>
-    2. 按F12打开开发者工具<br>
-    3. 找到Application → Cookies → music.163.com<br>
-    4. 复制 <code>MUSIC_U</code> 的值<br>
-    <br>
-    <strong>当前状态：</strong> <span id="cookie-status">检查中...</span>
-  </div>
+  <p>粘贴浏览器Cookie，让音乐花园能播放VIP歌曲</p>
 </div>
+
+<div class="nav-links">
+  <a href="/">🏠 音乐花园</a>
+  <a href="/netease">🎵 网易云</a>
+  <a href="/comments">💬 评论</a>
+  <a href="/listen">🎧 一起听</a>
+</div>
+
+<div class="card">
+  <h3>📋 粘贴完整Cookie（推荐）</h3>
+  <p style="color:#888;font-size:0.85em;margin-bottom:12px">从浏览器复制完整的Cookie字符串粘贴到这里</p>
+  <textarea id="full-cookie" rows="6" placeholder="Hm_lvt_xxx=xxx; MUSIC_U=xxx; __csrf=xxx; ..."></textarea>
+  <button class="btn btn-pink" onclick="parseAndSave()">🔍 解析并保存</button>
+  <div id="parse-status" class="status"></div>
+  <div id="parsed-cookies" class="parsed"></div>
+  <div id="cookie-preview" class="cookie-preview"></div>
+</div>
+
+<div class="card">
+  <h3>✏️ 手动输入</h3>
+  <label>MUSIC_U（必须）</label>
+  <input id="music-u" placeholder="从浏览器Cookie中复制MUSIC_U的值" style="margin-bottom:12px">
+  <label>__csrf（可选）</label>
+  <input id="csrf" placeholder="留空自动生成">
+  <button class="btn btn-green" onclick="saveManual()">💾 保存</button>
+  <div id="manual-status" class="status"></div>
+</div>
+
+<div class="card">
+  <h3>📊 当前Cookie状态</h3>
+  <div id="current-status">检查中...</div>
+  <button class="btn btn-blue" onclick="refreshUrls()" style="margin-top:12px">🔄 刷新歌曲链接</button>
+  <div id="refresh-status" class="status"></div>
+</div>
+
+<div class="info">
+  <strong>📖 如何获取Cookie：</strong><br>
+  1. 在浏览器打开 <a href="https://music.163.com" target="_blank">music.163.com</a> 并登录<br>
+  2. 按 <code>F12</code> 打开开发者工具<br>
+  3. 切到 <code>Application</code> → <code>Cookies</code> → <code>music.163.com</code><br>
+  4. 复制所有Cookie（或只复制 <code>MUSIC_U</code>）
+</div>
+
 <script>
 fetch('/api/cookie/status').then(r=>r.json()).then(d=>{
-  document.getElementById('cookie-status').textContent = d.hasCookie ? 
-    '✅ 已设置 (' + d.nickname + ', VIP' + d.vipType + ')' : '❌ 未设置';
+  document.getElementById('current-status').innerHTML = d.hasCookie ?
+    '<span style="color:#4caf50">✅ Cookie已设置</span> (UID: ' + d.uid + ', 昵称: ' + (d.nickname||'未知') + ')' :
+    '<span style="color:#f44336">❌ 未设置Cookie</span>';
 }).catch(()=>{
-  document.getElementById('cookie-status').textContent = '⚠️ 无法获取状态';
+  document.getElementById('current-status').innerHTML = '⚠️ 无法获取状态';
 });
 
-function saveCookie(){
-  const music_u = document.getElementById('music_u').value.trim();
+function parseAndSave() {
+  const raw = document.getElementById('full-cookie').value.trim();
+  if (!raw) { showParseStatus('请粘贴Cookie字符串', 'err'); return; }
+  const cookies = {};
+  raw.split(';').forEach(pair => {
+    const [key, ...vals] = pair.trim().split('=');
+    if (key && vals.length) cookies[key.trim()] = vals.join('=').trim();
+  });
+  const musicU = cookies['MUSIC_U'] || '';
+  const csrf = cookies['__csrf'] || '';
+  let html = '';
+  ['MUSIC_U', '__csrf', 'NTES_YD_SESS', 'P_INFO', 'S_INFO'].forEach(k => {
+    if (cookies[k]) {
+      const val = cookies[k].length > 50 ? cookies[k].substring(0, 50) + '...' : cookies[k];
+      html += '<div class="parsed-item"><span class="parsed-key">' + k + '</span>: <span class="parsed-val">' + val + '</span></div>';
+    }
+  });
+  document.getElementById('parsed-cookies').innerHTML = html;
+  document.getElementById('cookie-preview').textContent = raw;
+  document.getElementById('cookie-preview').classList.add('show');
+  if (!musicU) { showParseStatus('⚠️ 没有找到MUSIC_U', 'err'); return; }
+  fetch('/api/set_cookie', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({music_u:musicU,csrf:csrf}) })
+  .then(r=>r.json()).then(d=>{
+    if (d.ok) { showParseStatus('✅ Cookie已保存！', 'ok'); setTimeout(()=>location.reload(),1500); }
+    else showParseStatus('❌ 保存失败', 'err');
+  }).catch(e=>showParseStatus('❌ 请求失败: '+e.message,'err'));
+}
+
+function saveManual() {
+  const musicU = document.getElementById('music-u').value.trim();
   const csrf = document.getElementById('csrf').value.trim();
-  if(!music_u){showStatus('请输入MUSIC_U','err');return;}
-  
-  fetch('/api/set_cookie',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({music_u,csrf})
-  }).then(r=>r.json()).then(d=>{
-    if(d.ok){showStatus('✅ Cookie已保存！','ok');setTimeout(()=>location.reload(),1000);}
-    else{showStatus('❌ '+d.message,'err');}
-  }).catch(()=>{showStatus('❌ 请求失败','err');});
+  if (!musicU) { showManualStatus('请输入MUSIC_U','err'); return; }
+  fetch('/api/set_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({music_u:musicU,csrf:csrf})})
+  .then(r=>r.json()).then(d=>{
+    if(d.ok){showManualStatus('✅ Cookie已保存！','ok');setTimeout(()=>location.reload(),1000);}
+    else showManualStatus('❌ 保存失败','err');
+  }).catch(()=>showManualStatus('❌ 请求失败','err'));
 }
 
-function refreshUrls(){
-  showStatus('🔄 正在刷新歌曲链接...','ok');
+function refreshUrls() {
+  showRefreshStatus('🔄 正在刷新...','ok');
   fetch('/api/refresh_urls',{method:'POST'}).then(r=>r.json()).then(d=>{
-    if(d.ok){showStatus('✅ 已刷新 '+d.count+' 首歌曲链接','ok');}
-    else{showStatus('❌ '+d.message,'err');}
-  }).catch(()=>{showStatus('❌ 请求失败','err');});
+    if(d.ok) showRefreshStatus('✅ 已刷新 '+d.count+' 首歌曲链接','ok');
+    else showRefreshStatus('❌ '+(d.message||'刷新失败'),'err');
+  }).catch(()=>showRefreshStatus('❌ 请求失败','err'));
 }
 
-function showStatus(msg,type){
-  const s=document.getElementById('status');
-  s.textContent=msg;
-  s.className='status '+type;
-}
+function showParseStatus(m,t){const s=document.getElementById('parse-status');s.textContent=m;s.className='status show '+t;}
+function showManualStatus(m,t){const s=document.getElementById('manual-status');s.textContent=m;s.className='status show '+t;}
+function showRefreshStatus(m,t){const s=document.getElementById('refresh-status');s.textContent=m;s.className='status show '+t;}
 </script>
-</body>
-</html>`;
+</body></html>`;
 });
 
+// --- /music page (redirect with cookie button) ---
 fastify.get('/music', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   const indexContent = readFileSync(join(__dirname, 'index.html'), 'utf-8');
@@ -740,7 +805,505 @@ fastify.get('/music', async (request, reply) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════
-// 6. MCP ENDPOINT — Pure JSON-RPC 2.0 (23 tools)
+// 6. /netease — 网易云功能中心
+// ═════════════════════════════════════════════════════════════════════
+
+fastify.get('/netease', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>🎵 网易云功能中心 - 月汐音乐花园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#e1bee7,#f3e5f5);min-height:100vh;font-family:-apple-system,system-ui,sans-serif;padding-bottom:70px}
+
+/* Glass card */
+.glass{background:rgba(255,255,255,0.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px;box-shadow:0 8px 32px rgba(233,30,99,0.08);border:1px solid rgba(255,255,255,0.3)}
+
+/* Header */
+.page-header{padding:20px 16px 10px;text-align:center;position:relative}
+.page-header h1{font-size:1.4em;background:linear-gradient(135deg,#e91e63,#9c27b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.page-header p{color:#999;font-size:0.85em;margin-top:2px}
+.back-btn{position:absolute;left:16px;top:22px;color:#e91e63;text-decoration:none;font-size:0.85em;font-weight:600}
+
+/* Search */
+.search-bar{margin:12px 16px;display:flex;gap:8px}
+.search-bar input{flex:1;padding:12px 16px;border:2px solid rgba(233,30,99,0.15);border-radius:16px;background:rgba(255,255,255,0.7);font-size:0.95em;outline:none;backdrop-filter:blur(10px)}
+.search-bar input:focus{border-color:#e91e63}
+.search-bar button{padding:12px 20px;border:none;border-radius:16px;background:linear-gradient(135deg,#e91e63,#f06292);color:#fff;font-weight:700;cursor:pointer;font-size:0.95em}
+
+/* Sections */
+.section{margin:12px 16px;padding:16px}
+.section-title{font-size:1.05em;font-weight:700;color:#c2185b;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* Song list */
+.song-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(233,30,99,0.06)}
+.song-item:last-child{border-bottom:none}
+.song-idx{width:24px;text-align:center;color:#999;font-size:0.8em}
+.song-info{flex:1;min-width:0}
+.song-title{font-weight:600;font-size:0.9em;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-meta{font-size:0.75em;color:#999;margin-top:2px}
+.song-actions{display:flex;gap:6px}
+.song-actions button{padding:6px 10px;border:none;border-radius:8px;font-size:0.75em;cursor:pointer;transition:all 0.2s}
+.btn-play{background:linear-gradient(135deg,#e91e63,#f06292);color:#fff}
+.btn-like{background:rgba(233,30,99,0.1);color:#e91e63}
+.btn-add{background:rgba(76,175,80,0.1);color:#4caf50}
+.btn-del{background:rgba(244,67,54,0.1);color:#f44336}
+
+/* Playlist card */
+.pl-card{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.pl-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(233,30,99,0.12)}
+.pl-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#e91e63,#9c27b0);display:flex;align-items:center;justify-content:center;font-size:1.5em;color:#fff}
+.pl-info{flex:1}
+.pl-name{font-weight:600;font-size:0.9em;color:#333}
+.pl-meta{font-size:0.75em;color:#999;margin-top:2px}
+
+/* Tab content */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:8px 0 12px;border-top:1px solid rgba(233,30,99,0.1);z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:#999;font-size:0.65em}
+.nav-item.active{color:#e91e63}
+.nav-item .icon{font-size:1.5em}
+
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:70vh;overflow-y:auto}
+.modal h3{color:#e91e63;margin-bottom:12px}
+.modal input,.modal textarea{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.9em;margin-bottom:8px;outline:none}
+.modal textarea{height:60px;resize:vertical}
+.modal-btns{display:flex;gap:8px;margin-top:8px}
+.modal-btns button{flex:1;padding:10px;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.modal-btns .ok{background:linear-gradient(135deg,#e91e63,#f06292);color:#fff}
+.modal-btns .cancel{background:#f5f5f5;color:#666}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:#999}
+.loading::after{content:'';display:inline-block;width:20px;height:20px;border:2px solid #f8bbd0;border-top-color:#e91e63;border-radius:50%;animation:spin 0.8s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;padding:12px 24px;border-radius:12px;font-size:0.9em;z-index:300;pointer-events:none;opacity:0;transition:opacity 0.3s}
+.toast.show{opacity:1}
+
+/* Create playlist form */
+.create-form{margin:12px 16px;padding:16px;display:none}
+.create-form.show{display:block}
+.create-form input{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.9em;margin-bottom:8px;outline:none}
+.create-form button{padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#e91e63,#f06292);color:#fff;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <a href="/" class="back-btn">← 返回</a>
+  <h1>🎵 网易云功能中心</h1>
+  <p id="user-info">加载中...</p>
+</div>
+
+<!-- Tab: Home -->
+<div class="tab-content active" id="tab-home">
+  <div class="search-bar">
+    <input id="search-input" placeholder="搜索歌曲、歌手..." onkeydown="if(event.key==='Enter')doSearch()">
+    <button onclick="doSearch()">🔍</button>
+  </div>
+  <div id="home-content">
+    <div class="section glass">
+      <div class="section-title">🔥 每日推荐</div>
+      <div id="daily-songs"><div class="loading">加载中</div></div>
+    </div>
+    <div class="section glass">
+      <div class="section-title">📻 私人FM</div>
+      <div id="fm-songs"><div class="loading">加载中</div></div>
+    </div>
+  </div>
+  <div id="search-results" style="display:none">
+    <div class="section glass">
+      <div class="section-title">🔍 搜索结果</div>
+      <div id="search-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Search -->
+<div class="tab-content" id="tab-search">
+  <div class="search-bar">
+    <input id="search-input2" placeholder="搜索歌曲..." onkeydown="if(event.key==='Enter')doSearch2()">
+    <button onclick="doSearch2()">🔍</button>
+  </div>
+  <div class="section glass">
+    <div id="search-list2"></div>
+  </div>
+</div>
+
+<!-- Tab: Playlists -->
+<div class="tab-content" id="tab-playlists">
+  <div style="margin:12px 16px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-weight:700;color:#c2185b">📋 我的歌单</span>
+    <button onclick="toggleCreateForm()" style="padding:6px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#e91e63,#f06292);color:#fff;font-size:0.8em;font-weight:600;cursor:pointer">+ 新建</button>
+  </div>
+  <div class="create-form glass" id="create-form">
+    <input id="new-pl-name" placeholder="歌单名称">
+    <input id="new-pl-desc" placeholder="歌单描述（可选）">
+    <button onclick="createPlaylist()">✅ 创建</button>
+  </div>
+  <div id="playlists-list" style="margin:0 16px"></div>
+  <div id="playlist-songs" style="display:none">
+    <div class="section glass">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <button onclick="backToPlaylists()" style="background:none;border:none;color:#e91e63;cursor:pointer;font-size:0.9em">← 返回</button>
+        <span class="section-title" id="pl-songs-title" style="margin:0"></span>
+      </div>
+      <div id="pl-songs-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Liked -->
+<div class="tab-content" id="tab-liked">
+  <div class="section glass">
+    <div class="section-title">❤️ 喜欢的歌曲</div>
+    <div id="liked-list"><div class="loading">加载中</div></div>
+  </div>
+</div>
+
+<!-- Tab: Me -->
+<div class="tab-content" id="tab-me">
+  <div class="section glass">
+    <div class="section-title">🕐 播放历史</div>
+    <div id="history-list"><div class="loading">加载中</div></div>
+  </div>
+  <div class="section glass" style="margin-top:12px">
+    <div class="section-title">🍪 Cookie状态</div>
+    <div id="cookie-status-me">检查中...</div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/cookie" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;text-decoration:none;font-size:0.8em;font-weight:600">设置Cookie</a>
+      <button onclick="refreshUrls()" style="padding:8px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;font-size:0.8em;font-weight:600;cursor:pointer">刷新链接</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('home',this)"><span class="icon">🏠</span>首页</button>
+  <button class="nav-item" onclick="switchTab('search',this)"><span class="icon">🔍</span>搜索</button>
+  <button class="nav-item" onclick="switchTab('playlists',this)"><span class="icon">📋</span>歌单</button>
+  <button class="nav-item" onclick="switchTab('liked',this)"><span class="icon">❤️</span>喜欢</button>
+  <button class="nav-item" onclick="switchTab('me',this)"><span class="icon">👤</span>我的</button>
+</div>
+
+<!-- Add to playlist modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <h3>添加到歌单</h3>
+    <div id="add-modal-playlists"></div>
+    <div class="modal-btns"><button class="cancel" onclick="closeAddModal()">取消</button></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const UID = ${DEFAULT_UID};
+let currentSongId = null;
+
+// Tab switching
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (name === 'playlists') loadPlaylists();
+  if (name === 'liked') loadLiked();
+  if (name === 'me') { loadHistory(); loadCookieStatus(); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Search
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  document.getElementById('home-content').style.display = 'none';
+  document.getElementById('search-results').style.display = 'block';
+  document.getElementById('search-list').innerHTML = '<div class="loading">搜索中</div>';
+  fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=20').then(r => r.json()).then(d => {
+    renderSongs(d.result?.songs || [], 'search-list');
+  });
+}
+function doSearch2() {
+  const q = document.getElementById('search-input2').value.trim();
+  if (!q) return;
+  document.getElementById('search-list2').innerHTML = '<div class="loading">搜索中</div>';
+  fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=20').then(r => r.json()).then(d => {
+    renderSongs(d.result?.songs || [], 'search-list2');
+  });
+}
+
+function renderSongs(songs, containerId) {
+  const c = document.getElementById(containerId);
+  if (!songs.length) { c.innerHTML = '<div style="text-align:center;color:#999;padding:20px">没有找到歌曲</div>'; return; }
+  c.innerHTML = songs.map((s, i) => {
+    const artists = (s.artists || s.ar || []).map(a => typeof a === 'string' ? a : a.name).join(', ');
+    const duration = s.duration ? Math.floor(s.duration / 60000) + ':' + String(Math.floor((s.duration % 60000) / 1000)).padStart(2, '0') : '';
+    return '<div class="song-item">' +
+      '<div class="song-idx">' + (i + 1) + '</div>' +
+      '<div class="song-info"><div class="song-title">' + (s.name || '') + '</div><div class="song-meta">' + artists + (duration ? ' · ' + duration : '') + '</div></div>' +
+      '<div class="song-actions">' +
+        '<button class="btn-play" onclick="playSong(' + s.id + ')">▶</button>' +
+        '<button class="btn-like" onclick="likeSong(' + s.id + ')">❤️</button>' +
+        '<button class="btn-add" onclick="openAddModal(' + s.id + ')">+</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderDetailSongs(songs, containerId) {
+  const c = document.getElementById(containerId);
+  if (!songs.length) { c.innerHTML = '<div style="text-align:center;color:#999;padding:20px">没有歌曲</div>'; return; }
+  c.innerHTML = songs.map((s, i) => {
+    const artists = (s.artists || s.ar || []).map(a => typeof a === 'string' ? a : a.name).join(', ');
+    return '<div class="song-item">' +
+      '<div class="song-idx">' + (i + 1) + '</div>' +
+      '<div class="song-info"><div class="song-title">' + (s.name || '') + '</div><div class="song-meta">' + artists + '</div></div>' +
+      '<div class="song-actions">' +
+        '<button class="btn-play" onclick="playSong(' + s.id + ')">▶</button>' +
+        '<button class="btn-like" onclick="likeSong(' + s.id + ')">❤️</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+// Play song
+function playSong(id) {
+  fetch('/api/song/url?id=' + id).then(r => r.json()).then(d => {
+    if (d.data?.[0]?.url) {
+      const audio = new Audio(d.data[0].url);
+      audio.play();
+      showToast('🎵 播放中...');
+    } else {
+      showToast('❌ 无法获取播放链接');
+    }
+  });
+}
+
+// Like song
+function likeSong(id) {
+  fetch('/api/like', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, like: true }) })
+  .then(r => r.json()).then(d => {
+    showToast(d.code === 200 ? '❤️ 已喜欢' : '❌ 操作失败');
+  });
+}
+
+// Unlike
+function unlikeSong(id) {
+  fetch('/api/like', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, like: false }) })
+  .then(r => r.json()).then(d => {
+    showToast(d.code === 200 ? '💔 已取消喜欢' : '❌ 操作失败');
+    loadLiked();
+  });
+}
+
+// Daily recommend
+function loadDaily() {
+  fetch('/api/search?q=每日推荐&limit=0').catch(() => {});
+  // Use MCP tool via simple fetch
+  fetch('/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'music_daily_recommend', arguments: {} } }) })
+  .then(r => r.json()).then(d => {
+    const songs = JSON.parse(d.result?.content?.[0]?.text || '{}').songs || [];
+    if (songs.length) renderDetailSongs(songs, 'daily-songs');
+    else document.getElementById('daily-songs').innerHTML = '<div style="color:#999;font-size:0.85em">需要登录才能获取推荐</div>';
+  }).catch(() => {
+    document.getElementById('daily-songs').innerHTML = '<div style="color:#999;font-size:0.85em">加载失败</div>';
+  });
+}
+
+// Personal FM
+function loadFM() {
+  fetch('/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'music_personal_fm', arguments: {} } }) })
+  .then(r => r.json()).then(d => {
+    const songs = JSON.parse(d.result?.content?.[0]?.text || '{}').songs || [];
+    if (songs.length) renderDetailSongs(songs, 'fm-songs');
+    else document.getElementById('fm-songs').innerHTML = '<div style="color:#999;font-size:0.85em">需要登录</div>';
+  }).catch(() => {
+    document.getElementById('fm-songs').innerHTML = '<div style="color:#999;font-size:0.85em">加载失败</div>';
+  });
+}
+
+// Playlists
+function loadPlaylists() {
+  document.getElementById('playlists-list').innerHTML = '<div class="loading">加载中</div>';
+  fetch('/api/user/playlist?uid=' + UID).then(r => r.json()).then(d => {
+    const pls = d.playlist || [];
+    document.getElementById('playlists-list').innerHTML = pls.map(p =>
+      '<div class="pl-card glass" onclick="loadPlaylistSongs(' + p.id + ',\'' + p.name.replace(/'/g, "\\'") + '\')">' +
+        '<div class="pl-icon">📋</div>' +
+        '<div class="pl-info"><div class="pl-name">' + p.name + '</div><div class="pl-meta">' + (p.trackCount || 0) + '首 · ' + (p.creator?.nickname || '') + '</div></div>' +
+      '</div>'
+    ).join('');
+  }).catch(() => {
+    document.getElementById('playlists-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">加载失败</div>';
+  });
+}
+
+function loadPlaylistSongs(pid, name) {
+  document.getElementById('playlists-list').style.display = 'none';
+  document.getElementById('create-form').classList.remove('show');
+  document.getElementById('playlist-songs').style.display = 'block';
+  document.getElementById('pl-songs-title').textContent = '📋 ' + name;
+  document.getElementById('pl-songs-list').innerHTML = '<div class="loading">加载中</div>';
+  fetch('/api/playlist/detail?id=' + pid).then(r => r.json()).then(d => {
+    const tracks = d.playlist?.tracks || [];
+    const c = document.getElementById('pl-songs-list');
+    if (!tracks.length) { c.innerHTML = '<div style="text-align:center;color:#999;padding:20px">歌单为空</div>'; return; }
+    c.innerHTML = tracks.map((t, i) => {
+      const artists = (t.ar || []).map(a => a.name).join(', ');
+      return '<div class="song-item">' +
+        '<div class="song-idx">' + (i + 1) + '</div>' +
+        '<div class="song-info"><div class="song-title">' + t.name + '</div><div class="song-meta">' + artists + '</div></div>' +
+        '<div class="song-actions">' +
+          '<button class="btn-play" onclick="playSong(' + t.id + ')">▶</button>' +
+          '<button class="btn-del" onclick="removeFromPlaylist(' + pid + ',' + t.id + ')">移除</button>' +
+        '</div></div>';
+    }).join('');
+  });
+}
+
+function backToPlaylists() {
+  document.getElementById('playlists-list').style.display = 'block';
+  document.getElementById('playlist-songs').style.display = 'none';
+}
+
+function toggleCreateForm() {
+  document.getElementById('create-form').classList.toggle('show');
+}
+
+function createPlaylist() {
+  const name = document.getElementById('new-pl-name').value.trim();
+  if (!name) { showToast('请输入歌单名称'); return; }
+  fetch('/api/playlist/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description: document.getElementById('new-pl-desc').value.trim() }) })
+  .then(r => r.json()).then(d => {
+    if (d.id || d.playlist) { showToast('✅ 创建成功'); document.getElementById('create-form').classList.remove('show'); loadPlaylists(); }
+    else showToast('❌ 创建失败');
+  });
+}
+
+function removeFromPlaylist(pid, tid) {
+  fetch('/api/playlist/tracks/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pid, tracks: String(tid) }) })
+  .then(r => r.json()).then(d => {
+    showToast(d.code === 200 ? '✅ 已移除' : '❌ 移除失败');
+    if (d.code === 200) loadPlaylistSongs(pid, document.getElementById('pl-songs-title').textContent.replace('📋 ', ''));
+  });
+}
+
+// Add to playlist modal
+function openAddModal(songId) {
+  currentSongId = songId;
+  document.getElementById('add-modal').classList.add('show');
+  fetch('/api/user/playlist?uid=' + UID).then(r => r.json()).then(d => {
+    const pls = d.playlist || [];
+    document.getElementById('add-modal-playlists').innerHTML = pls.map(p =>
+      '<div style="padding:10px;border-bottom:1px solid #fce4ec;cursor:pointer" onclick="addToPlaylist(' + p.id + ')">' +
+        '<div style="font-weight:600;font-size:0.9em">' + p.name + '</div>' +
+        '<div style="font-size:0.75em;color:#999">' + (p.trackCount || 0) + '首</div>' +
+      '</div>'
+    ).join('');
+  });
+}
+
+function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); }
+
+function addToPlaylist(pid) {
+  if (!currentSongId) return;
+  fetch('/api/playlist/tracks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'add', pid, tracks: String(currentSongId) }) })
+  .then(r => r.json()).then(d => {
+    showToast(d.code === 200 ? '✅ 已添加' : '❌ 添加失败');
+    closeAddModal();
+  });
+}
+
+// Liked
+function loadLiked() {
+  document.getElementById('liked-list').innerHTML = '<div class="loading">加载中</div>';
+  fetch('/api/like/list?uid=' + UID).then(r => r.json()).then(d => {
+    const ids = d.ids || [];
+    if (!ids.length) { document.getElementById('liked-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">还没有喜欢的歌曲</div>'; return; }
+    // Show first 50 with unlike button
+    const showIds = ids.slice(0, 50);
+    document.getElementById('liked-list').innerHTML = showIds.map((id, i) =>
+      '<div class="song-item">' +
+        '<div class="song-idx">' + (i + 1) + '</div>' +
+        '<div class="song-info"><div class="song-title">歌曲 #' + id + '</div><div class="song-meta">ID: ' + id + '</div></div>' +
+        '<div class="song-actions">' +
+          '<button class="btn-play" onclick="playSong(' + id + ')">▶</button>' +
+          '<button class="btn-del" onclick="unlikeSong(' + id + ')">💔</button>' +
+        '</div></div>'
+    ).join('');
+  }).catch(() => {
+    document.getElementById('liked-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">加载失败</div>';
+  });
+}
+
+// History
+function loadHistory() {
+  document.getElementById('history-list').innerHTML = '<div class="loading">加载中</div>';
+  fetch('/api/play/history').then(r => r.json()).then(d => {
+    const records = d.allData || d.weekData || [];
+    if (!records.length) { document.getElementById('history-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">没有播放记录</div>'; return; }
+    document.getElementById('history-list').innerHTML = records.slice(0, 30).map((r, i) => {
+      const s = r.song || r;
+      const artists = (s.ar || s.artists || []).map(a => typeof a === 'string' ? a : a.name).join(', ');
+      return '<div class="song-item">' +
+        '<div class="song-idx">' + (i + 1) + '</div>' +
+        '<div class="song-info"><div class="song-title">' + (s.name || '') + '</div><div class="song-meta">' + artists + ' · 播放' + (r.playCount || r.score || '') + '次</div></div>' +
+        '<div class="song-actions"><button class="btn-play" onclick="playSong(' + (s.id || 0) + ')">▶</button></div>' +
+      '</div>';
+    }).join('');
+  }).catch(() => {
+    document.getElementById('history-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">加载失败</div>';
+  });
+}
+
+// Cookie status
+function loadCookieStatus() {
+  fetch('/api/cookie/status').then(r => r.json()).then(d => {
+    document.getElementById('cookie-status-me').innerHTML = d.hasCookie ?
+      '<span style="color:#4caf50">✅ Cookie已设置</span> · ' + (d.nickname || '未知') + ' · VIP' + (d.vipType || 0) :
+      '<span style="color:#f44336">❌ 未设置</span>';
+  });
+}
+
+function refreshUrls() {
+  showToast('🔄 刷新中...');
+  fetch('/api/refresh_urls', { method: 'POST' }).then(r => r.json()).then(d => {
+    showToast(d.ok ? '✅ 已刷新 ' + d.count + ' 首' : '❌ 失败');
+  });
+}
+
+// User info
+fetch('/api/cookie/status').then(r => r.json()).then(d => {
+  document.getElementById('user-info').textContent = d.hasCookie ? (d.nickname || '用户') + ' · VIP' + (d.vipType || 0) : '未登录';
+}).catch(() => {});
+
+// Init
+loadDaily();
+loadFM();
+</script>
+</body></html>`;
+});
+
+// ═════════════════════════════════════════════════════════════════════
+// 7. MCP ENDPOINT — Pure JSON-RPC 2.0 (23 tools)
 // ═════════════════════════════════════════════════════════════════════
 
 const MCP_TOOLS = [
@@ -763,13 +1326,12 @@ const MCP_TOOLS = [
   { name: 'music_daily_recommend', description: '获取每日推荐歌曲', inputSchema: { type: 'object', properties: {} } },
   { name: 'music_personal_fm', description: '获取私人FM歌曲', inputSchema: { type: 'object', properties: {} } },
   { name: 'music_share_song', description: '生成歌曲分享链接', inputSchema: { type: 'object', properties: { song_id: { type: 'number', description: '歌曲ID' } }, required: ['song_id'] } },
-  { name: 'music_listen_create', description: '创建一起听房间，邀请用户一起听歌', inputSchema: { type: 'object', properties: { host_name: { type: 'string', description: '房主名字' }, song_id: { type: 'number', description: '歌曲ID' }, song_name: { type: 'string', description: '歌曲名' }, song_artist: { type: 'string', description: '歌手' } }, required: ['host_name'] } },
-  { name: 'music_listen_invite', description: '发送一起听邀请（返回邀请链接）', inputSchema: { type: 'object', properties: { session_id: { type: 'string', description: '房间ID' }, invitee: { type: 'string', description: '被邀请人名字' } }, required: ['session_id', 'invitee'] } },
-  { name: 'music_listen_chat', description: '在一起听房间发送消息', inputSchema: { type: 'object', properties: { session_id: { type: 'string', description: '房间ID' }, from_name: { type: 'string', description: '发送者名字' }, text: { type: 'string', description: '消息内容' } }, required: ['session_id', 'from_name', 'text'] } },
-  { name: 'music_listen_change_song', description: '在一起听房间切换歌曲', inputSchema: { type: 'object', properties: { session_id: { type: 'string', description: '房间ID' }, song_id: { type: 'number', description: '歌曲ID' }, song_name: { type: 'string', description: '歌曲名' }, song_artist: { type: 'string', description: '歌手' }, changed_by: { type: 'string', description: '谁切换的' } }, required: ['session_id', 'song_id', 'song_name', 'changed_by'] } },
+  { name: 'music_listen_create', description: '创建一起听房间', inputSchema: { type: 'object', properties: { host_name: { type: 'string' }, song_id: { type: 'number' }, song_name: { type: 'string' }, song_artist: { type: 'string' } }, required: ['host_name'] } },
+  { name: 'music_listen_invite', description: '发送一起听邀请', inputSchema: { type: 'object', properties: { session_id: { type: 'string' }, invitee: { type: 'string' } }, required: ['session_id', 'invitee'] } },
+  { name: 'music_listen_chat', description: '在一起听房间发送消息', inputSchema: { type: 'object', properties: { session_id: { type: 'string' }, from_name: { type: 'string' }, text: { type: 'string' } }, required: ['session_id', 'from_name', 'text'] } },
+  { name: 'music_listen_change_song', description: '在一起听房间切换歌曲', inputSchema: { type: 'object', properties: { session_id: { type: 'string' }, song_id: { type: 'number' }, song_name: { type: 'string' }, song_artist: { type: 'string' }, changed_by: { type: 'string' } }, required: ['session_id', 'song_id', 'song_name', 'changed_by'] } },
 ];
 
-// Tool execution dispatcher
 async function callTool(name, args) {
   switch (name) {
     case 'music_search': {
@@ -954,12 +1516,10 @@ async function callTool(name, args) {
   }
 }
 
-// MCP JSON-RPC 2.0 endpoint
 fastify.post('/mcp', async (request, reply) => {
   const body = request.body || {};
   const { id, method, params } = body;
 
-  // Helper to build JSON-RPC response
   const rpcResult = (result) => ({ jsonrpc: '2.0', id, result });
   const rpcError = (code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
 
@@ -973,7 +1533,6 @@ fastify.post('/mcp', async (request, reply) => {
         });
 
       case 'notifications/initialized':
-        // Client ack, no response needed per JSON-RPC spec (notification)
         reply.status(204);
         return '';
 
@@ -1000,7 +1559,7 @@ fastify.post('/mcp', async (request, reply) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════
-// 7. HEALTH CHECK
+// 8. HEALTH CHECK
 // ═════════════════════════════════════════════════════════════════════
 
 fastify.get('/health', async () => ({
@@ -1023,6 +1582,7 @@ fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
   }
   console.log(`🎵 NetEase MCP + Music Garden running on ${address}`);
   console.log(`   Music Garden: ${address}/`);
+  console.log(`   NetEase Hub:  ${address}/netease`);
   console.log(`   MCP Endpoint: ${address}/mcp`);
   console.log(`   Health:       ${address}/health`);
   console.log(`   Comments:     ${address}/comments`);
