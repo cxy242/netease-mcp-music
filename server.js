@@ -148,6 +148,42 @@ fastify.post('/api/playlist/tracks', async (request, reply) => {
   return reply.send(data);
 });
 
+
+// 从歌单移除歌曲
+fastify.post('/api/playlist/tracks/delete', async (request, reply) => {
+  const { pid, tracks } = request.body || {};
+  const result = await neteaseApi(`/api/playlist/tracks`, {
+    method: 'POST',
+    body: JSON.stringify({ op: 'del', pid, tracks }),
+    contentType: 'application/json'
+  });
+  return result;
+});
+
+// 播放历史
+fastify.get('/api/play/history', async (request, reply) => {
+  const uid = request.query.uid || DEFAULT_UID;
+  const type = request.query.type || '0'; // 0=all, 1=week
+  const result = await neteaseApi(`/api/v1/play/record?uid=${uid}&type=${type}`);
+  return result;
+});
+
+// VIP歌曲直链
+fastify.get('/api/song/url/vip', async (request, reply) => {
+  const id = request.query.id;
+  const level = request.query.level || 'exhigh';
+  const result = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=999000`);
+  return result;
+});
+
+// 设置Cookie
+fastify.post('/api/set_cookie', async (request, reply) => {
+  const { music_u, csrf } = request.body || {};
+  if (music_u) MUSIC_U = music_u;
+  if (csrf) CSRF = csrf;
+  return { ok: true, message: 'Cookie已更新' };
+});
+
 // MCP endpoint
 fastify.post('/mcp', async (request, reply) => {
   const { Server } = await import('@modelcontextprotocol/sdk/server/index.js');
@@ -248,6 +284,52 @@ fastify.post('/mcp', async (request, reply) => {
         inputSchema: {
           type: 'object',
           properties: { song_id: { type: 'number', description: '歌曲ID' } },
+          required: ['song_id'],
+        },
+      },
+      {
+        name: 'music_remove_from_playlist',
+        description: '从歌单移除歌曲',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            playlist_id: { type: 'number', description: '歌单ID' },
+            song_ids: { type: 'array', items: { type: 'number' }, description: '歌曲ID列表' },
+          },
+          required: ['playlist_id', 'song_ids'],
+        },
+      },
+      {
+        name: 'music_play_history',
+        description: '获取播放历史',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            uid: { type: 'number', description: '用户ID', default: DEFAULT_UID },
+            type: { type: 'string', description: '0=全部, 1=最近一周', default: '0' },
+          },
+        },
+      },
+      {
+        name: 'music_set_cookie',
+        description: '设置网易云Cookie（MUSIC_U和csrf）',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            music_u: { type: 'string', description: 'MUSIC_U cookie值' },
+            csrf: { type: 'string', description: '__csrf cookie值（可选）' },
+          },
+          required: ['music_u'],
+        },
+      },
+      {
+        name: 'music_vip_url',
+        description: '获取VIP歌曲直链（需要VIP账号Cookie）',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            song_id: { type: 'number', description: '歌曲ID' },
+          },
           required: ['song_id'],
         },
       },
