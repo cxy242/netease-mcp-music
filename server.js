@@ -1536,6 +1536,40 @@ async function callTool(name, args) {
   }
 }
 
+// 实时获取歌曲播放URL
+fastify.get('/api/song/play_url', async (request, reply) => {
+  const { id } = request.query;
+  if (!id) return reply.status(400).send({ error: 'Missing song id' });
+  try {
+    const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
+    if (data.data && data.data[0] && data.data[0].url) {
+      return { ok: true, url: data.data[0].url };
+    }
+    return { ok: false, message: '无法获取播放链接' };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
+});
+
+// 代理播放（解决过期问题）
+fastify.get('/api/proxy_play', async (request, reply) => {
+  const { id } = request.query;
+  if (!id) return reply.status(400).send('Missing song id');
+  try {
+    const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
+    if (data.data && data.data[0] && data.data[0].url) {
+      const resp = await fetch(data.data[0].url);
+      reply.header('Content-Type', 'audio/mpeg');
+      reply.header('Access-Control-Allow-Origin', '*');
+      const buffer = await resp.arrayBuffer();
+      return reply.send(Buffer.from(buffer));
+    }
+    return reply.status(404).send('Song not found');
+  } catch (e) {
+    return reply.status(500).send(e.message);
+  }
+});
+
 fastify.post('/mcp', async (request, reply) => {
   const body = request.body || {};
   const { id, method, params } = body;
