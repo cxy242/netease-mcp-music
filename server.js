@@ -184,6 +184,164 @@ fastify.post('/api/set_cookie', async (request, reply) => {
   return { ok: true, message: 'Cookie已更新' };
 });
 
+
+// Cookie管理页面
+fastify.get('/cookie', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🍪 Cookie管理 - 月汐音乐花园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#fce4ec,#f8bbd0);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
+.card{background:white;border-radius:20px;padding:40px;max-width:450px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
+h1{text-align:center;margin-bottom:8px;font-size:1.5em}
+p{color:#888;text-align:center;margin-bottom:24px;font-size:0.9em}
+label{display:block;margin-bottom:6px;font-weight:600;color:#555;font-size:0.9em}
+input,textarea{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:1em;outline:none;transition:border-color 0.2s}
+input:focus,textarea:focus{border-color:#e91e63}
+textarea{height:80px;resize:vertical;font-family:monospace;font-size:0.85em}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:1.1em;font-weight:700;cursor:pointer;margin-top:16px;transition:all 0.2s}
+.btn-pink{background:linear-gradient(135deg,#e91e63,#ff5722);color:white}
+.btn-pink:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(233,30,99,0.3)}
+.btn-green{background:linear-gradient(135deg,#4caf50,#2e7d32);color:white;margin-top:8px}
+.status{margin-top:16px;padding:12px;border-radius:10px;text-align:center;font-size:0.9em;display:none}
+.status.ok{background:#e8f5e9;color:#2e7d32;display:block}
+.status.err{background:#ffebee;color:#c62828;display:block}
+.info{background:#f5f5f5;border-radius:10px;padding:12px;margin-top:16px;font-size:0.8em;color:#666}
+.back{display:inline-block;color:#e91e63;text-decoration:none;margin-bottom:16px;font-size:0.9em}
+.back:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="card">
+  <a href="/" class="back">← 返回音乐花园</a>
+  <h1>🍪 Cookie管理</h1>
+  <p>设置网易云音乐Cookie，让歌曲能正常播放</p>
+  
+  <label>MUSIC_U（必须）</label>
+  <input id="music_u" placeholder="从浏览器Cookie中复制MUSIC_U的值" style="margin-bottom:12px">
+  
+  <label>__csrf（可选，自动生成）</label>
+  <input id="csrf" placeholder="留空自动生成" style="margin-bottom:12px">
+  
+  <button class="btn btn-pink" onclick="saveCookie()">💾 保存Cookie</button>
+  <button class="btn btn-green" onclick="refreshUrls()">🔄 刷新歌曲链接</button>
+  
+  <div id="status" class="status"></div>
+  
+  <div class="info">
+    <strong>如何获取MUSIC_U：</strong><br>
+    1. 在浏览器登录 <a href="https://music.163.com" target="_blank">music.163.com</a><br>
+    2. 按F12打开开发者工具<br>
+    3. 找到Application → Cookies → music.163.com<br>
+    4. 复制 <code>MUSIC_U</code> 的值<br>
+    <br>
+    <strong>当前状态：</strong> <span id="cookie-status">检查中...</span>
+  </div>
+</div>
+<script>
+// 检查当前Cookie状态
+fetch('/api/cookie/status').then(r=>r.json()).then(d=>{
+  document.getElementById('cookie-status').textContent = d.hasCookie ? 
+    '✅ 已设置 (' + d.nickname + ', VIP' + d.vipType + ')' : '❌ 未设置';
+}).catch(()=>{
+  document.getElementById('cookie-status').textContent = '⚠️ 无法获取状态';
+});
+
+function saveCookie(){
+  const music_u = document.getElementById('music_u').value.trim();
+  const csrf = document.getElementById('csrf').value.trim();
+  if(!music_u){showStatus('请输入MUSIC_U','err');return;}
+  
+  fetch('/api/set_cookie',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({music_u,csrf})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){showStatus('✅ Cookie已保存！','ok');setTimeout(()=>location.reload(),1000);}
+    else{showStatus('❌ '+d.message,'err');}
+  }).catch(e=>{showStatus('❌ 请求失败','err');});
+}
+
+function refreshUrls(){
+  showStatus('🔄 正在刷新歌曲链接...','ok');
+  fetch('/api/refresh_urls',{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){showStatus('✅ 已刷新 '+d.count+' 首歌曲链接','ok');}
+    else{showStatus('❌ '+d.message,'err');}
+  }).catch(e=>{showStatus('❌ 请求失败','err');});
+}
+
+function showStatus(msg,type){
+  const s=document.getElementById('status');
+  s.textContent=msg;
+  s.className='status '+type;
+}
+</script>
+</body>
+</html>`;
+});
+
+// Cookie状态API
+fastify.get('/api/cookie/status', async (request, reply) => {
+  return {
+    hasCookie: !!MUSIC_U,
+    nickname: cookieData ? cookieData.nickname : '未知',
+    vipType: cookieData ? cookieData.vipType : 0
+  };
+});
+
+// 刷新歌曲链接API
+fastify.post('/api/refresh_urls', async (request, reply) => {
+  try {
+    const songsPath = join(__dirname, 'songs_data.js');
+    const songsContent = readFileSync(songsPath, 'utf-8');
+    const songsMatch = songsContent.match(/const SONGS = (\[.*\])/s);
+    if (!songsMatch) return { ok: false, message: '无法解析歌曲数据' };
+    
+    const songs = JSON.parse(songsMatch[1]);
+    const songsWithoutUrl = songs.filter(s => !s.u && s.i);
+    let refreshed = 0;
+    
+    for (const song of songsWithoutUrl.slice(0, 50)) {
+      try {
+        const result = await neteaseApi(`/api/song/enhance/player/url?ids=[${song.i}]&br=320000`);
+        if (result.data && result.data[0] && result.data[0].url) {
+          song.u = result.data[0].url;
+          refreshed++;
+        }
+      } catch (e) {}
+    }
+    
+    // 更新songs_data.js
+    const newContent = 'const SONGS = ' + JSON.stringify(songs, null, 0) + ';';
+    const { writeFileSync } = await import('fs');
+    writeFileSync(songsPath, newContent, 'utf-8');
+    
+    return { ok: true, count: refreshed, total: songsWithoutUrl.length };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
+});
+
+
+
+// 音乐花园主页（带Cookie管理入口）
+fastify.get('/music', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  const indexContent = readFileSync(join(__dirname, 'index.html'), 'utf-8');
+  // 在</body>之前注入Cookie管理按钮
+  const injected = indexContent.replace('</body>', `
+    <div style="position:fixed;bottom:20px;left:20px;z-index:9999">
+      <a href="/cookie" style="display:inline-block;padding:10px 16px;background:linear-gradient(135deg,#e91e63,#ff5722);color:white;border-radius:30px;text-decoration:none;font-weight:600;font-size:0.85em;box-shadow:0 4px 12px rgba(233,30,99,0.3)">🍪 Cookie管理</a>
+    </div>
+  </body>`);
+  return injected;
+});
+
 // MCP endpoint
 fastify.post('/mcp', async (request, reply) => {
   const { Server } = await import('@modelcontextprotocol/sdk/server/index.js');
