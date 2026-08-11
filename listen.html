@@ -1185,19 +1185,25 @@ function renderLyrics(container){
     container.appendChild(div);
   }
 }
-// 歌词随歌滚动
+// 歌词随歌滚动（只在歌词行变化时触发，避免闪烁）
+let _lastLyricIdx = -1;
 _listenAudio.addEventListener('timeupdate', function(){
   if(!lyricsVisible || currentLyrics.length===0) return;
   const ct = _listenAudio.currentTime;
-  const lines = document.querySelectorAll('.lyric-line');
   let activeIdx = -1;
   for(let i=currentLyrics.length-1;i>=0;i--){
     if(ct >= currentLyrics[i].time){activeIdx=i;break;}
   }
+  if(activeIdx === _lastLyricIdx) return; // 没变化不滚动
+  _lastLyricIdx = activeIdx;
+  const lines = document.querySelectorAll('.lyric-line');
   lines.forEach((el,i)=>{
     if(i===activeIdx){
       el.classList.add('active');
-      el.scrollIntoView({behavior:'smooth',block:'center'});
+      // 用平滑滚动，不触发reflow
+      requestAnimationFrame(()=>{
+        el.scrollIntoView({behavior:'smooth',block:'center'});
+      });
     }else{
       el.classList.remove('active');
     }
