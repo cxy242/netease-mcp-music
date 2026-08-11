@@ -168,12 +168,7 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
 .join-sub{color:var(--text2);margin-bottom:32px;font-size:14px}
 .join-card{max-width:400px;width:100%;text-align:center}
 .join-card .input-field{margin-bottom:16px;text-align:center}
-.code-inputs{display:flex;gap:8px;justify-content:center;margin:20px 0}
-.code-inputs input{width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;
-  border-radius:12px;border:2px solid var(--glass-border);background:var(--glass);color:var(--text);
-  outline:none;transition:all .2s}
-.code-inputs input:focus{border-color:var(--accent);transform:scale(1.05)}
-.divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--text2);font-size:13px}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;font-size:12px;color:var(--text2)}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--glass-border)}
 
 /* ============ MAIN PAGE ============ */
@@ -442,14 +437,7 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
     <input class="input-field" id="nameInput" placeholder="输入你的昵称" maxlength="12">
     <button class="btn btn-primary" style="width:100%;margin-bottom:20px" onclick="createRoom()">创建房间</button>
     <div class="divider">或者加入房间</div>
-    <div class="code-inputs" id="codeInputs">
-      <input maxlength="1" inputmode="numeric" pattern="[0-9]">
-      <input maxlength="1" inputmode="numeric" pattern="[0-9]">
-      <input maxlength="1" inputmode="numeric" pattern="[0-9]">
-      <input maxlength="1" inputmode="numeric" pattern="[0-9]">
-      <input maxlength="1" inputmode="numeric" pattern="[0-9]">
-      <input maxlength="1" inputmode="numeric" pattern="[0-9]">
-    </div>
+    <input class="input-field" id="roomCodeInput" placeholder="输入房间码（如 lt_1723456789012）" style="width:100%;margin:16px 0;text-align:center;font-size:16px">
     <button class="btn btn-secondary" style="width:100%" onclick="joinRoom()">加入房间</button>
   </div>
 </div>
@@ -767,26 +755,10 @@ function buildBgLayer(){
 }
 
 // ============ CODE INPUTS ============
-document.querySelectorAll('.code-inputs input').forEach((inp,i,arr)=>{
-  inp.addEventListener('input',e=>{
-    const v=e.target.value.replace(/\D/g,'');
-    e.target.value=v;
-    if(v && i<arr.length-1) arr[i+1].focus();
-  });
-  inp.addEventListener('keydown',e=>{
-    if(e.key==='Backspace' && !e.target.value && i>0) arr[i-1].focus();
-  });
-  inp.addEventListener('paste',e=>{
-    e.preventDefault();
-    const d=(e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);
-    d.split('').forEach((c,j)=>{if(arr[j]) arr[j].value=c});
-    if(d.length>=6) arr[5].focus();
-    else if(d.length>0) arr[Math.min(d.length,5)].focus();
-  });
-});
+// (已改为单行输入框，旧的6位数字逻辑已移除)
 
 function getCode(){
-  return Array.from(document.querySelectorAll('.code-inputs input')).map(i=>i.value).join('');
+  return document.getElementById('roomCodeInput').value.trim();
 }
 
 // ============ API ============
@@ -813,7 +785,7 @@ async function createRoom(){
 
 async function joinRoom(){
   const code = getCode();
-  if(code.length<6){alert('请输入6位房间码');return}
+  if(!code){alert('请输入房间码');return}
   const name = document.getElementById('nameInput').value.trim()||'匿名';
   const r = await api('join',{session_id:code,guest_name:name});
   if(r && r.ok){
@@ -1177,8 +1149,8 @@ async function loadLyrics(songId){
   try{
     const r = await fetch('/api/lyric?id=' + songId);
     const d = await r.json();
-    if(d.lrc){
-      currentLyrics = parseLRC(d.lrc);
+    if(d.lyric){
+      currentLyrics = parseLRC(d.lyric);
       renderLyrics(content);
     }else{
       content.innerHTML = '<div style="text-align:center;opacity:0.5;padding:20px">暂无歌词</div>';
