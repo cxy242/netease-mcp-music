@@ -387,6 +387,8 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
   .cat-head{width:75px;height:62px}
   .cat-body{width:65px;height:45px}
 }
+.song-result-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:center;transition:background 0.2s}
+.song-result-item:hover{background:rgba(255,255,255,0.08)}
 </style>
 </head>
 <body class="theme-cat">
@@ -830,7 +832,7 @@ function searchListenSongs(q) {
     const matched = listenSongs.filter(s=> (s.n||'').toLowerCase().includes(ql) || (s.a||'').toLowerCase().includes(ql)).slice(0,8);
     if(!matched.length){results.style.display='none';return;}
     results.innerHTML = matched.map(s=>
-      '<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:center" onclick="selectListenSong('+s.i+',this)" data-name="'+(s.n||'').replace(/"/g,'&quot;')+'" data-artist="'+(s.a||'').replace(/"/g,'&quot;')+'" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">' +
+      '<div class="song-result-item" onclick="selectListenSong('+s.i+',this)" data-name="'+(s.n||'').replace(/"/g,'&quot;')+'" data-artist="'+(s.a||'').replace(/"/g,'&quot;')+'">' +
       '<div><div style="font-weight:600">'+s.n+'</div><div style="font-size:11px;opacity:0.6">'+s.a+'</div></div></div>'
     ).join('');
     results.style.display='';
