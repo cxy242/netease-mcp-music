@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -52,6 +52,7 @@ async function neteaseApi(path, options = {}) {
 
 // ─── Fastify ─────────────────────────────────────────────────────────
 const fastify = Fastify({ logger: false });
+await fastify.register(import('@fastify/multipart'), { limits: { fileSize: 50 * 1024 * 1024 } });
 
 // CORS
 fastify.addHook('onSend', async (request, reply) => {
