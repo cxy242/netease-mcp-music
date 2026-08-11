@@ -32,6 +32,7 @@ let listenSessions = {};
 
 // ─── Local audio files ──────────────────────────────────────────────
 const LOCAL_AUDIO_DIR = join(__dirname, 'audio');
+const REMOTE_AUDIO_BASE = process.env.REMOTE_AUDIO_BASE || 'https://wifi-semiconductor-calibration-sec.trycloudflare.com';
 let localAudioMap = {};
 try {
   if (existsSync(LOCAL_AUDIO_DIR)) {
@@ -44,6 +45,14 @@ try {
   }
 } catch (e) {
   console.warn('[Local Audio] Failed to scan audio dir:', e.message);
+}
+
+// 如果本地没有音频文件（Railway环境），从远程隧道获取映射
+if (Object.keys(localAudioMap).length === 0 && REMOTE_AUDIO_BASE) {
+  fetch(`${REMOTE_AUDIO_BASE}/api/local_audio_map`).then(r=>r.json()).then(m=>{
+    localAudioMap = m;
+    console.log(`[Remote Audio] Loaded ${Object.keys(m).length} FLAC mappings from tunnel`);
+  }).catch(e=>console.warn('[Remote Audio] Failed to load:', e.message));
 }
 
 const NETEASE_BASE = 'https://music.163.com';
@@ -86,16 +95,6 @@ fastify.options('*', async (request, reply) => {
 // ═════════════════════════════════════════════════════════════════════
 const AUDIO_DIR = join(__dirname, 'audio_cache');
 if (!existsSync(AUDIO_DIR)) mkdirSync(AUDIO_DIR, { recursive: true });
-
-fastify.get('/api/local_audio/:id', async (request, reply) => {
-  const { id } = request.params;
-  const filePath = join(AUDIO_DIR, id + '.mp3');
-  if (!existsSync(filePath)) { reply.status(404); return { ok: false }; }
-  reply.type('audio/mpeg');
-  reply.header('Accept-Ranges', 'bytes');
-  reply.header('Cache-Control', 'public, max-age=86400');
-  return reply.send(readFileSync(filePath));
-});
 
 fastify.post('/api/upload_audio', async (request, reply) => {
   const data = await request.file();
@@ -1572,20 +1571,37 @@ fastify.get('/api/song/play_url', async (request, reply) => {
   }
 });
 
-// 本地FLAC音频流（优先使用，绕过CDN封锁）
+// 本地FLAC音频流（优先本地，fallback到远程隧道）
 fastify.get('/api/local_audio', async (request, reply) => {
   const { id } = request.query;
   if (!id) return reply.status(400).send('Missing song id');
   const filename = localAudioMap[id];
   if (!filename) return reply.status(404).send('No local audio');
+  // 本地文件存在 → 直接读取
   const filePath = join(LOCAL_AUDIO_DIR, filename);
-  if (!existsSync(filePath)) return reply.status(404).send('File not found');
-  const stat = statSync(filePath);
-  reply.header('Content-Type', 'audio/flac');
-  reply.header('Content-Length', stat.size);
-  reply.header('Accept-Ranges', 'bytes');
-  reply.header('Cache-Control', 'public, max-age=86400');
-  return reply.send(createReadStream(filePath));
+  if (existsSync(filePath)) {
+    const stat = statSync(filePath);
+    reply.header('Content-Type', 'audio/flac');
+    reply.header('Content-Length', stat.size);
+    reply.header('Accept-Ranges', 'bytes');
+    reply.header('Cache-Control', 'public, max-age=86400');
+    return reply.send(createReadStream(filePath));
+  }
+  // 本地文件不存在（Railway环境）→ 从远程隧道代理
+  if (REMOTE_AUDIO_BASE) {
+    try {
+      const resp = await fetch(`${REMOTE_AUDIO_BASE}/api/local_audio?id=${id}`);
+      if (resp.ok) {
+        reply.header('Content-Type', resp.headers.get('content-type') || 'audio/flac');
+        reply.header('Content-Length', resp.headers.get('content-length'));
+        reply.header('Accept-Ranges', 'bytes');
+        reply.header('Cache-Control', 'public, max-age=86400');
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        return reply.send(buffer);
+      }
+    } catch (e) {}
+  }
+  return reply.status(404).send('Audio not available');
 });
 
 // 兼容路径参数格式 /api/local_audio/12345
@@ -1594,13 +1610,28 @@ fastify.get('/api/local_audio/:id', async (request, reply) => {
   const filename = localAudioMap[id];
   if (!filename) return reply.status(404).send('No local audio');
   const filePath = join(LOCAL_AUDIO_DIR, filename);
-  if (!existsSync(filePath)) return reply.status(404).send('File not found');
-  const stat = statSync(filePath);
-  reply.header('Content-Type', 'audio/flac');
-  reply.header('Content-Length', stat.size);
-  reply.header('Accept-Ranges', 'bytes');
-  reply.header('Cache-Control', 'public, max-age=86400');
-  return reply.send(createReadStream(filePath));
+  if (existsSync(filePath)) {
+    const stat = statSync(filePath);
+    reply.header('Content-Type', 'audio/flac');
+    reply.header('Content-Length', stat.size);
+    reply.header('Accept-Ranges', 'bytes');
+    reply.header('Cache-Control', 'public, max-age=86400');
+    return reply.send(createReadStream(filePath));
+  }
+  if (REMOTE_AUDIO_BASE) {
+    try {
+      const resp = await fetch(`${REMOTE_AUDIO_BASE}/api/local_audio/${id}`);
+      if (resp.ok) {
+        reply.header('Content-Type', resp.headers.get('content-type') || 'audio/flac');
+        reply.header('Content-Length', resp.headers.get('content-length'));
+        reply.header('Accept-Ranges', 'bytes');
+        reply.header('Cache-Control', 'public, max-age=86400');
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        return reply.send(buffer);
+      }
+    } catch (e) {}
+  }
+  return reply.status(404).send('Audio not available');
 });
 
 // 本地音频映射表（前端用来判断哪些歌有本地版本）
