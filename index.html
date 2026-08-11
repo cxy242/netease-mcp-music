@@ -3135,9 +3135,7 @@ function setupAudio() {
   });
   audio.addEventListener('error', () => {
     const s = SONGS[currentIdx];
-    if(s && s.i) {
-      useEmbedPlayer(s.i, s.n, s.a);
-    }
+    showToast('😢 歌曲播放失败，可能是VIP受限');
   });
 }
 
@@ -3169,18 +3167,16 @@ function playSong(idx) {
           // 加载歌词
           if(lyricsVisible) loadLyrics(s.i);
         }).catch(e => {
-          // 播放失败（可能是VIP）→ 用嵌入播放器
-          console.warn('audio.play failed, trying embed:', e);
-          useEmbedPlayer(s.i, s.n, s.a);
+          console.warn('audio.play failed:', e);
+          showToast('😢 播放失败，可能是VIP受限');
         });
       } else {
-        // API没返回URL → 用嵌入播放器
-        useEmbedPlayer(s.i, s.n, s.a);
+        showToast('😢 无法获取播放链接');
       }
     })
     .catch(e => {
       console.error('Fetch failed:', e);
-      useEmbedPlayer(s.i, s.n, s.a);
+      showToast('😢 网络错误');
     });
 
   // Record play
@@ -5361,13 +5357,15 @@ function startPianoFullscreen(songIdx) {
       ctx.stroke();
     }
 
-    // Song time
-    const songTime = pianoFsState.songAudio ? pianoFsState.songAudio.currentTime : 0;
+    // Song time - use game time if audio not loaded (e.g. VIP songs)
+    const audioTime = pianoFsState.songAudio ? pianoFsState.songAudio.currentTime : 0;
+    const gameTime = pianoFsState.startTime ? (performance.now()/1000 - pianoFsState.startTime) : 0;
+    const songTime = audioTime > 0.1 ? audioTime : gameTime;
     const songDuration = pianoFsState.songAudio ? (pianoFsState.songAudio.duration || s.d || 120) : (s.d || 120);
 
     // Progress
     const progEl = document.getElementById('pianoFsProgress');
-    if(progEl) progEl.textContent = Math.floor((songTime / songDuration) * 100) + '%';
+    if(progEl) progEl.textContent = Math.min(100, Math.floor((songTime / songDuration) * 100)) + '%';
 
     // Spawn tiles from pattern
     while(patternIdx < pattern.length) {
