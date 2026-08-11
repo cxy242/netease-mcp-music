@@ -127,7 +127,7 @@ fastify.get('/api/playlist/detail', async (request, reply) => {
 fastify.get('/api/user/playlist', async (request, reply) => {
   const { uid } = request.query;
   if (!uid) return reply.status(400).send({ error: 'Missing uid' });
-  return neteaseApi(`/api/user/playlist?uid=${uid}`);
+  return neteaseApi(`/api/user/playlist?uid=${uid}&limit=100&offset=0`);
 });
 
 fastify.get('/api/like/list', async (request, reply) => {
@@ -1374,7 +1374,7 @@ async function callTool(name, args) {
     }
     case 'music_playlists': {
       const uid = args.uid || DEFAULT_UID;
-      const data = await neteaseApi(`/api/user/playlist?uid=${uid}`);
+      const data = await neteaseApi(`/api/user/playlist?uid=${uid}&limit=100&offset=0`);
       const playlists = (data.playlist || []).map(p => ({
         id: p.id, name: p.name, trackCount: p.trackCount,
         playCount: p.playCount, creator: p.creator?.nickname || '',
