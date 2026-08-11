@@ -489,6 +489,55 @@ button, .song-result-item, .chat-send, .ctrl-btn {
     </div>
   </div>
 
+  <!-- 黑毛红瞳小猫 - 在头像上方，互动按钮在两侧 -->
+  <div class="listen-cat-wrap">
+    <!-- 左侧按钮 -->
+    <div class="lc-side-btns lc-left">
+      <button class="lc-menu-btn" onclick="ListenCat.feed();event.stopPropagation()" title="喂食">🐟</button>
+      <button class="lc-menu-btn" onclick="ListenCat.pet();event.stopPropagation()" title="摸摸">🤚</button>
+    </div>
+
+    <!-- 中间小猫 -->
+    <div class="listen-cat" id="listenCat">
+      <div class="lc-bubble"></div>
+      <div class="lc-particles"></div>
+      <div class="lc-figure">
+        <div class="lc-tail"></div>
+        <div class="lc-body"></div>
+        <div class="lc-paws">
+          <div class="lc-paw"></div>
+          <div class="lc-paw"></div>
+        </div>
+        <div class="lc-head">
+          <div class="lc-ear left"></div>
+          <div class="lc-ear right"></div>
+          <div class="lc-eyes">
+            <div class="lc-eye"></div>
+            <div class="lc-eye"></div>
+          </div>
+          <div class="lc-nose"></div>
+          <div class="lc-mouth"></div>
+          <div class="lc-whiskers">
+            <div class="lc-whisker"></div>
+            <div class="lc-whisker"></div>
+            <div class="lc-whisker"></div>
+            <div class="lc-whisker"></div>
+            <div class="lc-whisker"></div>
+            <div class="lc-whisker"></div>
+          </div>
+        </div>
+        <div class="lc-wave-paw"></div>
+      </div>
+      <div class="lc-mood-bar"><div class="lc-mood-fill"></div></div>
+    </div>
+
+    <!-- 右侧按钮 -->
+    <div class="lc-side-btns lc-right">
+      <button class="lc-menu-btn" onclick="ListenCat.play();event.stopPropagation()" title="玩耍">🎾</button>
+      <button class="lc-menu-btn" onclick="ListenCat.dance();event.stopPropagation()" title="跳舞">💃</button>
+    </div>
+  </div>
+
   <!-- Avatars + Headphones -->
   <div class="avatars-section">
     <div class="headphones">
@@ -511,47 +560,6 @@ button, .song-result-item, .chat-send, .ctrl-btn {
       </div>
     </div>
     <input type="file" id="photoInput2" accept="image/*" style="display:none" onchange="pickPhoto(2,this.files[0])">
-  </div>
-
-  <!-- 黑毛红瞳小猫 -->
-  <div class="listen-cat" id="listenCat">
-    <div class="lc-bubble"></div>
-    <div class="lc-particles"></div>
-    <div class="lc-menu">
-      <button class="lc-menu-btn" onclick="ListenCat.feed();event.stopPropagation()" title="喂食">🐟</button>
-      <button class="lc-menu-btn" onclick="ListenCat.pet();event.stopPropagation()" title="摸摸">🤚</button>
-      <button class="lc-menu-btn" onclick="ListenCat.play();event.stopPropagation()" title="玩耍">🎾</button>
-      <button class="lc-menu-btn" onclick="ListenCat.dance();event.stopPropagation()" title="跳舞">💃</button>
-      <button class="lc-menu-btn" onclick="ListenCat.sleep();event.stopPropagation()" title="睡觉">💤</button>
-    </div>
-    <div style="position:relative;width:120px;height:140px">
-      <div class="lc-tail"></div>
-      <div class="lc-body"></div>
-      <div class="lc-paws">
-        <div class="lc-paw"></div>
-        <div class="lc-paw"></div>
-      </div>
-      <div class="lc-head">
-        <div class="lc-ear left"></div>
-        <div class="lc-ear right"></div>
-        <div class="lc-eyes">
-          <div class="lc-eye"><div class="lc-eye-extra"></div></div>
-          <div class="lc-eye"><div class="lc-eye-extra"></div></div>
-        </div>
-        <div class="lc-nose"></div>
-        <div class="lc-mouth"></div>
-        <div class="lc-whiskers">
-          <div class="lc-whisker"></div>
-          <div class="lc-whisker"></div>
-          <div class="lc-whisker"></div>
-          <div class="lc-whisker"></div>
-          <div class="lc-whisker"></div>
-          <div class="lc-whisker"></div>
-        </div>
-      </div>
-      <div class="lc-wave-paw"></div>
-    </div>
-    <div class="lc-mood-bar"><div class="lc-mood-fill"></div></div>
   </div>
 
   <!-- Song info -->
