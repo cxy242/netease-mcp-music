@@ -484,16 +484,18 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
     <div class="avatar" id="avatar1" onclick="showAvatarMenu(1)">🎵
       <div class="avatar-menu" id="avatarMenu1">
         <div class="avatar-menu-item" onclick="pickEmoji(1);event.stopPropagation()">选择 Emoji</div>
-        <div class="avatar-menu-item" onclick="pickEmoji(1);event.stopPropagation()">从相册选择</div>
+        <div class="avatar-menu-item" onclick="document.getElementById('photoInput1').click();event.stopPropagation()">从相册选择</div>
       </div>
     </div>
+    <input type="file" id="photoInput1" accept="image/*" style="display:none" onchange="pickPhoto(1,this.files[0])">
     <div style="width:80px"></div>
     <div class="avatar" id="avatar2" onclick="showAvatarMenu(2)">🎶
       <div class="avatar-menu" id="avatarMenu2">
         <div class="avatar-menu-item" onclick="pickEmoji(2);event.stopPropagation()">选择 Emoji</div>
-        <div class="avatar-menu-item" onclick="pickEmoji(2);event.stopPropagation()">从相册选择</div>
+        <div class="avatar-menu-item" onclick="document.getElementById('photoInput2').click();event.stopPropagation()">从相册选择</div>
       </div>
     </div>
+    <input type="file" id="photoInput2" accept="image/*" style="display:none" onchange="pickPhoto(2,this.files[0])">
   </div>
 
   <!-- Song info -->
@@ -1146,6 +1148,24 @@ function hideEmojiPicker(){
 function selectEmoji(e){
   document.getElementById('avatar'+avatarPickerNum).firstChild.textContent=e;
   hideEmojiPicker();
+}
+async function pickPhoto(n,file){
+  if(!file)return;
+  document.querySelectorAll('.avatar-menu').forEach(m=>m.classList.remove('show'));
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const r=await fetch('/api/listen/upload_image',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.ok){
+      const avatar=document.getElementById('avatar'+n);
+      avatar.style.backgroundImage='url('+d.url+')';
+      avatar.style.backgroundSize='cover';
+      avatar.style.backgroundPosition='center';
+      avatar.firstChild.style.display='none';
+    }
+  }catch(e){alert('上传失败');}
+  // 清除input值，允许重复选择同一文件
+  document.getElementById('photoInput'+n).value='';
 }
 
 // ============ INIT ============
