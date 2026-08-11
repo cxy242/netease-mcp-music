@@ -2656,7 +2656,7 @@ function init() {
 
   safe('stats', () => {
     document.getElementById('totalCount').textContent = SONGS.length;
-    document.getElementById('urlCount').textContent = SONGS.filter(s=>s.u).length;
+    document.getElementById('urlCount').textContent = SONGS.filter(s=>s.i).length;
     updateFavCount();
     const totalMin = Math.round(SONGS.reduce((a,s)=>a+s.d,0)/60);
     document.getElementById('totalTime').textContent = totalMin>60 ? Math.floor(totalMin/60)+'h'+(totalMin%60)+'m' : totalMin+'分';
@@ -3156,10 +3156,10 @@ function setupAudio() {
 function playSong(idx) {
   if(idx<0 || idx>=SONGS.length) return;
   const s = SONGS[idx];
-  if(!s.u) return;
+  if(!s.i) return;
   SFX.pop();
   currentIdx = idx;
-  audio.src = s.u;
+  audio.src = '/api/proxy_play?id=' + s.i;
   audio.play().catch(e => {
     try {
       // Resume existing SFX context instead of leaking new AudioContext
@@ -3189,7 +3189,7 @@ function playSong(idx) {
 
 function togglePlay() {
   SFX.pop();
-  if(!audio.src) { if(SONGS.length>0) playSong(SONGS.findIndex(s=>s.u)); return; }
+  if(!audio.src) { if(SONGS.length>0) playSong(SONGS.findIndex(s=>s.i)); return; }
   if(isPlaying) audio.pause(); else audio.play();
 }
 
@@ -3574,7 +3574,7 @@ function renderFortune() {
   const fortune = fortunes[Math.floor(rng(2) * fortunes.length)];
   const luckyNum = Math.floor(rng(3) * 100) + 1;
   const luckyColor = ['#f8a4c8','#c3a6e8','#a8e6cf','#ffd3b6','#a8d8ea','#ffd580'][Math.floor(rng(4) * 6)];
-  const playable = SONGS.filter(s => s.u);
+  const playable = SONGS.filter(s => s.i);
   const luckySong = playable[Math.floor(rng(5) * playable.length)];
 
   return '<div class="mood-card">' +
@@ -3667,7 +3667,7 @@ function checkSleepTimer() {
 // ============================================================
 function playRandom() {
   SFX.pop();
-  const playable = SONGS.filter(s => s.u);
+  const playable = SONGS.filter(s => s.i);
   if(!playable.length) { showToast('没有可播放的歌曲'); return; }
   const s = playable[Math.floor(Math.random() * playable.length)];
   const idx = songIdx(s);
@@ -4839,7 +4839,7 @@ let pianoRafId = null;        // track requestAnimationFrame for cancellation
 let pianoResizeFn = null;     // track resize listener for cleanup
 
 function initPianoGame(area) {
-  const playable = SONGS.filter(s => s.u);
+  const playable = SONGS.filter(s => s.i);
   if(!playable.length) {
     area.innerHTML = '<div class="piano-sel-wrap" style="text-align:center;padding:40px;color:var(--text-light)">没有可播放的歌曲</div>';
     return;
