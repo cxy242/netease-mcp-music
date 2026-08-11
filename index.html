@@ -3135,7 +3135,9 @@ function setupAudio() {
   });
   audio.addEventListener('error', () => {
     const s = SONGS[currentIdx];
-    showToast('😢 歌曲播放失败，可能是VIP受限');
+    if(s && s.i) {
+      showNeteaseEmbed(s.i, s.n, s.a);
+    }
   });
 }
 
@@ -3168,15 +3170,15 @@ function playSong(idx) {
           if(lyricsVisible) loadLyrics(s.i);
         }).catch(e => {
           console.warn('audio.play failed:', e);
-          showToast('😢 播放失败，可能是VIP受限');
+          showNeteaseEmbed(s.i, s.n, s.a);
         });
       } else {
-        showToast('😢 无法获取播放链接');
+        showNeteaseEmbed(s.i, s.n, s.a);
       }
     })
     .catch(e => {
       console.error('Fetch failed:', e);
-      showToast('😢 网络错误');
+      showNeteaseEmbed(s.i, s.n, s.a);
     });
 
   // Record play
@@ -3184,6 +3186,33 @@ function playSong(idx) {
   markListened();
   addRecentPlayed(idx);
   checkPlayMilestones();
+}
+
+function showNeteaseEmbed(songId, name, artist) {
+  let wrap = document.getElementById('embedWrap');
+  if(!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'embedWrap';
+    wrap.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9998;transition:all 0.3s';
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:12px;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);padding:2px 8px;border-radius:8px">🎵 VIP歌曲 · 请在播放器中登录网易云</span>
+        <button onclick="document.getElementById('embedWrap').style.display='none'" style="width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,0.2);color:#fff;font-size:12px;cursor:pointer">✕</button>
+      </div>
+      <iframe id="embedPlayer" style="width:340px;height:110px;border:none;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.3)" allow="autoplay"></iframe>
+    `;
+    document.body.appendChild(wrap);
+  }
+  wrap.style.display = '';
+  wrap.querySelector('iframe').src = 'https://music.163.com/outchain/player?type=2&id=' + songId + '&auto=1';
+  isPlaying = true;
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('npVinyl').classList.add('spin');
+  document.getElementById('npTonearm').classList.add('play');
+  document.getElementById('nowPlaying').classList.add('show');
+  document.getElementById('npTitle').textContent = name;
+  document.getElementById('npArtist').textContent = artist;
+  if(lyricsVisible) loadLyrics(songId);
 }
 
 function useEmbedPlayer(songId, name, artist) {
