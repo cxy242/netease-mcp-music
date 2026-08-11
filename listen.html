@@ -446,6 +446,11 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
     </div>
     <button class="exit-btn" onclick="showExitPopup()">退出</button>
   </div>
+  <!-- 在线状态 -->
+  <div id="onlineStatus" style="display:flex;gap:12px;justify-content:center;margin-bottom:12px;font-size:13px">
+    <span id="hostStatus" style="opacity:0.5">👤 主人: 等待中...</span>
+    <span id="guestStatus" style="opacity:0.5">👤 伙伴: 等待加入...</span>
+  </div>
 
   <!-- Cat mascot (cat theme only) -->
   <audio id="listenAudio" preload="auto"></audio>
@@ -902,6 +907,13 @@ async function pollStatus(){
     const d = await r.json();
     if(d && d.ok && d.session){
       const s = d.session;
+      // 更新在线状态
+      const hostEl = document.getElementById('hostStatus');
+      const guestEl = document.getElementById('guestStatus');
+      if(hostEl && s.host){hostEl.textContent='👤 主人: '+s.host;hostEl.style.opacity='1';}
+      if(guestEl && s.guest){guestEl.textContent='👤 伙伴: '+s.guest;guestEl.style.opacity='1';}
+      if(guestEl && !s.guest){guestEl.textContent='👤 伙伴: 等待加入...';guestEl.style.opacity='0.5';}
+      
       if(s.song){
         document.getElementById('songName').textContent = s.song.name||'未知歌曲';
         document.getElementById('songArtist').textContent = s.song.artist||'未知歌手';
