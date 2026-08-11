@@ -1494,6 +1494,9 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 
 <div class="song-list" id="songList"></div>
 
+<!-- NetEase Embed Player (hidden iframe for playback) -->
+<iframe id="neteasePlayer" style="position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1" allow="autoplay" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+
 <!-- Now Playing Bar -->
 <div class="now-playing" id="nowPlaying">
   <div style="position:relative;display:flex;align-items:center;">
@@ -3159,15 +3162,13 @@ function playSong(idx) {
   if(!s.i) return;
   SFX.pop();
   currentIdx = idx;
-  audio.src = '/api/proxy_play?id=' + s.i;
-  audio.play().catch(e => {
-    try {
-      // Resume existing SFX context instead of leaking new AudioContext
-      const ctx = getSfxCtx();
-      if(ctx && ctx.state === 'suspended') ctx.resume();
-    } catch(x){}
-    setTimeout(() => audio.play().catch(()=>{}), 100);
-  });
+  // Use NetEase embed player iframe (bypasses CDN IP restrictions)
+  const iframe = document.getElementById('neteasePlayer');
+  iframe.src = 'https://music.163.com/outchain/player?type=2&id=' + s.i + '&auto=1';
+  isPlaying = true;
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('npVinyl').classList.add('spin');
+  document.getElementById('npTonearm').classList.add('play');
   document.getElementById('nowPlaying').classList.add('show');
   document.getElementById('npTitle').textContent = s.n;
   document.getElementById('npArtist').textContent = s.a;
@@ -3189,21 +3190,38 @@ function playSong(idx) {
 
 function togglePlay() {
   SFX.pop();
-  if(!audio.src) { if(SONGS.length>0) playSong(SONGS.findIndex(s=>s.i)); return; }
-  if(isPlaying) audio.pause(); else audio.play();
+  const iframe = document.getElementById('neteasePlayer');
+  if(!iframe.src || iframe.src === 'about:blank') { if(SONGS.length>0) playSong(SONGS.findIndex(s=>s.i)); return; }
+  // Toggle by reloading with auto=0 or auto=1
+  if(isPlaying) {
+    iframe.src = 'about:blank';
+    isPlaying = false;
+    document.getElementById('playBtn').textContent = '▶';
+    document.getElementById('npVinyl').classList.remove('spin');
+    document.getElementById('npTonearm').classList.remove('play');
+  } else {
+    const s = SONGS[currentIdx];
+    if(s) {
+      iframe.src = 'https://music.163.com/outchain/player?type=2&id=' + s.i + '&auto=1';
+      isPlaying = true;
+      document.getElementById('playBtn').textContent = '⏸';
+      document.getElementById('npVinyl').classList.add('spin');
+      document.getElementById('npTonearm').classList.add('play');
+    }
+  }
 }
 
 function playPrev() {
   SFX.pop();
   let idx = currentIdx - 1;
-  while(idx>=0 && !SONGS[idx].u) idx--;
+  while(idx>=0 && !SONGS[idx].i) idx--;
   if(idx>=0) playSong(idx);
 }
 
 function playNext() {
   SFX.pop();
   let idx = currentIdx + 1;
-  while(idx<SONGS.length && !SONGS[idx].u) idx++;
+  while(idx<SONGS.length && !SONGS[idx].i) idx++;
   if(idx<SONGS.length) playSong(idx);
 }
 
