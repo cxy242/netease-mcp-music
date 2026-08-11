@@ -310,68 +310,6 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:16px}
 .chat-send:hover{transform:scale(1.1)}
 
-/* ============ CAT THEME SPECIFICS ============ */
-.cat-container{position:relative;width:140px;height:160px;cursor:pointer;margin:0 auto 10px;z-index:10}
-.cat-body{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
-  width:80px;height:55px;background:#1a1a1a;border-radius:40% 40% 35% 35%}
-.cat-head{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
-  width:90px;height:75px;background:#111;border-radius:50% 50% 45% 45%;
-  border:2px solid #222}
-.cat-ear{position:absolute;top:-18px;width:24px;height:28px;background:#111;
-  border:2px solid #222;border-radius:50% 50% 0 0}
-.cat-ear-l{left:8px;transform:rotate(-15deg)}
-.cat-ear-r{right:8px;transform:rotate(15deg)}
-.cat-ear-inner{position:absolute;top:4px;left:4px;right:4px;height:16px;
-  background:#ff69b4;border-radius:50% 50% 0 0;opacity:.6}
-.cat-eye{position:absolute;top:28px;width:22px;height:22px;background:radial-gradient(circle at 40% 40%,#ff1744,#cc0000);
-  border-radius:50%;border:2px solid #333;overflow:hidden}
-.cat-eye-l{left:14px}
-.cat-eye-r{right:14px}
-.cat-eye-shine{position:absolute;top:4px;left:5px;width:7px;height:7px;background:#fff;border-radius:50%;opacity:.9}
-.cat-eye-shine2{position:absolute;bottom:5px;right:5px;width:4px;height:4px;background:rgba(255,255,255,.5);border-radius:50%}
-.cat-pupil{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:10px;height:10px;background:#000;border-radius:50%}
-.cat-nose{position:absolute;top:42px;left:50%;transform:translateX(-50%);
-  width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
-  border-top:6px solid #ff69b4}
-.cat-mouth{position:absolute;top:48px;left:50%;transform:translateX(-50%);width:18px;height:8px;
-  border-bottom:2px solid #555;border-radius:0 0 50% 50%}
-.cat-whisker{position:absolute;top:42px;width:25px;height:1px;background:#444}
-.cat-whisker-l1{left:-16px;transform:rotate(-8deg)}
-.cat-whisker-l2{left:-14px;top:46px;transform:rotate(8deg)}
-.cat-whisker-r1{right:-16px;transform:rotate(8deg)}
-.cat-whisker-r2{right:-14px;top:46px;transform:rotate(-8deg)}
-.cat-paw{position:absolute;bottom:-5px;width:20px;height:12px;background:#1a1a1a;border-radius:50%;border:1px solid #222}
-.cat-paw-l{left:15px}
-.cat-paw-r{right:15px}
-
-/* Cat moods */
-.cat-container.happy .cat-eye{background:radial-gradient(circle at 40% 40%,#ff1744,#cc0000)}
-.cat-container.happy .cat-mouth{border-bottom-color:#ff69b4;height:10px}
-.cat-container.tsundere .cat-eye{height:14px;border-radius:30%}
-.cat-container.tsundere .cat-mouth{border-bottom-color:#555;width:14px;height:6px;border-top:2px solid #555;
-  border-bottom:none;border-radius:50% 50% 0 0;transform:translateX(-50%) translateY(-2px)}
-.cat-container.sleepy .cat-eye{height:6px;border-radius:50%;background:#ff1744}
-.cat-container.sleepy .cat-eye-shine,.cat-container.sleepy .cat-eye-shine2{display:none}
-.cat-container.sleepy .cat-mouth{width:12px;height:4px;border-bottom:2px solid #555}
-.cat-container.love .cat-eye{background:radial-gradient(circle,#ff1744,#ff69b4);transform:scale(1.1)}
-.cat-container.love .cat-mouth{border-bottom-color:#ff69b4;height:10px}
-.cat-container.sad .cat-eye{height:10px;border-radius:50% 50% 30% 30%;background:#666}
-.cat-container.sad .cat-mouth{border-bottom-color:#555;width:10px;height:4px;transform:translateX(-50%) rotate(180deg)}
-
-.cat-bounce{animation:catBounce 1.5s ease-in-out infinite}
-@keyframes catBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-
-/* Speech bubble */
-.speech-bubble{position:absolute;top:-50px;left:50%;transform:translateX(-50%);
-  background:var(--card);border:1.5px solid var(--glass-border);border-radius:14px;
-  padding:8px 14px;font-size:12px;color:var(--text);white-space:nowrap;
-  opacity:0;transition:opacity .3s;pointer-events:none;z-index:20}
-.speech-bubble.show{opacity:1}
-.speech-bubble::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
-  width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
-  border-top:8px solid var(--card)}
-
 /* ============ EXIT POPUP ============ */
 .overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);
   backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center}
@@ -469,25 +407,6 @@ button, .song-result-item, .chat-send, .ctrl-btn {
 
   <!-- Cat mascot (cat theme only) -->
   <audio id="listenAudio" preload="auto"></audio>
-  <div class="cat-container" id="catMascot" onclick="cycleCatMood()" style="display:none">
-    <div class="speech-bubble" id="catSpeech"></div>
-    <div class="cat-body">
-      <div class="cat-paw cat-paw-l"></div>
-      <div class="cat-paw cat-paw-r"></div>
-    </div>
-    <div class="cat-head">
-      <div class="cat-ear cat-ear-l"><div class="cat-ear-inner"></div></div>
-      <div class="cat-ear cat-ear-r"><div class="cat-ear-inner"></div></div>
-      <div class="cat-eye cat-eye-l"><div class="cat-eye-shine"></div><div class="cat-eye-shine2"></div><div class="cat-pupil"></div></div>
-      <div class="cat-eye cat-eye-r"><div class="cat-eye-shine"></div><div class="cat-eye-shine2"></div><div class="cat-pupil"></div></div>
-      <div class="cat-nose"></div>
-      <div class="cat-mouth"></div>
-      <div class="cat-whisker cat-whisker-l1"></div>
-      <div class="cat-whisker cat-whisker-l2"></div>
-      <div class="cat-whisker cat-whisker-r1"></div>
-      <div class="cat-whisker cat-whisker-r2"></div>
-    </div>
-  </div>
 
   <!-- 黑毛红瞳小猫 - 在头像上方，互动按钮在两侧 -->
   <div class="listen-cat-wrap">
@@ -688,15 +607,6 @@ let state = {
   pollTimer: null
 };
 
-const catMoods = ['happy','tsundere','sleepy','love','sad'];
-const catLines = {
-  happy: ["哼，才不是特意为你放的歌呢~","今天的歌单还不错嘛"],
-  tsundere: ["别、别看我！我在听歌而已！","谁允许你碰我的！"],
-  sleepy: ["zzZ...别吵...","让我再睡五分钟..."],
-  love: ["嗯...这首歌很好听呢...💕","和你一起听...还不错啦"],
-  sad: ["这首歌让我想起了...","喵..."]
-};
-
 // ============ THEME ============
 function toggleThemeMenu(){
   document.getElementById('themePopup').classList.toggle('show');
@@ -706,9 +616,7 @@ function setTheme(t){
   document.body.className = 'theme-'+t;
   document.getElementById('themePopup').classList.remove('show');
   buildBgLayer();
-  // Show/hide cat
-  const cat = document.getElementById('catMascot');
-  if(cat) cat.style.display = t==='cat' ? 'block' : 'none';
+  // 新猫猫始终显示，不需要切换
 }
 document.addEventListener('click', e=>{
   if(!e.target.closest('.theme-btn') && !e.target.closest('.theme-popup'))
@@ -840,7 +748,6 @@ function showMain(){
   document.getElementById('joinPage').style.display='none';
   document.getElementById('mainPage').style.display='flex';
   document.getElementById('roomCodeDisplay').textContent=state.sessionId||'------';
-  if(state.theme==='cat') document.getElementById('catMascot').style.display='block';
   startPolling();
 }
 
@@ -1030,13 +937,11 @@ function togglePlay(){
     vinyl.classList.add('spinning');
     arm.classList.add('playing');
     icon.className='icon-pause';
-    if(state.theme==='cat') document.getElementById('catMascot').classList.add('cat-bounce');
   }else{
     audio.pause();
     vinyl.classList.remove('spinning');
     arm.classList.remove('playing');
     icon.className='icon-play';
-    if(state.theme==='cat') document.getElementById('catMascot').classList.remove('cat-bounce');
   }
 }
 function prevTrack(){}
@@ -1178,22 +1083,6 @@ function confirmExit(){
 }
 function stayAfterAll(){
   document.getElementById('exitOverlay').classList.remove('show');
-}
-
-// ============ CAT MOOD ============
-function cycleCatMood(){
-  state.catMood=(state.catMood+1)%catMoods.length;
-  const m=catMoods[state.catMood];
-  const cat=document.getElementById('catMascot');
-  cat.className='cat-container '+m;
-  if(state.playing) cat.classList.add('cat-bounce');
-  // Speech bubble
-  const lines=catLines[m];
-  const line=lines[Math.floor(Math.random()*lines.length)];
-  const bubble=document.getElementById('catSpeech');
-  bubble.textContent=line;
-  bubble.classList.add('show');
-  setTimeout(()=>bubble.classList.remove('show'),3000);
 }
 
 // ============ AVATAR MENU ============
