@@ -814,6 +814,44 @@ async function pollStatus(){
   }catch(e){}
 }
 
+// ============ SONG SEARCH ============
+let listenSongs = [];
+fetch('/songs_data.js').then(r=>r.text()).then(t=>{
+  try{const m=t.match(/const SONGS = (\[.*\])/s);if(m) listenSongs=JSON.parse(m[1]);}catch(e){}
+}).catch(()=>{});
+
+let songSearchTimer = null;
+function searchListenSongs(q) {
+  clearTimeout(songSearchTimer);
+  const results = document.getElementById('songResults');
+  if(!q.trim()){results.style.display='none';return;}
+  songSearchTimer = setTimeout(()=>{
+    const ql = q.toLowerCase().trim();
+    const matched = listenSongs.filter(s=> (s.n||'').toLowerCase().includes(ql) || (s.a||'').toLowerCase().includes(ql)).slice(0,8);
+    if(!matched.length){results.style.display='none';return;}
+    results.innerHTML = matched.map(s=>
+      '<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:center" onclick="selectListenSong('+s.i+',this)" data-name="'+(s.n||'').replace(/"/g,'&quot;')+'" data-artist="'+(s.a||'').replace(/"/g,'&quot;')+'" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">' +
+      '<div><div style="font-weight:600">'+s.n+'</div><div style="font-size:11px;opacity:0.6">'+s.a+'</div></div></div>'
+    ).join('');
+    results.style.display='';
+  },200);
+}
+
+function selectListenSong(id, el) {
+  document.getElementById('songResults').style.display='none';
+  document.getElementById('songSearch').value='';
+  const name = el.dataset.name;
+  const artist = el.dataset.artist;
+  if(!sessionId) return;
+  fetch('/api/listen/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,from:myName||'我',text:'🎵 想听: '+artist+' - '+name,song_id:id,song_name:artist+' - '+name})});
+  showToast('🎵 已点歌: '+name);
+}
+
+document.addEventListener('click',e=>{
+  const sr = document.getElementById('songResults');
+  if(sr && !e.target.closest('#songSearch') && !e.target.closest('#songResults')) sr.style.display='none';
+});
+
 // ============ CHAT ============
 async function sendChat(){
   const inp = document.getElementById('chatInput');
