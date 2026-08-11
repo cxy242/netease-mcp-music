@@ -1709,7 +1709,7 @@ let audio = new Audio();
 let mode = 'all';
 let filteredSongs = [...SONGS];
 let gameType = 'bubble';
-let gameSpeedMultiplier = 1.5;
+let gameSpeedMultiplier = 0.8;
 let favorites = JSON.parse(localStorage.getItem('yueXiFavs') || '[]');
 let isDarkMode = localStorage.getItem('yueXiDark') === 'true';
 let titleClickCount = 0;
@@ -1745,9 +1745,9 @@ function setGameSpeed(mult) {
 function createSpeedControlHTML() {
   return `<div class="game-speed-control" style="display:flex;justify-content:center;gap:6px;margin:6px 0;flex-wrap:wrap;align-items:center">
     <span style="font-size:11px;color:var(--text-light)">速度:</span>
-    <button class="game-speed-btn${gameSpeedMultiplier===1.5?' active':''}" data-speed="1.5" onclick="setGameSpeed(1.5)" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1.5px solid var(--glass-border);background:var(--glass);cursor:pointer;transition:all 0.2s">🚶 慢速</button>
-    <button class="game-speed-btn${gameSpeedMultiplier===3?' active':''}" data-speed="3" onclick="setGameSpeed(3)" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1.5px solid var(--glass-border);background:var(--glass);cursor:pointer;transition:all 0.2s">🏃 快速</button>
-    <button class="game-speed-btn${gameSpeedMultiplier===5?' active':''}" data-speed="5" onclick="setGameSpeed(5)" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1.5px solid var(--glass-border);background:var(--glass);cursor:pointer;transition:all 0.2s">⚡ 极速</button>
+    <button class="game-speed-btn${gameSpeedMultiplier===0.8?' active':''}" data-speed="0.8" onclick="setGameSpeed(0.8)" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1.5px solid var(--glass-border);background:var(--glass);cursor:pointer;transition:all 0.2s">🚶 慢速</button>
+    <button class="game-speed-btn${gameSpeedMultiplier===2?' active':''}" data-speed="2" onclick="setGameSpeed(2)" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1.5px solid var(--glass-border);background:var(--glass);cursor:pointer;transition:all 0.2s">🏃 快速</button>
+    <button class="game-speed-btn${gameSpeedMultiplier===4?' active':''}" data-speed="4" onclick="setGameSpeed(4)" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1.5px solid var(--glass-border);background:var(--glass);cursor:pointer;transition:all 0.2s">⚡ 极速</button>
   </div>`;
 }
 // Style active speed button
@@ -3135,7 +3135,9 @@ function setupAudio() {
   });
   audio.addEventListener('error', () => {
     const s = SONGS[currentIdx];
-    showToast('😢 播放失败，可能是VIP歌曲受限');
+    if(s && s.i) {
+      useEmbedPlayer(s.i, s.n, s.a);
+    }
   });
 }
 
@@ -4013,6 +4015,8 @@ function hideGames() {
   stopGameSong();
   document.getElementById('gamesPanel').classList.remove('show');
   document.getElementById('gamesOverlay').classList.remove('show');
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = '';
   // Re-render song list to fix any stale DOM after game switching
   setTimeout(() => renderList(), 100);
 }
@@ -4635,7 +4639,7 @@ function quizNextQuestion(area) {
   html += `<div class="quiz-streak">🔥 连击: ${quizState.streak} · 第 ${quizState.questionNum+1}/${quizState.total} 题</div>`;
 
   html += `<div style="text-align:center;margin:16px 0">`;
-  html += `<button id="quizPlayBtn" class="quiz-play-btn" onclick="quizPlayClip('${correctSong.u}')">🎵 点我播放歌曲片段</button>`;
+  html += `<button id="quizPlayBtn" class="quiz-play-btn" onclick="quizPlayClip('/api/proxy_play?id=${correctSong.i}')">🎵 点我播放歌曲片段</button>`;
   html += `<div id="quizTimer" style="font-size:12px;color:var(--text-light);margin-top:8px">播放15秒片段，猜猜是哪首歌！</div>`;
   html += `<div id="quizHint" class="quiz-hint"></div>`;
   html += `</div>`;
@@ -4657,7 +4661,7 @@ function quizNextQuestion(area) {
   area.innerHTML = html;
 
   // Auto play
-  setTimeout(() => quizPlayClip(correctSong.u), 300);
+  setTimeout(() => quizPlayClip('/api/proxy_play?id=' + correctSong.i), 300);
 
   // Hint after 5 seconds
   quizState.hintTimer = setTimeout(() => {
@@ -4930,7 +4934,7 @@ function initPianoGame(area) {
 
 function startPianoFullscreen(songIdx) {
   const s = SONGS[songIdx];
-  if(!s || !s.u) return;
+  if(!s || !s.i) return;
   SFX.pop();
 
   // Close any existing overlay first
