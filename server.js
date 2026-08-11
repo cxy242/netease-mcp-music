@@ -148,6 +148,20 @@ fastify.get('/api/song/url/vip', async (request, reply) => {
   return neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=999000`);
 });
 
+fastify.get('/api/lyric', async (request) => {
+  const { id } = request.query;
+  if (!id) return { lyric: '' };
+  try {
+    const data = await neteaseApi(`/api/song/lyric?id=${id}&lv=1&tv=1`);
+    return {
+      lyric: data.lrc ? data.lrc.lyric : '',
+      tlyric: data.tlyric ? data.tlyric.lyric : '',
+    };
+  } catch (e) {
+    return { lyric: '', error: e.message };
+  }
+});
+
 fastify.get('/api/cookie/status', async () => {
   return {
     hasCookie: !!MUSIC_U,
