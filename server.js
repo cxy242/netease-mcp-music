@@ -79,11 +79,17 @@ async function neteaseApi(path, options = {}) {
 const fastify = Fastify({ logger: false });
 await fastify.register(import('@fastify/multipart'), { limits: { fileSize: 50 * 1024 * 1024 } });
 
-// CORS
+// CORS + 安全防护
 fastify.addHook('onSend', async (request, reply) => {
   reply.header('Access-Control-Allow-Origin', '*');
   reply.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   reply.header('Access-Control-Allow-Headers', 'Content-Type');
+  // 安全防护：防止浏览器注入和劫持
+  reply.header('X-Frame-Options', 'DENY');
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('X-XSS-Protection', '1; mode=block');
+  reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  reply.header('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; img-src 'self' data: blob: https:; media-src 'self' blob: https:;");
 });
 
 fastify.options('*', async (request, reply) => {
