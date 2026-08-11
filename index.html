@@ -1494,9 +1494,6 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 
 <div class="song-list" id="songList"></div>
 
-<!-- NetEase Embed Player (hidden iframe for playback) -->
-<iframe id="neteasePlayer" style="position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1" allow="autoplay" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
-
 <!-- Now Playing Bar -->
 <div class="now-playing" id="nowPlaying">
   <div style="position:relative;display:flex;align-items:center;">
@@ -3162,13 +3159,29 @@ function playSong(idx) {
   if(!s.i) return;
   SFX.pop();
   currentIdx = idx;
-  // Use NetEase embed player iframe (bypasses CDN IP restrictions)
-  const iframe = document.getElementById('neteasePlayer');
-  iframe.src = 'https://music.163.com/outchain/player?type=2&id=' + s.i + '&auto=1';
-  isPlaying = true;
-  document.getElementById('playBtn').textContent = '⏸';
-  document.getElementById('npVinyl').classList.add('spin');
-  document.getElementById('npTonearm').classList.add('play');
+  // Fetch fresh URL from our API, then play via audio element
+  fetch('/api/song/play_url?id=' + s.i)
+    .then(r => r.json())
+    .then(d => {
+      if(d.ok && d.url) {
+        audio.src = d.url;
+        audio.play().then(() => {
+          isPlaying = true;
+          document.getElementById('playBtn').textContent = '⏸';
+          document.getElementById('npVinyl').classList.add('spin');
+          document.getElementById('npTonearm').classList.add('play');
+        }).catch(e => {
+          console.error('Play failed:', e);
+          showToast('😢 播放失败: ' + e.message);
+        });
+      } else {
+        showToast('😢 获取链接失败: ' + (d.message || '未知错误'));
+      }
+    })
+    .catch(e => {
+      console.error('Fetch failed:', e);
+      showToast('😢 网络错误: ' + e.message);
+    });
   document.getElementById('nowPlaying').classList.add('show');
   document.getElementById('npTitle').textContent = s.n;
   document.getElementById('npArtist').textContent = s.a;
