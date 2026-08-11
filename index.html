@@ -1484,6 +1484,35 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
 .song-card { content-visibility: auto; contain-intrinsic-size: 0 60px; }
 
 </style>
+<script>
+// ===== 安全防护：防止浏览器劫持和注入 =====
+(function(){
+  if(window.self!==window.top){try{window.top.location=window.self.location}catch(e){}}
+  function cleanDOM(){
+    var host=location.hostname;
+    document.querySelectorAll('script[src],iframe[src]').forEach(function(el){
+      var src=el.src||'';
+      if(src&&!src.includes(host)&&!src.startsWith('data:')&&!src.startsWith('blob:')){
+        var ok=['fonts.googleapis.com','fonts.gstatic.com','cdnjs.cloudflare.com','cdn.jsdelivr.net'];
+        try{var u=new URL(src);if(!ok.some(function(d){return u.hostname.includes(d)}))el.remove()}catch(e){}
+      }
+    });
+    document.querySelectorAll('div[style*="position: fixed"],div[style*="position: absolute"]').forEach(function(el){
+      var z=parseInt(el.style.zIndex)||0;
+      if(z>9000&&!el.classList.length&&!el.id&&!el.closest('.now-playing,.fab-container,.mascot-container,.cat-mascot,.header,.overlay,.popup-panel'))el.remove();
+    });
+  }
+  var obs=new MutationObserver(function(m){m.forEach(function(x){x.addedNodes.forEach(function(n){
+    if(n.nodeType===1&&(n.tagName==='SCRIPT'||n.tagName==='IFRAME')){
+      var s=n.src||'';if(s&&!s.includes(location.hostname)&&!s.startsWith('data:'))n.remove();
+    }
+  })})});
+  obs.observe(document.documentElement,{childList:true,subtree:true});
+  var origOpen=window.open;window.open=function(u){if(u&&!u.includes(location.hostname))return null;return origOpen.apply(this,arguments)};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',cleanDOM);else cleanDOM();
+  setInterval(cleanDOM,2000);
+})();
+</script>
 </head>
 <body>
 
