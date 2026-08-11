@@ -1552,35 +1552,17 @@ fastify.get('/api/song/play_url', async (request, reply) => {
 });
 
 // 代理播放：服务端获取音频流转发给浏览器（CDN会拦截直接访问）
+// 重定向到CDN URL（浏览器直接请求CDN，服务器IP会被拦截）
 fastify.get('/api/proxy_play', async (request, reply) => {
   const { id } = request.query;
   if (!id) return reply.status(400).send('Missing song id');
   try {
     const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
     if (data.data && data.data[0] && data.data[0].url) {
-      const cdnUrl = data.data[0].url;
-      // 服务端请求CDN，带上Referer头绕过限制
-      const resp = await fetch(cdnUrl, {
-        headers: {
-          'Referer': 'https://music.163.com/',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Origin': 'https://music.163.com'
-        }
-      });
-      if (!resp.ok) {
-        return reply.status(resp.status).send('CDN error');
-      }
-      // 设置正确的音频响应头
-      reply.header('Content-Type', resp.headers.get('content-type') || 'audio/mpeg');
-      reply.header('Content-Length', resp.headers.get('content-length'));
-      reply.header('Accept-Ranges', 'bytes');
-      reply.header('Cache-Control', 'public, max-age=86400');
-      // 流式转发
-      return reply.send(resp.body);
+      return reply.redirect(data.data[0].url, 302);
     }
     return reply.status(404).send('Song not found');
   } catch (e) {
-    console.log('[Proxy] Error:', e.message);
     return reply.status(500).send(e.message);
   }
 });
