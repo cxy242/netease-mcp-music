@@ -399,6 +399,20 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
 }
 .song-result-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:center;transition:background 0.2s}
 .song-result-item:hover{background:rgba(255,255,255,0.08)}
+
+/* ====== 丝滑优化 ====== */
+* { -webkit-tap-highlight-color: transparent; }
+button, .song-result-item, .chat-send, .ctrl-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.song-result-item:active { transform: scale(0.97); transition-duration: 0.1s; }
+.ctrl-btn:active { transform: scale(0.9) !important; }
+.chat-send:active { transform: scale(0.9); }
+.chat-msg { animation: msgSlide 0.3s ease; }
+@keyframes msgSlide { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.vinyl { will-change: transform; }
+
 </style>
 </head>
 <body class="theme-cat">
