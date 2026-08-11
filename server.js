@@ -431,12 +431,13 @@ fastify.post('/api/listen/upload_image', async (request) => {
   try {
     const data = await request.file();
     if (!data) return { ok: false, message: 'no file' };
-    const ext = (data.filename || '.jpg').split('.').pop();
-    const fname = Date.now().toString(36) + '_' + Math.random().toString(36).substr(2,4) + '.' + ext;
-    const fpath = join(__dirname, 'uploads', fname);
     const buffer = await data.toBuffer();
-    writeFileSync(fpath, buffer);
-    return { ok: true, url: '/uploads/' + fname };
+    const ext = (data.filename || '.jpg').split('.').pop().toLowerCase();
+    const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    // 存为base64 data URL，避免Railway重启丢失文件
+    const b64 = buffer.toString('base64');
+    const dataUrl = `data:${mime};base64,${b64}`;
+    return { ok: true, url: dataUrl };
   } catch(e) {
     return { ok: false, message: e.message };
   }
@@ -582,6 +583,13 @@ body{background:#0d0d1a;color:#e0e0e0;min-height:100vh;font-family:'Segoe UI',sy
     <div class="s"><div class="n" id="statUser">0</div><div class="l">用户</div></div>
   </div>
 
+  <!-- 正在播放 -->
+  <div id="nowPlayingBar" style="display:none;padding:10px 16px;background:rgba(233,30,99,0.08);border:1px solid rgba(233,30,99,0.15);border-radius:12px;margin-bottom:16px;align-items:center;gap:10px">
+    <span style="font-size:1.1em">🎵</span>
+    <span id="npName" style="flex:1;font-size:0.85em;font-weight:600;color:#f06292;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+    <button onclick="stopSong()" style="background:rgba(233,30,99,0.2);border:none;color:#e91e63;padding:6px 12px;border-radius:8px;font-size:0.8em;cursor:pointer">⏹ 停止</button>
+  </div>
+
   <div class="post-box">
     <input id="c-author" placeholder="你的名字" maxlength="20">
     <div class="song-tag" id="songTag">
@@ -714,11 +722,38 @@ function toggleLike(el){
 
 // 播放
 let _audio=null;
+let _playingId=0;
 function playSong(id){
   if(!id)return;
   if(!_audio){_audio=new Audio();_audio.volume=0.8;}
-  _audio.src='/api/proxy_play?id='+id;_audio.play().catch(()=>{});
+  if(_playingId===id&&!_audio.paused){_audio.pause();updatePlayBtns();return;}
+  if(_playingId!==id){_audio.src='/api/proxy_play?id='+id;}
+  _audio.play().catch(()=>{});
+  _playingId=id;
+  // 显示正在播放
+  const npBar=document.getElementById('nowPlayingBar');
+  const npName=document.getElementById('npName');
+  if(npBar&&npName){
+    const song=allSongs.find(s=>s.i===id);
+    npName.textContent=song?(song.a+' - '+song.n):('歌曲 #'+id);
+    npBar.style.display='flex';
+  }
+  updatePlayBtns();
 }
+function stopSong(){
+  if(_audio){_audio.pause();_audio.currentTime=0;}
+  _playingId=0;updatePlayBtns();
+  const npBar=document.getElementById('nowPlayingBar');
+  if(npBar)npBar.style.display='none';
+}
+function updatePlayBtns(){
+  document.querySelectorAll('.s-play').forEach(b=>{
+    const cid=parseInt(b.dataset.sid||'0');
+    if(cid===_playingId&&!_audio.paused){b.innerHTML='⏸';b.style.background='linear-gradient(135deg,#9c27b0,#7b1fa2)';}
+    else{b.innerHTML='';b.style.background='linear-gradient(135deg,#e91e63,#f06292)';}
+  });
+}
+_audio&&_audio.addEventListener('ended',()=>{_playingId=0;updatePlayBtns();});
 
 // 加载评论
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -740,7 +775,7 @@ function loadComments(){
       if(c.song_id>0&&c.song_name){
         songH='<div class="cmt-song" onclick="playSong('+c.song_id+')">'+
           '<div class="s-icon"></div><div class="s-info"><div class="n">'+esc(c.song_name)+'</div></div>'+
-          '<div class="s-play"></div></div>';
+          '<div class="s-play" data-sid="'+c.song_id+'"></div></div>';
       }
       let imgH=c.image_url?'<img class="cmt-img" src="'+c.image_url+'" onclick="window.open(this.src)">':'';
       let reps='';
