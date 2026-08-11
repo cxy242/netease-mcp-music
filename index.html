@@ -95,7 +95,7 @@ body.dark-mode .lyrics-panel { background: linear-gradient(180deg, rgba(20,15,40
 
 * { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; }
-body {
+body { transition: background 0.5s ease, color 0.3s ease;
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   background-size: 200% 200%;
@@ -151,7 +151,7 @@ body {
 
 /* ===== NOW PLAYING BAR ===== */
 .now-playing {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: fixed; bottom: 0; left: 0; right: 0; will-change: transform;
   background: linear-gradient(135deg, rgba(255,240,245,0.97), rgba(240,230,255,0.97));
   border-top: 1px solid rgba(200,150,200,0.2);
   padding: 10px 16px; z-index: 100;
@@ -815,7 +815,7 @@ body.dark-mode .lyrics-header { background: rgba(0,0,0,0.2); }
 body.dark-mode .lyrics-body-wrapper::before { background: linear-gradient(180deg, rgba(25,20,50,0.9) 0%, transparent 100%); }
 body.dark-mode .lyrics-body-wrapper::after { background: linear-gradient(0deg, rgba(25,20,50,0.9) 0%, transparent 100%); }
 
-.lyrics-body {
+.lyrics-body { transition: background 0.5s ease, color 0.3s ease;
   padding: 40px 20px;
   contain: layout style;
   transition: none;
@@ -1182,7 +1182,7 @@ button:active, .act-btn:active, .mac-btn:active, .fab-btn:active, .fab-mini:acti
 .search-box:focus { border-color: var(--lavender); border-radius: 22px; box-shadow: 0 0 20px rgba(195,166,232,0.3), 0 0 40px rgba(248,164,200,0.1); }
 
 /* Glassmorphism enhancement */
-body { --glass: rgba(255,255,255,0.25); --glass-border: rgba(255,255,255,0.4); }
+body { transition: background 0.5s ease, color 0.3s ease; --glass: rgba(255,255,255,0.25); --glass-border: rgba(255,255,255,0.4); }
 body.dark-mode { --glass: rgba(30,20,60,0.5); --glass-border: rgba(100,80,160,0.3); }
 /* backdrop-filter removed for performance - was causing 400+ GPU layers */
 
@@ -1455,6 +1455,34 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 .conv-status.error { color:#ff6b6b; }
 .conv-status.success { color:#4ecdc4; }
 .conv-token-hint { font-size:11px; color:var(--text-light); margin-top:4px; line-height:1.4; }
+
+/* ====== 全局丝滑优化 ====== */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.song-card { will-change: transform, box-shadow; }
+.song-card:active { transform: scale(0.98) !important; transition-duration: 0.1s; }
+.mac-btn:active { transform: scale(0.95) !important; transition-duration: 0.1s; }
+.np-btn:active { transform: scale(0.9) !important; }
+.fab-btn:active, .fab-mini:active { transform: scale(0.9) !important; }
+.toast { transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(0); }
+.toast.show { animation: toastIn 0.3s ease; }
+@keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.search-box { transition: all 0.3s ease; }
+.search-box:focus { transform: scale(1.01); }
+.overlay { transition: opacity 0.3s ease; }
+.overlay.show { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.popup-panel { transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease; }
+.popup-panel.show { animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+@keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.mode-tab { transition: all 0.2s ease; }
+.mode-tab:active { transform: scale(0.95); }
+.song-list { contain: layout style; }
+.song-card { content-visibility: auto; contain-intrinsic-size: 0 60px; }
+
 </style>
 </head>
 <body>
@@ -3023,7 +3051,7 @@ function createMacarons() {
 function renderList() {
   const list = document.getElementById('songList');
   if(!list) return;
-  list.innerHTML = '';
+  const frag = document.createDocumentFragment();
   const ranks = JSON.parse(localStorage.getItem('yueXiRanks') || '{}');
 
   filteredSongs.forEach((s, i) => {
@@ -3109,8 +3137,10 @@ function renderList() {
         <button class="swipe-btn" style="background:rgba(168,216,234,0.5)" onclick="event.stopPropagation();copyUrl(${globalIdx})" title="复制链接">📋</button>
       </div>
     `;
-    list.appendChild(div);
+    frag.appendChild(div);
   });
+  list.innerHTML = '';
+  list.appendChild(frag);
 
   // Update recent section
   renderRecentPlayed();
@@ -6225,17 +6255,18 @@ function hideSkeletonLoading() {
 
 // Scroll handlers (back-to-top, compact mode)
 function setupScrollHandlers() {
-  let scrollTimeout;
+  let ticking = false;
+  let lastSy = 0;
   window.addEventListener('scroll', () => {
-    if(scrollTimeout) return;
-    scrollTimeout = requestAnimationFrame(() => {
-      scrollTimeout = null;
-      const sy = window.scrollY;
-      // Back to top
-      const btt = document.getElementById('backToTop');
-      if(btt) btt.classList.toggle('show', sy > 500);
-      // 不再自动compact，保持显示歌曲信息
-    });
+    lastSy = window.scrollY;
+    if(!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const btt = document.getElementById('backToTop');
+        if(btt) btt.classList.toggle('show', lastSy > 500);
+      });
+    }
   }, {passive: true});
 }
 
