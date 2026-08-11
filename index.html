@@ -3107,7 +3107,10 @@ function setupAudio() {
       requestAnimationFrame(() => { _lyricsRafPending = false; updateLyricsHighlight(); });
     }
   });
-  audio.addEventListener('ended', () => playNext());
+  audio.addEventListener('ended', () => {
+    // Auto-play next song when current ends naturally
+    playNext();
+  });
   audio.addEventListener('play', () => {
     isPlaying = true;
     document.getElementById('playBtn').textContent = '⏸';
@@ -3129,27 +3132,8 @@ function setupAudio() {
     renderList();
   });
   audio.addEventListener('error', () => {
-    // Try to refresh expired URL before giving up
     const s = SONGS[currentIdx];
-    if(s && s.i) {
-      showToast('🔄 链接可能已过期，正在尝试刷新...');
-      tryRefreshUrl(s.i, currentIdx).then(newUrl => {
-        if(newUrl) {
-          s.u = newUrl;
-          audio.src = newUrl;
-          audio.play().catch(() => {
-            showToast('😢 刷新后仍无法播放，跳过这首');
-            setTimeout(() => playNext(), 1500);
-          });
-        } else {
-          showToast('😢 播放出错，跳过这首（可用转换器手动刷新）');
-          setTimeout(() => playNext(), 1500);
-        }
-      });
-    } else {
-      showToast('😢 播放出错，跳过这首');
-      setTimeout(() => playNext(), 1500);
-    }
+    showToast('😢 播放失败，可能是VIP歌曲受限');
   });
 }
 
@@ -3203,25 +3187,8 @@ function playSong(idx) {
 
 function togglePlay() {
   SFX.pop();
-  const iframe = document.getElementById('neteasePlayer');
-  if(!iframe.src || iframe.src === 'about:blank') { if(SONGS.length>0) playSong(SONGS.findIndex(s=>s.i)); return; }
-  // Toggle by reloading with auto=0 or auto=1
-  if(isPlaying) {
-    iframe.src = 'about:blank';
-    isPlaying = false;
-    document.getElementById('playBtn').textContent = '▶';
-    document.getElementById('npVinyl').classList.remove('spin');
-    document.getElementById('npTonearm').classList.remove('play');
-  } else {
-    const s = SONGS[currentIdx];
-    if(s) {
-      iframe.src = 'https://music.163.com/outchain/player?type=2&id=' + s.i + '&auto=1';
-      isPlaying = true;
-      document.getElementById('playBtn').textContent = '⏸';
-      document.getElementById('npVinyl').classList.add('spin');
-      document.getElementById('npTonearm').classList.add('play');
-    }
-  }
+  if(!audio.src || audio.src === location.href) { if(SONGS.length>0) playSong(currentIdx >= 0 ? currentIdx : SONGS.findIndex(s=>s.i)); return; }
+  if(isPlaying) { audio.pause(); } else { audio.play(); }
 }
 
 function playPrev() {
