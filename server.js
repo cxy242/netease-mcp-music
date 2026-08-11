@@ -1543,7 +1543,7 @@ fastify.get('/api/song/play_url', async (request, reply) => {
   try {
     const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
     if (data.data && data.data[0] && data.data[0].url) {
-      return { ok: true, url: data.data[0].url };
+      return { ok: true, url: data.data[0].url.replace(/^http:\/\//, 'https://') };
     }
     return { ok: false, message: '无法获取播放链接' };
   } catch (e) {
@@ -1559,7 +1559,9 @@ fastify.get('/api/proxy_play', async (request, reply) => {
   try {
     const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
     if (data.data && data.data[0] && data.data[0].url) {
-      return reply.redirect(data.data[0].url, 302);
+      // 强制HTTPS避免混合内容拦截（浏览器会阻止HTTPS页面加载HTTP音频）
+      const url = data.data[0].url.replace(/^http:\/\//, 'https://');
+      return reply.redirect(url, 302);
     }
     return reply.status(404).send('Song not found');
   } catch (e) {
