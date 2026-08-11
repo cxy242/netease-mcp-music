@@ -1587,17 +1587,17 @@ fastify.get('/api/local_audio', async (request, reply) => {
     reply.header('Cache-Control', 'public, max-age=86400');
     return reply.send(createReadStream(filePath));
   }
-  // 本地文件不存在（Railway环境）→ 从远程隧道代理
+  // 本地文件不存在（Railway环境）→ 从远程隧道流式代理
   if (REMOTE_AUDIO_BASE) {
     try {
       const resp = await fetch(`${REMOTE_AUDIO_BASE}/api/local_audio?id=${id}`);
       if (resp.ok) {
         reply.header('Content-Type', resp.headers.get('content-type') || 'audio/flac');
-        reply.header('Content-Length', resp.headers.get('content-length'));
         reply.header('Accept-Ranges', 'bytes');
         reply.header('Cache-Control', 'public, max-age=86400');
-        const buffer = Buffer.from(await resp.arrayBuffer());
-        return reply.send(buffer);
+        if (resp.headers.get('content-length')) reply.header('Content-Length', resp.headers.get('content-length'));
+        // 流式传输，不缓冲整个文件
+        return reply.send(resp.body);
       }
     } catch (e) {}
   }
@@ -1623,11 +1623,10 @@ fastify.get('/api/local_audio/:id', async (request, reply) => {
       const resp = await fetch(`${REMOTE_AUDIO_BASE}/api/local_audio/${id}`);
       if (resp.ok) {
         reply.header('Content-Type', resp.headers.get('content-type') || 'audio/flac');
-        reply.header('Content-Length', resp.headers.get('content-length'));
         reply.header('Accept-Ranges', 'bytes');
         reply.header('Cache-Control', 'public, max-age=86400');
-        const buffer = Buffer.from(await resp.arrayBuffer());
-        return reply.send(buffer);
+        if (resp.headers.get('content-length')) reply.header('Content-Length', resp.headers.get('content-length'));
+        return reply.send(resp.body);
       }
     } catch (e) {}
   }
