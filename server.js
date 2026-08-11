@@ -337,11 +337,12 @@ fastify.post('/api/refresh_urls', async (request) => {
 // ═════════════════════════════════════════════════════════════════════
 
 fastify.post('/api/comment', async (request, reply) => {
-  const { song_id, song_name, author, text, is_ai } = request.body || {};
+  const { song_id, song_name, author, text, is_ai, image_url } = request.body || {};
   if (!author || !text) return { ok: false, message: '需要 author, text' };
   const comment = {
     id: Date.now(), song_id, song_name: song_name || '',
-    author, text, is_ai: !!is_ai, time: new Date().toISOString(), replies: []
+    author, text, is_ai: !!is_ai, time: new Date().toISOString(), replies: [],
+    image_url: image_url || ''
   };
   commentsDB.push(comment);
   return { ok: true, comment };
@@ -531,6 +532,16 @@ body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh
   <input id="c-song-id" type="hidden" value="0">
   <input id="c-song-name" type="hidden" value="">
   <textarea id="c-text" placeholder="写下你的感想..."></textarea>
+  <!-- 图片上传 -->
+  <div id="img-preview-wrap" style="display:none;margin-bottom:8px;position:relative">
+    <img id="c-img-preview" style="max-height:100px;border-radius:8px">
+    <button onclick="clearImg()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:11px;cursor:pointer">✕</button>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+    <label style="cursor:pointer;font-size:20px;opacity:0.7" title="添加图片">📷
+      <input type="file" id="c-img-input" accept="image/*" style="display:none" onchange="handleImg(this.files[0])">
+    </label>
+  </div>
   <button class="btn btn-pink" onclick="postComment()">💬 发表评论</button>
 </div>
 
@@ -539,6 +550,26 @@ body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh
 <script>
 const saved=localStorage.getItem('draw-player')||localStorage.getItem('playerName')||'';
 if(saved)document.getElementById('c-author').value=saved;
+
+let _commentImgUrl='';
+async function handleImg(file){
+  if(!file)return;
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const r=await fetch('/api/listen/upload_image',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.ok){
+      _commentImgUrl=d.url;
+      document.getElementById('c-img-preview').src=d.url;
+      document.getElementById('img-preview-wrap').style.display='block';
+    }
+  }catch(e){alert('图片上传失败');}
+}
+function clearImg(){
+  _commentImgUrl='';
+  document.getElementById('img-preview-wrap').style.display='none';
+  document.getElementById('c-img-input').value='';
+}
 
 let searchTimer=null;
 let allSongs=[];
@@ -598,9 +629,11 @@ function loadComments(){
       const replies=c.replies.map(r=>'<div class="reply"><span class="author">'+(r.is_ai?'🤖 ':'')+r.author+':</span> '+r.text+'</div>').join('');
       const songBtn=c.song_id>0?'<button class="play-btn" onclick="playCommentSong('+c.song_id+',this)">🎵 播放 '+esc(c.song_name||'')+'</button>':'';
       const songTag=c.song_name?'<span class="comment-song" onclick="playCommentSong('+c.song_id+',this)">🎵 '+c.song_name+'</span>':'';
+      const imgHtml=c.image_url?'<img src="'+c.image_url+'" style="max-width:200px;max-height:150px;border-radius:10px;margin:6px 0;cursor:pointer" onclick="window.open(this.src)">':'';
       return '<div class="card">'+
         '<div class="comment-header"><span class="comment-author">'+(c.is_ai?'🤖 ':'')+c.author+'</span>'+songTag+'</div>'+
         '<div class="comment-text">'+c.text+'</div>'+
+        imgHtml+
         '<div class="comment-time">'+c.time.slice(0,16)+'</div>'+
         replies+
         '<div class="comment-actions">'+
@@ -619,11 +652,12 @@ function postComment(){
   const song_id=parseInt(document.getElementById('c-song-id').value)||0;
   const song_name=document.getElementById('c-song-name').value.trim();
   if(!author||!text){alert('请输入名字和评论');return;}
-  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id,song_name,author,text,is_ai:false})})
+  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id,song_name,author,text,is_ai:false,image_url:_commentImgUrl})})
   .then(r=>r.json()).then(d=>{
     if(d.ok){
       document.getElementById('c-text').value='';
       clearSelectedSong();
+      clearImg();
       loadComments();
     } else {
       alert('发表失败: '+(d.message||'未知错误'));
