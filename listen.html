@@ -819,7 +819,7 @@ async function pollStatus(){
 // ============ SONG SEARCH ============
 let listenSongs = [];
 fetch('/songs_data.js').then(r=>r.text()).then(t=>{
-  try{const m=t.match(/const SONGS = (\[.*\])/s);if(m) listenSongs=JSON.parse(m[1]);}catch(e){}
+  try{const s=t.indexOf('['),e=t.lastIndexOf(']');if(s>=0&&e>s) listenSongs=JSON.parse(t.substring(s,e+1));}catch(e){}
 }).catch(()=>{});
 
 let songSearchTimer = null;
@@ -860,7 +860,7 @@ async function sendChat(){
   const text = inp.value.trim();
   if(!text || !state.sessionId) return;
   inp.value='';
-  const from = state.isHost?'host':'guest';
+  const from = document.getElementById('nameInput').value.trim()||'匿名';
   await api('chat',{session_id:state.sessionId,from,text});
   // Add locally
   const box = document.getElementById('chatMessages');
