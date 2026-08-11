@@ -1707,7 +1707,7 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <!-- Converter Floating Button - 在快捷按钮下方 -->
-<button onclick="showConverter()" style="position:fixed;bottom:120px;right:16px;z-index:90;width:50px;height:50px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff6b9d,#c44dff);color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,157,0.4);display:flex;align-items:center;justify-content:center;transition:all 0.3s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="网易云链接转换器">🔗</button>
+<button onclick="showConverter()" style="position:fixed;bottom:80px;right:16px;z-index:90;width:50px;height:50px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff6b9d,#c44dff);color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,157,0.4);display:flex;align-items:center;justify-content:center;transition:all 0.3s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="网易云链接转换器">🔗</button>
 
 <!-- Animated Mascot -->
 <div class="mascot-container" id="mascot" onclick="showToast(mascotSpeeches[Math.floor(Math.random()*mascotSpeeches.length)])">
@@ -1753,6 +1753,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 let currentIdx = -1;
 let localAudioIds = new Set();
+let _userRequestedPlay = false;
 let isPlaying = false;
 let audio = new Audio();
 let mode = 'all';
@@ -3192,15 +3193,19 @@ function setupAudio() {
     renderList();
   });
   audio.addEventListener('error', () => {
+    // 只在用户主动播放时才弹出网易云播放器，搜索时不要弹
+    if(!_userRequestedPlay) return;
+    _userRequestedPlay = false;
     const s = SONGS[currentIdx];
     if(s && s.i) {
-      showNeteaseEmbed(s.i, s.n, s.a);
+      useEmbedPlayer(s.i, s.n, s.a);
     }
   });
 }
 
 function playSong(idx) {
   if(idx<0 || idx>=SONGS.length) return;
+  _userRequestedPlay = true;
   const s = SONGS[idx];
   if(!s.i) return;
   SFX.pop();
