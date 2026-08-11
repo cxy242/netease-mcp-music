@@ -5388,7 +5388,6 @@ function startPianoFullscreen(songIdx) {
 
     // Song time - use game time if audio not loaded (e.g. VIP songs)
     const audioTime = pianoFsState.songAudio ? pianoFsState.songAudio.currentTime : 0;
-    const gameTime = pianoFsState.startTime ? (performance.now()/1000 - pianoFsState.startTime) : 0;
     const songTime = audioTime > 0.1 ? audioTime : gameTime;
     const songDuration = pianoFsState.songAudio ? (pianoFsState.songAudio.duration || s.d || 120) : (s.d || 120);
 
