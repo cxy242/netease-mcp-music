@@ -125,6 +125,14 @@ fastify.get('/cat-mascot.js', async (request, reply) => {
   reply.type('application/javascript; charset=utf-8');
   return readFileSync(join(__dirname, 'cat-mascot.js'), 'utf-8');
 });
+fastify.get('/listen-cat.css', async (request, reply) => {
+  reply.type('text/css; charset=utf-8');
+  return readFileSync(join(__dirname, 'listen-cat.css'), 'utf-8');
+});
+fastify.get('/listen-cat.js', async (request, reply) => {
+  reply.type('application/javascript; charset=utf-8');
+  return readFileSync(join(__dirname, 'listen-cat.js'), 'utf-8');
+});
 
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
