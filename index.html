@@ -1479,8 +1479,9 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 </div>
 
 <div class="toolbar">
-  <div style="position:relative;flex:1;min-width:200px;max-width:360px;">
-    <input class="search-box" id="search" placeholder="🔍 搜索歌曲或歌手..." oninput="filterSongs()" autocomplete="off">
+  <button onclick="showUploader()" style="padding:8px 14px;border:none;border-radius:14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(76,175,80,0.3);white-space:nowrap;touch-action:manipulation">🎵 上传</button>
+  <div style="position:relative;flex:1;min-width:160px;max-width:320px;">
+    <input class="search-box" id="search" placeholder="🔍 搜索..." oninput="filterSongs()" autocomplete="off">
     <div class="search-suggestions" id="searchSuggestions"></div>
   </div>
   <button class="mac-btn" onclick="showGames()">🎮 小游戏</button>
@@ -1490,7 +1491,6 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
   <button class="mac-btn" onclick="showFortune()">🔮 今日运势</button>
   <button class="mac-btn" onclick="showCalendar()">📅 打卡</button>
   <button class="mac-btn" onclick="showThemePicker()">🎨 主题</button>
-  <button class="mac-btn" onclick="showUploader()" style="background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff">🎵 上传音频</button>
   <button class="mac-btn" onclick="saveTxt()">💾 保存链接</button>
   <button class="mac-btn" onclick="saveM3U()">📋 M3U列表</button>
   <button class="mac-btn" id="darkModeBtn" onclick="toggleDarkMode()">🌙 深夜</button>
