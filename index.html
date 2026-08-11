@@ -4062,11 +4062,10 @@ function showLyrics() {
   if(!panel) return;
   lyricsVisible = !lyricsVisible;
   panel.classList.toggle('show', lyricsVisible);
-  // 进入歌词时隐藏导航和嵌入播放器
+  // 进入歌词时隐藏导航
   const nav = document.getElementById('nav-float');
   if(nav) nav.style.display = lyricsVisible ? 'none' : '';
-  const embedWrap = document.getElementById('embedWrap');
-  if(embedWrap) embedWrap.style.display = lyricsVisible ? 'none' : '';
+  // 不再自动显示/隐藏嵌入播放器，避免退回主界面时突然出现
   if(lyricsVisible && currentIdx >= 0) {
     const s = SONGS[currentIdx];
     if(s) {
@@ -4146,7 +4145,8 @@ function parseLyrics(raw) {
   for(const line of lines) {
     const m = line.match(/^\[(\d+):(\d+)[\.:](\d+)\](.*)/);
     if(m) {
-      const time = parseInt(m[1])*60 + parseInt(m[2]) + parseInt(m[3])/100;
+      const ms = m[3];
+      const time = parseInt(m[1])*60 + parseInt(m[2]) + parseInt(ms)/(ms.length >= 3 ? 1000 : 100);
       const text = m[4].trim();
       if(text) {
         lyricsTimings.push(time);
