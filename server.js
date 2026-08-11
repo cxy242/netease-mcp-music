@@ -1814,6 +1814,19 @@ fastify.get('/api/local_audio_map', async (request, reply) => {
   return localAudioMap;
 });
 
+// 刷新音频地图（不用重启服务器）
+fastify.post('/api/refresh_audio_map', async (request, reply) => {
+  try {
+    const mapPath = join(__dirname, 'local_audio_map.json');
+    const newMap = JSON.parse(readFileSync(mapPath, 'utf-8'));
+    Object.keys(localAudioMap).forEach(k => delete localAudioMap[k]);
+    Object.assign(localAudioMap, newMap);
+    return { ok: true, count: Object.keys(localAudioMap).length };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 // 代理播放：优先本地FLAC，fallback到网易云CDN
 fastify.get('/api/proxy_play', async (request, reply) => {
   const { id } = request.query;
