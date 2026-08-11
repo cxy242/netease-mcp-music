@@ -283,7 +283,7 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
 .icon-pause::before,.icon-pause::after{content:'';width:4px;height:16px;background:currentColor;border-radius:1px}
 
 /* ============ CHAT ============ */
-.chat-section{flex:1;margin-top:16px;display:flex;flex-direction:column;max-height:280px}
+.chat-section{flex:1;margin-top:16px;display:flex;flex-direction:column;max-height:280px;position:relative;z-index:1}
 .chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;
   max-height:200px;scrollbar-width:thin;scrollbar-color:var(--glass-border) transparent}
 .chat-msg{max-width:75%;padding:8px 14px;border-radius:14px;font-size:13px;line-height:1.5;
@@ -292,6 +292,19 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
 .chat-msg.other{align-self:flex-start;background:var(--glass);color:var(--text);
   border:1px solid var(--glass-border);border-bottom-left-radius:4px}
 .chat-msg .msg-from{font-size:11px;opacity:.7;margin-bottom:2px}
+.song-card-mini{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;
+  margin-top:4px;transition:all 0.2s}
+.song-card-mini:hover{background:rgba(255,255,255,0.15);transform:scale(1.02)}
+.song-card-mini:active{transform:scale(0.98)}
+.song-card-mini-icon{font-size:20px;flex-shrink:0}
+.song-card-mini-info{flex:1;min-width:0}
+.song-card-mini-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-card-mini-artist{font-size:11px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-card-mini-play{width:28px;height:28px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  color:#fff;flex-shrink:0;transition:transform 0.2s}
+.song-card-mini:hover .song-card-mini-play{transform:scale(1.1)}
 @keyframes msgIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
 
 .chat-input-area{display:flex;gap:8px;padding:10px 0}
@@ -535,7 +548,7 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
   </div>
 
   <!-- Song Search -->
-  <div class="glass-card" style="margin:12px 0;padding:12px">
+  <div class="glass-card" style="margin:12px 0;padding:12px;position:relative;z-index:100">
     <div style="position:relative">
       <input class="input-field" id="songSearch" placeholder="🔍 搜索歌曲..." oninput="searchListenSongs(this.value)" autocomplete="off" style="width:100%">
       <div id="songResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg2,#1a1a2e);border:1px solid var(--glass-border,rgba(255,255,255,0.15));border-radius:10px;max-height:200px;overflow-y:auto;z-index:9999;margin-top:4px;box-shadow:0 8px 30px rgba(0,0,0,0.5)"></div>
@@ -808,13 +821,38 @@ async function pollStatus(){
         s.messages.forEach(m=>{
           const div=document.createElement('div');
           div.className='chat-msg '+(m.from===(state.isHost?'host':'guest')?'self':'other');
-          div.innerHTML=`<div class="msg-from">${m.from}</div>${m.text}`;
+          // Check if this is a song change message
+          const songMatch = m.text.match(/切换了歌曲[：:](.+)/);
+          if(songMatch && s.song){
+            div.innerHTML=`<div class="msg-from">${m.from}</div>`+
+              `<div class="song-card-mini" onclick="playSongFromComment('${s.song.id}','${(s.song.name||'').replace(/'/g,"\'")}','${(s.song.artist||'').replace(/'/g,"\'")}')">`+
+              `<div class="song-card-mini-icon">🎵</div>`+
+              `<div class="song-card-mini-info">`+
+              `<div class="song-card-mini-name">${s.song.name||'未知歌曲'}</div>`+
+              `<div class="song-card-mini-artist">${s.song.artist||'未知歌手'}</div>`+
+              `</div>`+
+              `<div class="song-card-mini-play">▶</div>`+
+              `</div>`;
+          } else {
+            div.innerHTML=`<div class="msg-from">${m.from}</div>${m.text}`;
+          }
           box.appendChild(div);
         });
         box.scrollTop=box.scrollHeight;
       }
     }
   }catch(e){}
+}
+
+function playSongFromComment(id, name, artist) {
+  const audio = document.getElementById('listenAudio');
+  audio.src = '/api/proxy_play?id=' + id;
+  audio.play().catch(e => {});
+  const sn = document.getElementById('songName');
+  const sa = document.getElementById('songArtist');
+  if(sn) sn.textContent = name;
+  if(sa) sa.textContent = artist;
+  showToast('🎵 正在播放: ' + name);
 }
 
 // ============ SONG SEARCH ============
@@ -845,15 +883,34 @@ function selectListenSong(id, el) {
   document.getElementById('songSearch').value='';
   const name = el.dataset.name;
   const artist = el.dataset.artist;
+  
+  // Play the song
   const audio = document.getElementById('listenAudio');
   audio.src = '/api/proxy_play?id=' + id;
   audio.play().catch(e => {});
+  
+  // Update UI
   const sn = document.getElementById('songName');
   const sa = document.getElementById('songArtist');
   if(sn) sn.textContent = name;
   if(sa) sa.textContent = artist;
-  if(!sessionId) return;
-  fetch('/api/listen/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,from:document.getElementById('nameInput').value.trim()||'匿名',text:'🎵 想听: '+artist+' - '+name})});
+  
+  if(!state.sessionId) return;
+  const from = document.getElementById('nameInput').value.trim()||'匿名';
+  
+  // Save song info to server
+  fetch('/api/listen/song',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      session_id:state.sessionId,
+      song_id:String(id),
+      song_name:name,
+      song_artist:artist,
+      changed_by:from
+    })
+  });
+  
   showToast('🎵 正在播放: '+name);
 }
 
