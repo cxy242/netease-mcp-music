@@ -66,6 +66,38 @@ fastify.options('*', async (request, reply) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════
+// 0. LOCAL AUDIO STORAGE
+// ═════════════════════════════════════════════════════════════════════
+const AUDIO_DIR = join(__dirname, 'audio_cache');
+if (!existsSync(AUDIO_DIR)) mkdirSync(AUDIO_DIR, { recursive: true });
+
+fastify.get('/api/local_audio/:id', async (request, reply) => {
+  const { id } = request.params;
+  const filePath = join(AUDIO_DIR, id + '.mp3');
+  if (!existsSync(filePath)) { reply.status(404); return { ok: false }; }
+  reply.type('audio/mpeg');
+  reply.header('Accept-Ranges', 'bytes');
+  reply.header('Cache-Control', 'public, max-age=86400');
+  return reply.send(readFileSync(filePath));
+});
+
+fastify.post('/api/upload_audio', async (request, reply) => {
+  const data = await request.file();
+  if (!data) return { ok: false, message: 'no file' };
+  const songId = data.fields.songId?.value;
+  if (!songId) return { ok: false, message: 'missing songId' };
+  const buffer = await data.toBuffer();
+  writeFileSync(join(AUDIO_DIR, songId + '.mp3'), buffer);
+  console.log('[Audio] Saved: ' + songId + '.mp3 (' + buffer.length + ' bytes)');
+  return { ok: true, id: songId, size: buffer.length };
+});
+
+fastify.get('/api/local_audio_list', async () => {
+  const files = readdirSync(AUDIO_DIR).filter(f => f.endsWith('.mp3'));
+  return { ids: files.map(f => f.replace('.mp3', '')) };
+});
+
+// ═════════════════════════════════════════════════════════════════════
 // 1. STATIC FILES (3 routes)
 // ═════════════════════════════════════════════════════════════════════
 
