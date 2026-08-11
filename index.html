@@ -211,8 +211,8 @@ body {
 }
 
 .np-info { flex: 1; min-width: 0; }
-.np-title { font-size: 13px; font-weight: 600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
-.np-artist { font-size: 11px; color: var(--text-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.np-title { font-size: 13px; font-weight: 600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.np-artist { font-size: 11px; color: var(--text-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .np-progress {
   width: 100%; height: 8px; background: #e8ddf0; border-radius: 4px;
   margin-top: 6px; cursor: pointer; position: relative;
@@ -1106,7 +1106,7 @@ body.dark-mode .lyric-line.active {
 
 /* FAB */
 .fab-container {
-  position:fixed; bottom:120px; right:16px; z-index:90;
+  position:fixed; bottom:175px; right:16px; z-index:90;
   display:flex; flex-direction:column; gap:8px; align-items:flex-end;
 }
 .fab-btn {
@@ -1706,8 +1706,8 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 <!-- Back to Top -->
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<!-- Converter Floating Button - 在快捷按钮上方 -->
-<button onclick="showConverter()" style="position:fixed;bottom:175px;right:16px;z-index:90;width:50px;height:50px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff6b9d,#c44dff);color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,157,0.4);display:flex;align-items:center;justify-content:center;transition:all 0.3s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="网易云链接转换器">🔗</button>
+<!-- Converter Floating Button - 在快捷按钮下方 -->
+<button onclick="showConverter()" style="position:fixed;bottom:120px;right:16px;z-index:90;width:50px;height:50px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff6b9d,#c44dff);color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,157,0.4);display:flex;align-items:center;justify-content:center;transition:all 0.3s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="网易云链接转换器">🔗</button>
 
 <!-- Animated Mascot -->
 <div class="mascot-container" id="mascot" onclick="showToast(mascotSpeeches[Math.floor(Math.random()*mascotSpeeches.length)])">
