@@ -1140,7 +1140,10 @@ function renderDetailSongs(songs, containerId) {
   const c = document.getElementById(containerId);
   if (!songs.length) { c.innerHTML = '<div style="text-align:center;color:#999;padding:20px">没有歌曲</div>'; return; }
   c.innerHTML = songs.map((s, i) => {
-    const artists = (s.artists || s.ar || []).map(a => typeof a === 'string' ? a : a.name).join(', ');
+    let artists = '';
+    if (typeof s.artists === 'string') artists = s.artists;
+    else if (Array.isArray(s.artists)) artists = s.artists.map(a => typeof a === 'string' ? a : a.name).join(', ');
+    else if (Array.isArray(s.ar)) artists = s.ar.map(a => typeof a === 'string' ? a : a.name).join(', ');
     return '<div class="song-item">' +
       '<div class="song-idx">' + (i + 1) + '</div>' +
       '<div class="song-info"><div class="song-title">' + (s.name || '') + '</div><div class="song-meta">' + artists + '</div></div>' +
@@ -1301,25 +1304,49 @@ function addToPlaylist(pid) {
 }
 
 // Liked
+let likedPage = 0;
+const LIKED_PAGE_SIZE = 30;
+
 function loadLiked() {
   document.getElementById('liked-list').innerHTML = '<div class="loading">加载中</div>';
+  likedPage = 0;
   fetch('/api/like/list?uid=' + UID).then(r => r.json()).then(d => {
     const ids = d.ids || [];
     if (!ids.length) { document.getElementById('liked-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">还没有喜欢的歌曲</div>'; return; }
-    // Show first 50 with unlike button
-    const showIds = ids.slice(0, 50);
-    document.getElementById('liked-list').innerHTML = showIds.map((id, i) =>
-      '<div class="song-item">' +
-        '<div class="song-idx">' + (i + 1) + '</div>' +
-        '<div class="song-info"><div class="song-title">歌曲 #' + id + '</div><div class="song-meta">ID: ' + id + '</div></div>' +
-        '<div class="song-actions">' +
-          '<button class="btn-play" onclick="playSong(' + id + ')">▶</button>' +
-          '<button class="btn-del" onclick="unlikeSong(' + id + ')">💔</button>' +
-        '</div></div>'
-    ).join('');
+    window._likedIds = ids;
+    renderLikedPage();
   }).catch(() => {
     document.getElementById('liked-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">加载失败</div>';
   });
+}
+
+function renderLikedPage() {
+  const ids = window._likedIds || [];
+  const start = likedPage * LIKED_PAGE_SIZE;
+  const pageIds = ids.slice(start, start + LIKED_PAGE_SIZE);
+  let html = pageIds.map((id, i) => {
+    // 在SONGS里找歌名
+    const s = SONGS.find(s => s.i === id);
+    const name = s ? s.n : '歌曲 #' + id;
+    const artist = s ? s.a : '';
+    return '<div class="song-item">' +
+      '<div class="song-idx">' + (start + i + 1) + '</div>' +
+      '<div class="song-info"><div class="song-title">' + name + '</div><div class="song-meta">' + artist + '</div></div>' +
+      '<div class="song-actions">' +
+        (s ? '<button class="btn-play" onclick="playSong(' + SONGS.indexOf(s) + ')">▶</button>' : '') +
+        '<button class="btn-del" onclick="unlikeSong(' + id + ')">💔</button>' +
+      '</div></div>';
+  }).join('');
+  // 分页按钮
+  const totalPages = Math.ceil(ids.length / LIKED_PAGE_SIZE);
+  if (totalPages > 1) {
+    html += '<div style="display:flex;justify-content:center;gap:8px;padding:12px">';
+    if (likedPage > 0) html += '<button onclick="likedPage--;renderLikedPage()" style="padding:6px 14px;border:1px solid #e91e63;border-radius:8px;background:transparent;color:#e91e63;cursor:pointer">◀ 上一页</button>';
+    html += '<span style="line-height:32px;color:#999;font-size:0.85em">第 ' + (likedPage+1) + ' / ' + totalPages + ' 页</span>';
+    if (likedPage < totalPages - 1) html += '<button onclick="likedPage++;renderLikedPage()" style="padding:6px 14px;border:1px solid #e91e63;border-radius:8px;background:transparent;color:#e91e63;cursor:pointer">下一页 ▶</button>';
+    html += '</div>';
+  }
+  document.getElementById('liked-list').innerHTML = html;
 }
 
 // History
