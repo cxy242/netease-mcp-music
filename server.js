@@ -1546,6 +1546,18 @@ const MCP_TOOLS = [
   { name: 'music_listen_invite', description: '发送一起听邀请', inputSchema: { type: 'object', properties: { session_id: { type: 'string' }, invitee: { type: 'string' } }, required: ['session_id', 'invitee'] } },
   { name: 'music_listen_chat', description: '在一起听房间发送消息', inputSchema: { type: 'object', properties: { session_id: { type: 'string' }, from_name: { type: 'string' }, text: { type: 'string' } }, required: ['session_id', 'from_name', 'text'] } },
   { name: 'music_listen_change_song', description: '在一起听房间切换歌曲', inputSchema: { type: 'object', properties: { session_id: { type: 'string' }, song_id: { type: 'number' }, song_name: { type: 'string' }, song_artist: { type: 'string' }, changed_by: { type: 'string' } }, required: ['session_id', 'song_id', 'song_name', 'changed_by'] } },
+  { name: 'music_local_songs', description: '列出本地音乐花园的所有歌曲（带分页）', inputSchema: { type: 'object', properties: { page: { type: 'number', description: '页码（从1开始）', default: 1 }, limit: { type: 'number', description: '每页数量', default: 50 } } } },
+  { name: 'music_local_play', description: '播放本地花园的歌曲', inputSchema: { type: 'object', properties: { song_id: { type: 'string', description: '歌曲ID（本地音频映射中的ID）' } }, required: ['song_id'] } },
+  { name: 'music_lyrics', description: '获取歌曲歌词', inputSchema: { type: 'object', properties: { song_id: { type: 'number', description: '歌曲ID' } }, required: ['song_id'] } },
+  { name: 'music_listen_status', description: '获取一起听房间状态（谁在里面、播放什么）', inputSchema: { type: 'object', properties: { session_id: { type: 'string', description: '房间ID' } }, required: ['session_id'] } },
+  { name: 'music_listen_join', description: '加入一起听房间', inputSchema: { type: 'object', properties: { session_id: { type: 'string', description: '房间ID' }, guest_name: { type: 'string', description: '加入者名字' } }, required: ['session_id'] } },
+  { name: 'music_listen_leave', description: '离开一起听房间', inputSchema: { type: 'object', properties: { session_id: { type: 'string', description: '房间ID' }, name: { type: 'string', description: '离开者名字' } }, required: ['session_id', 'name'] } },
+  { name: 'music_comment_with_song', description: '在评论广场发布带歌曲的评论', inputSchema: { type: 'object', properties: { song_id: { type: 'number' }, song_name: { type: 'string' }, author: { type: 'string' }, text: { type: 'string' } }, required: ['song_id', 'author', 'text'] } },
+  { name: 'music_comment_with_image', description: '发布带图片的评论', inputSchema: { type: 'object', properties: { song_id: { type: 'number' }, song_name: { type: 'string' }, author: { type: 'string' }, text: { type: 'string' }, image_url: { type: 'string', description: '图片URL（data:URL或https链接）' } }, required: ['author', 'text'] } },
+  { name: 'music_upload_image', description: '上传评论图片（base64或文件）', inputSchema: { type: 'object', properties: { image_data: { type: 'string', description: '图片的base64编码' }, filename: { type: 'string', description: '文件名（含扩展名）', default: 'image.jpg' } }, required: ['image_data'] } },
+  { name: 'music_garden_stats', description: '获取音乐花园统计信息', inputSchema: { type: 'object', properties: {} } },
+  { name: 'music_refresh_audio', description: '刷新本地音频映射', inputSchema: { type: 'object', properties: {} } },
+  { name: 'music_cookie_status', description: '检查网易云Cookie是否有效', inputSchema: { type: 'object', properties: {} } },
 ];
 
 async function callTool(name, args) {
@@ -1726,6 +1738,110 @@ async function callTool(name, args) {
       session.song = { id: song_id, name: song_name, artist: song_artist || '', url: '' };
       session.messages.push({ from: '系统', text: changed_by + ' 切换了歌曲：' + song_name, time: new Date().toISOString() });
       return { ok: true, song: session.song };
+    }
+    case 'music_local_songs': {
+      const { page = 1, limit = 50 } = args;
+      const allIds = Object.keys(localAudioMap);
+      const total = allIds.length;
+      const start = (page - 1) * limit;
+      const pageIds = allIds.slice(start, start + limit);
+      return { total, page, limit, pages: Math.ceil(total / limit), songs: pageIds.map(id => ({ id, filename: localAudioMap[id] })) };
+    }
+    case 'music_local_play': {
+      const { song_id } = args;
+      const filename = localAudioMap[song_id];
+      if (!filename) return { ok: false, message: '本地无此歌曲音频' };
+      return { ok: true, url: `/api/local_audio?id=${song_id}`, filename };
+    }
+    case 'music_lyrics': {
+      const { song_id } = args;
+      try {
+        const data = await neteaseApi(`/api/song/lyric?id=${song_id}&lv=1&tv=1`);
+        return { lyric: data.lrc ? data.lrc.lyric : '', tlyric: data.tlyric ? data.tlyric.lyric : '' };
+      } catch (e) {
+        return { lyric: '', error: e.message };
+      }
+    }
+    case 'music_listen_status': {
+      const { session_id } = args;
+      const session = listenSessions[session_id];
+      if (!session) return { ok: false, message: '房间不存在' };
+      return { ok: true, session };
+    }
+    case 'music_listen_join': {
+      const { session_id, guest_name } = args;
+      const session = listenSessions[session_id];
+      if (!session) return { ok: false, message: '房间不存在' };
+      session.guest = guest_name || '艾因';
+      session.messages.push({ from: '系统', text: (guest_name || '艾因') + ' 加入了一起听', time: new Date().toISOString() });
+      return { ok: true, session };
+    }
+    case 'music_listen_leave': {
+      const { session_id, name } = args;
+      const session = listenSessions[session_id];
+      if (!session) return { ok: false, message: '房间不存在' };
+      session.messages.push({ from: '系统', text: name + ' 离开了一起听', time: new Date().toISOString() });
+      if (name === session.host) session.active = false;
+      return { ok: true };
+    }
+    case 'music_comment_with_song': {
+      const { song_id, song_name, author, text } = args;
+      const comment = {
+        id: Date.now(), song_id, song_name: song_name || '',
+        author, text, is_ai: true, time: new Date().toISOString(), replies: [], image_url: ''
+      };
+      commentsDB.push(comment);
+      return { ok: true, comment };
+    }
+    case 'music_comment_with_image': {
+      const { song_id, song_name, author, text, image_url } = args;
+      const comment = {
+        id: Date.now(), song_id: song_id || 0, song_name: song_name || '',
+        author, text, is_ai: true, time: new Date().toISOString(), replies: [], image_url: image_url || ''
+      };
+      commentsDB.push(comment);
+      return { ok: true, comment };
+    }
+    case 'music_upload_image': {
+      const { image_data, filename = 'image.jpg' } = args;
+      const ext = filename.split('.').pop().toLowerCase();
+      const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      // Return as data URL for inline use
+      const dataUrl = `data:${mime};base64,${image_data}`;
+      return { ok: true, url: dataUrl };
+    }
+    case 'music_garden_stats': {
+      const audioDir = existsSync(AUDIO_DIR) ? readdirSync(AUDIO_DIR).filter(f => f.endsWith('.mp3')).length : 0;
+      const flacDir = existsSync(LOCAL_AUDIO_DIR) ? readdirSync(LOCAL_AUDIO_DIR).filter(f => f.endsWith('.flac')).length : 0;
+      return {
+        local_audio_map_count: Object.keys(localAudioMap).length,
+        flac_files: flacDir,
+        cached_mp3_files: audioDir,
+        comments_count: commentsDB.length,
+        listen_sessions: Object.keys(listenSessions).length,
+        has_cookie: !!MUSIC_U,
+        uid: DEFAULT_UID,
+      };
+    }
+    case 'music_refresh_audio': {
+      try {
+        const mapPath = join(__dirname, 'local_audio_map.json');
+        const newMap = JSON.parse(readFileSync(mapPath, 'utf-8'));
+        Object.keys(localAudioMap).forEach(k => delete localAudioMap[k]);
+        Object.assign(localAudioMap, newMap);
+        return { ok: true, count: Object.keys(localAudioMap).length };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    }
+    case 'music_cookie_status': {
+      return {
+        hasCookie: !!MUSIC_U,
+        music_u_length: MUSIC_U.length,
+        nickname: cookieData ? cookieData.nickname : '未知',
+        vipType: cookieData ? cookieData.vipType : 0,
+        uid: DEFAULT_UID,
+      };
     }
     default:
       throw new Error(`Unknown tool: ${name}`);
