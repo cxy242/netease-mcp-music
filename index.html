@@ -76,7 +76,7 @@ body.dark-mode .header h1 {
   filter: drop-shadow(0 0 10px rgba(200,150,255,0.3));
 }
 body.dark-mode .song-card { border-color: rgba(100,80,160,0.2); }
-body.dark-mode .now-playing { background: rgba(20,15,40,0.9); }
+body.dark-mode .now-playing { background: linear-gradient(135deg, rgba(20,15,40,0.95), rgba(30,20,50,0.95)); border-top-color: rgba(100,80,160,0.2); }
 body.dark-mode .toolbar { background: rgba(20,15,40,0.85); }
 body.dark-mode .games-panel { background: rgba(25,20,50,0.95); }
 body.dark-mode .song-num { background: rgba(100,80,160,0.3); }
@@ -152,13 +152,15 @@ body {
 /* ===== NOW PLAYING BAR ===== */
 .now-playing {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(255,255,255,0.95);
-  border-top: 1px solid var(--glass-border);
-  padding: 12px 20px; z-index: 100;
-  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, rgba(255,240,245,0.97), rgba(240,230,255,0.97));
+  border-top: 1px solid rgba(200,150,200,0.2);
+  padding: 10px 16px; z-index: 100;
+  display: flex; align-items: center; gap: 10px;
   transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
-  box-shadow: 0 -4px 30px var(--shadow);
+  box-shadow: 0 -2px 20px rgba(200,150,200,0.15);
   contain: layout style;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 .now-playing.show { transform: translateY(0); }
 
@@ -234,17 +236,26 @@ body {
 .np-time { font-size: 11px; color: var(--text-light); margin-top: 2px; display:flex; justify-content:space-between; }
 .np-controls { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .np-btn {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 42px; height: 42px; border-radius: 50%;
   border: none; cursor: pointer; font-size: 16px;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
-  background: transparent; color: var(--text);
+  background: rgba(200,150,200,0.08);
+  color: var(--text);
+  touch-action: manipulation;
 }
 .np-btn:hover { background: rgba(200,150,200,0.15); transform:scale(1.1); }
 .np-btn.main {
-  width: 48px; height: 48px; font-size: 20px;
-  background: linear-gradient(135deg, var(--pink), var(--lavender));
-  color: white; box-shadow: 0 4px 15px rgba(200,150,200,0.3);
+  width: 50px; height: 50px; font-size: 18px;
+  background: linear-gradient(135deg, #ff6b9d, #c084fc, #818cf8);
+  color: white;
+  box-shadow: 0 2px 12px rgba(255,107,157,0.35);
+  border: 2px solid rgba(255,255,255,0.3);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
 }
 .np-btn.main:hover { box-shadow: 0 6px 20px rgba(200,150,200,0.5); transform:scale(1.1); }
 
@@ -4030,6 +4041,8 @@ function updateLyricsProgressBar() {
 function showGames() {
   SFX.pop();
   SFX.slide();
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = 'none';
   document.getElementById('gamesPanel').classList.add('show');
   document.getElementById('gamesOverlay').classList.add('show');
   switchGame(gameType, document.querySelector('.game-tab.active'));
