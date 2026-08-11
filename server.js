@@ -158,13 +158,18 @@ fastify.get('/api/playlist/detail', async (request, reply) => {
   const playlist = data.playlist || {};
   const tracks = playlist.tracks || [];
   const trackIds = (playlist.trackIds || []).map(t => t.id);
-  // 如果API返回的tracks少于trackIds，用song/detail补充
+  // 如果API返回的tracks少于trackIds，分批获取所有歌曲
   if (trackIds.length > tracks.length && trackIds.length > 0) {
     try {
-      const detailData = await neteaseApi(`/api/song/detail?ids=${JSON.stringify(trackIds.slice(0, 500))}`);
-      if (detailData.songs) {
-        playlist.tracks = detailData.songs;
+      const allSongs = [];
+      const batchSize = 100;
+      for (let i = 0; i < trackIds.length; i += batchSize) {
+        const batch = trackIds.slice(i, i + batchSize);
+        const detailData = await neteaseApi(`/api/song/detail?ids=${JSON.stringify(batch)}`);
+        if (detailData.songs) allSongs.push(...detailData.songs);
+        if (i + batchSize < trackIds.length) await new Promise(r => setTimeout(r, 200));
       }
+      if (allSongs.length > 0) playlist.tracks = allSongs;
     } catch (e) { /* 降级使用原始tracks */ }
   }
   return data;
