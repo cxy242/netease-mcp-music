@@ -1213,11 +1213,12 @@ function loadPlaylists() {
   fetch('/api/user/playlist?uid=' + UID).then(r => r.json()).then(d => {
     const pls = d.playlist || [];
     document.getElementById('playlists-list').innerHTML = pls.map(p =>
-      '<div class="pl-card glass" onclick="loadPlaylistSongs(' + p.id + ',\'' + p.name.replace(/'/g, "\\'") + '\')">' +
+      '<div class="pl-card glass" data-pid="' + p.id + '" data-pname="' + (p.name||'').replace(/"/g, '&quot;') + '" onclick="loadPlaylistSongs(+this.dataset.pid, this.dataset.pname)">' +
         '<div class="pl-icon">📋</div>' +
         '<div class="pl-info"><div class="pl-name">' + p.name + '</div><div class="pl-meta">' + (p.trackCount || 0) + '首 · ' + (p.creator?.nickname || '') + '</div></div>' +
       '</div>'
     ).join('');
+    document.querySelectorAll('.pl-card[data-pid]').forEach(el => el.onclick = function(){ loadPlaylistSongs(+this.dataset.pid, this.dataset.pname); });
   }).catch(() => {
     document.getElementById('playlists-list').innerHTML = '<div style="text-align:center;color:#999;padding:20px">加载失败</div>';
   });
