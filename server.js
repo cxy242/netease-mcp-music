@@ -1082,9 +1082,13 @@ function renderDetailSongs(songs, containerId) {
 
 // Play song
 function playSong(id) {
+  if(!window._neteaseAudio) { window._neteaseAudio = new Audio(); }
+  const audio = window._neteaseAudio;
+  audio.pause();
+  audio.currentTime = 0;
   fetch('/api/song/url?id=' + id).then(r => r.json()).then(d => {
     if (d.data?.[0]?.url) {
-      const audio = new Audio(d.data[0].url);
+      audio.src = d.data[0].url;
       audio.play();
       showToast('🎵 播放中...');
     } else {
