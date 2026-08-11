@@ -3331,6 +3331,18 @@ function useEmbedPlayer(songId, name, artist) {
 
 function togglePlay() {
   SFX.pop();
+  // 如果嵌入播放器在显示，暂停就是关闭它
+  const embedWrap = document.getElementById('embedWrap');
+  if(embedWrap && embedWrap.style.display !== 'none') {
+    const iframe = embedWrap.querySelector('iframe');
+    if(iframe) iframe.src = '';
+    embedWrap.style.display = 'none';
+    isPlaying = false;
+    document.getElementById('playBtn').textContent = '▶';
+    document.getElementById('npVinyl').classList.remove('spin');
+    document.getElementById('npTonearm').classList.remove('play');
+    return;
+  }
   if(!audio.src || audio.src === location.href) { if(SONGS.length>0) playSong(currentIdx >= 0 ? currentIdx : SONGS.findIndex(s=>s.i)); return; }
   if(isPlaying) { audio.pause(); } else { audio.play(); }
 }
