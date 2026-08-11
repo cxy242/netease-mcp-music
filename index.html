@@ -3268,11 +3268,11 @@ function showNeteaseEmbed(songId, name, artist) {
   if(!wrap) {
     wrap = document.createElement('div');
     wrap.id = 'embedWrap';
-    wrap.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9998;transition:all 0.3s';
+    wrap.style.cssText = 'position:fixed;bottom:180px;left:50%;transform:translateX(-50%);z-index:9998;transition:all 0.3s';
     wrap.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <span style="font-size:11px;color:rgba(255,255,255,0.6);background:rgba(0,0,0,0.3);padding:2px 8px;border-radius:8px">🎵 网易云播放器</span>
-        <button onclick="document.getElementById('embedWrap').style.display='none'" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,255,255,0.2);color:#fff;font-size:11px;cursor:pointer">✕</button>
+        <button onclick="document.getElementById('embedWrap').style.display='none';document.getElementById('embedPlayer').src='';audio.pause();isPlaying=false;document.getElementById('playBtn').textContent='▶';document.getElementById('npVinyl').classList.remove('spin');document.getElementById('npTonearm').classList.remove('play');" style="width:28px;height:28px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:16px;cursor:pointer;font-weight:bold">✕</button>
       </div>
       <iframe id="embedPlayer" style="width:320px;height:80px;border:none;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.2)" allow="autoplay"></iframe>
     `;
@@ -3295,11 +3295,20 @@ function useEmbedPlayer(songId, name, artist) {
   if(!wrap) {
     wrap = document.createElement('div');
     wrap.id = 'embedWrap';
-    wrap.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9998';
+    wrap.style.cssText = 'position:fixed;bottom:180px;left:50%;transform:translateX(-50%);z-index:9998;transition:all 0.3s';
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:14px;cursor:pointer;z-index:9999;line-height:1';
-    closeBtn.onclick = () => { wrap.style.display = 'none'; };
+    closeBtn.style.cssText = 'position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:16px;cursor:pointer;z-index:9999;line-height:1;font-weight:bold';
+    closeBtn.onclick = () => { 
+      wrap.style.display = 'none';
+      const iframe = wrap.querySelector('iframe');
+      if(iframe) iframe.src = '';
+      audio.pause();
+      isPlaying = false;
+      document.getElementById('playBtn').textContent = '▶';
+      document.getElementById('npVinyl').classList.remove('spin');
+      document.getElementById('npTonearm').classList.remove('play');
+    };
     wrap.appendChild(closeBtn);
     const frame = document.createElement('iframe');
     frame.id = 'embedPlayer';
