@@ -3194,6 +3194,9 @@ function playSong(idx) {
   const s = SONGS[idx];
   if(!s.i) return;
   SFX.pop();
+  // 先暂停当前播放，防止两首歌同时播放
+  audio.pause();
+  audio.currentTime = 0;
   currentIdx = idx;
 
   // 立即更新UI
@@ -3657,15 +3660,27 @@ function handleFiles(files) {
       songName = name.substring(dashIdx + 3).trim();
     }
 
-    // 在SONGS里模糊匹配
+    // 在SONGS里模糊匹配 - 支持残缺匹配
     let bestMatch = null, bestScore = 0;
+    const nameLow = songName.toLowerCase().trim();
     for(let i = 0; i < SONGS.length; i++) {
       const s = SONGS[i];
+      const sNameLow = s.n.toLowerCase().trim();
       let score = 0;
-      if(s.n === songName) score += 100;
-      else if(s.n.toLowerCase() === songName.toLowerCase()) score += 90;
-      else if(s.n.includes(songName) || songName.includes(s.n)) score += 50;
-      if(artist && s.a && (s.a.includes(artist) || artist.includes(s.a))) score += 30;
+      // 完全匹配
+      if(sNameLow === nameLow) { score = 100; }
+      // 包含匹配（双向）
+      else if(sNameLow.includes(nameLow)) score = 80;
+      else if(nameLow.includes(sNameLow)) score = 75;
+      // 去掉括号/版本信息后匹配
+      else {
+        const cleanName = nameLow.replace(/[\(（\[【].*?[\)）\]】]/g, '').trim();
+        const cleanSName = sNameLow.replace(/[\(（\[【].*?[\)）\]】]/g, '').trim();
+        if(cleanSName === cleanName) score = 70;
+        else if(cleanSName.includes(cleanName) || cleanName.includes(cleanSName)) score = 60;
+      }
+      // 歌手加分
+      if(artist && score > 0 && s.a && (s.a.toLowerCase().includes(artist.toLowerCase()) || artist.toLowerCase().includes(s.a.toLowerCase()))) score += 20;
       if(score > bestScore) { bestScore = score; bestMatch = {idx: i, song: s}; }
     }
 
