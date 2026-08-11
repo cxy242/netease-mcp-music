@@ -3242,15 +3242,18 @@ function playSong(idx) {
           document.getElementById('npTonearm').classList.add('play');
         }).catch(e => {
           console.warn('CDN play failed:', e);
-          showToast('😢 播放失败 · 可上传音频到本地');
+          // CDN失败 → 回退到网易云嵌入播放器
+          useEmbedPlayer(s.i, s.n, s.a);
         });
       } else {
-        showToast('😢 无法获取播放链接');
+        // 无法获取链接 → 回退到网易云嵌入播放器
+        useEmbedPlayer(s.i, s.n, s.a);
       }
     })
     .catch(e => {
       console.error('Fetch failed:', e);
-      showToast('😢 网络错误');
+      // 网络错误 → 回退到网易云嵌入播放器
+      useEmbedPlayer(s.i, s.n, s.a);
     });
 
   // Record play
