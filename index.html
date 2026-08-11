@@ -1484,6 +1484,7 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
 .song-card { content-visibility: auto; contain-intrinsic-size: 0 60px; }
 
 </style>
+<link rel="stylesheet" href="/cat-mascot.css">
 </head>
 <body>
 
@@ -1738,10 +1739,37 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
 <button onclick="showConverter()" style="position:fixed;bottom:80px;right:16px;z-index:90;width:50px;height:50px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff6b9d,#c44dff);color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,157,0.4);display:flex;align-items:center;justify-content:center;transition:all 0.3s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="网易云链接转换器">🔗</button>
 
 <!-- Animated Mascot -->
-<div class="mascot-container" id="mascot" onclick="showToast(mascotSpeeches[Math.floor(Math.random()*mascotSpeeches.length)])">
-  <span class="mascot-sleep" id="mascotEmoji">🐱</span>
-  <span class="mascot-z" id="mascotZ">💤</span>
-  <div class="mascot-speech" id="mascotSpeech">摸摸～</div>
+<!-- 黑毛红瞳小猫 -->
+<div class="cat-mascot" id="catMascot">
+  <div class="cat-bubble" id="catBubble"></div>
+  <div class="cat-particles" id="catParticles"></div>
+  <div class="cat-body-wrap">
+    <div class="cat-tail"></div>
+    <div class="cat-torso"></div>
+    <div class="cat-paws">
+      <div class="cat-paw"></div>
+      <div class="cat-paw"></div>
+    </div>
+    <div class="cat-head">
+      <div class="cat-ear left"></div>
+      <div class="cat-ear right"></div>
+      <div class="cat-eyes">
+        <div class="cat-eye"></div>
+        <div class="cat-eye"></div>
+      </div>
+      <div class="cat-nose"></div>
+      <div class="cat-mouth"></div>
+      <div class="cat-whiskers">
+        <div class="cat-whisker"></div>
+        <div class="cat-whisker"></div>
+        <div class="cat-whisker"></div>
+        <div class="cat-whisker"></div>
+        <div class="cat-whisker"></div>
+        <div class="cat-whisker"></div>
+      </div>
+    </div>
+    <div class="cat-paw-wave"></div>
+  </div>
 </div>
 
 <!-- Keyboard Shortcut Overlay -->
@@ -6373,6 +6401,23 @@ window.addEventListener('resize', debounce(() => {
 }, 250));
 
 init();
+</script>
+<script src="/cat-mascot.js"></script>
+<script>
+// 初始化小猫
+document.addEventListener('DOMContentLoaded', () => {
+  Cat.init();
+  
+  // 连接到音乐播放器
+  if (typeof audio !== 'undefined') {
+    audio.addEventListener('play', () => {
+      const s = SONGS[currentIdx];
+      if (s) Cat.onSongPlay(s.n);
+    });
+    audio.addEventListener('pause', () => Cat.onSongPause());
+    audio.addEventListener('ended', () => Cat.onSongPause());
+  }
+});
 </script>
 </body>
 </html>
