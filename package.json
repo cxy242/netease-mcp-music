@@ -9,8 +9,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "@fastify/multipart": "^8.3.0",
     "fastify": "^4.28.0",
-    "zod": "^3.24.4"
+    "zod": "^3.24.4" 
   },
   "engines": {
     "node": ">=18.0.0"
