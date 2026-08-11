@@ -305,7 +305,7 @@ fastify.post('/api/refresh_urls', async (request) => {
 
 fastify.post('/api/comment', async (request, reply) => {
   const { song_id, song_name, author, text, is_ai } = request.body || {};
-  if (!song_id || !author || !text) return { ok: false, message: '需要 song_id, author, text' };
+  if (!author || !text) return { ok: false, message: '需要 author, text' };
   const comment = {
     id: Date.now(), song_id, song_name: song_name || '',
     author, text, is_ai: !!is_ai, time: new Date().toISOString(), replies: []
@@ -403,46 +403,126 @@ fastify.get('/comments', async (request, reply) => {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>💬 评论广场 - 月汐音乐花园</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh;font-family:system-ui,-apple-system,sans-serif;padding:16px}
-.header{text-align:center;padding:24px 0}
-.header h1{font-size:1.6em;margin-bottom:4px;color:#c2185b}
-.header p{color:#888;font-size:0.9em}
-.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
-.comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+body{background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f3e5f5);min-height:100vh;font-family:system-ui,-apple-system,sans-serif;padding:16px;padding-bottom:40px}
+.header{text-align:center;padding:20px 0}
+.header h1{font-size:1.5em;margin-bottom:4px;color:#c2185b}
+.header p{color:#888;font-size:0.85em}
+.card{background:white;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
+.comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px}
 .comment-author{font-weight:700;color:#e91e63}
-.comment-song{color:#4caf50;font-size:0.85em}
-.comment-text{color:#333;line-height:1.6;margin-bottom:8px}
+.comment-song{display:inline-flex;align-items:center;gap:4px;color:#4caf50;font-size:0.85em;cursor:pointer;padding:2px 8px;background:rgba(76,175,80,0.08);border-radius:8px;transition:all 0.2s}
+.comment-song:hover{background:rgba(76,175,80,0.15);transform:scale(1.02)}
+.comment-text{color:#333;line-height:1.6;margin-bottom:6px;font-size:0.95em}
 .comment-time{color:#999;font-size:0.75em}
-.reply{margin-left:20px;padding:8px 12px;background:#fce4ec;border-radius:8px;margin-top:6px;font-size:0.9em}
+.comment-actions{display:flex;gap:6px;margin-top:8px;align-items:center}
+.reply{margin-left:16px;padding:8px 12px;background:#fce4ec;border-radius:8px;margin-top:6px;font-size:0.85em}
 .reply .author{color:#e91e63;font-weight:600}
 .form{background:white;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 12px rgba(233,30,99,0.08)}
-.form input,.form textarea{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.95em;margin-bottom:8px;outline:none}
+.form input,.form textarea{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.95em;margin-bottom:8px;outline:none;transition:border-color 0.3s}
 .form input:focus,.form textarea:focus{border-color:#e91e63}
 .form textarea{height:60px;resize:vertical}
-.btn{padding:10px 20px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.95em}
-.btn-pink{background:linear-gradient(135deg,#e91e63,#f06292);color:white}
-.back{display:inline-block;color:#e91e63;text-decoration:none;margin-bottom:12px;font-weight:600}
+.btn{padding:10px 20px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.95em;transition:all 0.2s}
+.btn:active{transform:scale(0.97)}
+.btn-pink{background:linear-gradient(135deg,#e91e63,#f06292);color:white;box-shadow:0 2px 8px rgba(233,30,99,0.2)}
+.btn-green{background:linear-gradient(135deg,#4caf50,#66bb6a);color:white;font-size:0.8em;padding:5px 10px;border-radius:8px}
+.back{display:inline-block;color:#e91e63;text-decoration:none;margin-bottom:12px;font-weight:600;font-size:0.9em}
 .back:hover{text-decoration:underline}
+/* Song search */
+.song-search-wrap{position:relative;margin-bottom:8px}
+.song-search{width:100%;padding:10px;border:2px solid #f8bbd0;border-radius:10px;font-size:0.95em;outline:none;transition:border-color 0.3s}
+.song-search:focus{border-color:#e91e63}
+.song-results{position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #f0f0f0;border-radius:10px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.1);display:none}
+.song-result{padding:8px 12px;cursor:pointer;font-size:0.85em;border-bottom:1px solid #f8f8f8;transition:background 0.2s;display:flex;align-items:center;gap:8px}
+.song-result:hover{background:#fce4ec}
+.song-result:last-child{border-bottom:none}
+.song-result-name{font-weight:600;color:#333}
+.song-result-artist{color:#999;font-size:0.85em}
+.selected-song{display:none;padding:8px 12px;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2);border-radius:10px;margin-bottom:8px;font-size:0.85em;align-items:center;gap:8px}
+.selected-song.show{display:flex}
+.selected-song .name{font-weight:600;color:#4caf50;flex:1}
+.clear-song{background:none;border:none;cursor:pointer;font-size:1em;color:#999}
+/* Play button on comment */
+.play-btn{background:linear-gradient(135deg,#e91e63,#f06292);color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.8em;cursor:pointer;transition:all 0.2s}
+.play-btn:hover{transform:scale(1.05);box-shadow:0 2px 8px rgba(233,30,99,0.3)}
 </style>
 </head>
 <body>
 <a href="/" class="back">← 返回音乐花园</a>
 <div class="header"><h1>💬 评论广场</h1><p>分享你对歌曲的感受~</p></div>
+
 <div class="form">
   <input id="c-author" placeholder="你的名字">
-  <input id="c-song" placeholder="歌曲名（可选）">
-  <input id="c-song-id" placeholder="歌曲ID（可选）" style="display:none">
+  <!-- Song search -->
+  <div class="song-search-wrap">
+    <input class="song-search" id="c-song-search" placeholder="🔍 搜索歌曲名..." oninput="searchSongs(this.value)" autocomplete="off">
+    <div class="song-results" id="song-results"></div>
+  </div>
+  <div class="selected-song" id="selected-song">
+    <span>🎵</span>
+    <span class="name" id="selected-song-name"></span>
+    <button class="clear-song" onclick="clearSelectedSong()">✕</button>
+  </div>
+  <input id="c-song-id" type="hidden" value="0">
+  <input id="c-song-name" type="hidden" value="">
   <textarea id="c-text" placeholder="写下你的感想..."></textarea>
   <button class="btn btn-pink" onclick="postComment()">💬 发表评论</button>
 </div>
+
 <div id="comments-list"></div>
+
 <script>
 const saved=localStorage.getItem('draw-player')||localStorage.getItem('playerName')||'';
 if(saved)document.getElementById('c-author').value=saved;
+
+let searchTimer=null;
+let allSongs=[];
+
+// Load songs data for search
+fetch('/songs_data.js').then(r=>r.text()).then(t=>{
+  try{eval(t);allSongs=SONGS||[];}catch(e){}
+}).catch(()=>{});
+
+function searchSongs(q){
+  clearTimeout(searchTimer);
+  const results=document.getElementById('song-results');
+  if(!q.trim()){results.style.display='none';return;}
+  searchTimer=setTimeout(()=>{
+    const ql=q.toLowerCase().trim();
+    const matched=allSongs.filter(s=>{
+      const name=(s.n||'').toLowerCase();
+      const artist=(s.a||'').toLowerCase();
+      return name.includes(ql)||artist.includes(ql);
+    }).slice(0,8);
+    if(!matched.length){results.style.display='none';return;}
+    results.innerHTML=matched.map(s=>
+      '<div class="song-result" onclick="selectSong('+s.i+',\''+esc(s.n)+'\',\''+esc(s.a)+'\')">' +
+      '<div><div class="song-result-name">'+s.n+'</div><div class="song-result-artist">'+s.a+'</div></div></div>'
+    ).join('');
+    results.style.display='';
+  },200);
+}
+
+function esc(s){return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
+function selectSong(id,name,artist){
+  document.getElementById('c-song-id').value=id;
+  document.getElementById('c-song-name').value=name;
+  document.getElementById('selected-song-name').textContent=artist+' - '+name;
+  document.getElementById('selected-song').classList.add('show');
+  document.getElementById('c-song-search').value='';
+  document.getElementById('song-results').style.display='none';
+}
+
+function clearSelectedSong(){
+  document.getElementById('c-song-id').value='0';
+  document.getElementById('c-song-name').value='';
+  document.getElementById('selected-song').classList.remove('show');
+}
 
 function loadComments(){
   fetch('/api/comments').then(r=>r.json()).then(d=>{
@@ -450,11 +530,17 @@ function loadComments(){
     if(!d.comments.length){list.innerHTML='<div class="card" style="text-align:center;color:#999">还没有评论~</div>';return;}
     list.innerHTML=d.comments.map(c=>{
       const replies=c.replies.map(r=>'<div class="reply"><span class="author">'+(r.is_ai?'🤖 ':'')+r.author+':</span> '+r.text+'</div>').join('');
+      const songBtn=c.song_id>0?'<button class="play-btn" onclick="playCommentSong('+c.song_id+',this)">🎵 播放 '+esc(c.song_name||'')+'</button>':'';
+      const songTag=c.song_name?'<span class="comment-song" onclick="playCommentSong('+c.song_id+',this)">🎵 '+c.song_name+'</span>':'';
       return '<div class="card">'+
-        '<div class="comment-header"><span class="comment-author">'+(c.is_ai?'🤖 ':'')+c.author+'</span>'+(c.song_name?'<span class="comment-song">🎵 '+c.song_name+'</span>':'')+'</div>'+
+        '<div class="comment-header"><span class="comment-author">'+(c.is_ai?'🤖 ':'')+c.author+'</span>'+songTag+'</div>'+
         '<div class="comment-text">'+c.text+'</div>'+
         '<div class="comment-time">'+c.time.slice(0,16)+'</div>'+
         replies+
+        '<div class="comment-actions">'+
+          songBtn+
+          '<div style="flex:1"></div>'+
+        '</div>'+
         '<div style="margin-top:8px;display:flex;gap:4px"><input id="reply-'+c.id+'" placeholder="回复..." style="flex:1;padding:6px;border:1px solid #f8bbd0;border-radius:6px;font-size:0.85em"><button onclick="replyComment('+c.id+')" style="padding:6px 10px;border:none;background:#e91e63;color:white;border-radius:6px;font-size:0.85em;cursor:pointer">回复</button></div>'+
       '</div>';
     }).join('');
@@ -464,10 +550,19 @@ function loadComments(){
 function postComment(){
   const author=document.getElementById('c-author').value.trim();
   const text=document.getElementById('c-text').value.trim();
-  const song_name=document.getElementById('c-song').value.trim();
+  const song_id=parseInt(document.getElementById('c-song-id').value)||0;
+  const song_name=document.getElementById('c-song-name').value.trim();
   if(!author||!text){alert('请输入名字和评论');return;}
-  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id:0,song_name,author,text,is_ai:false})})
-  .then(()=>{document.getElementById('c-text').value='';loadComments();});
+  fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({song_id,song_name,author,text,is_ai:false})})
+  .then(r=>r.json()).then(d=>{
+    if(d.ok){
+      document.getElementById('c-text').value='';
+      clearSelectedSong();
+      loadComments();
+    } else {
+      alert('发表失败: '+(d.message||'未知错误'));
+    }
+  });
 }
 
 function replyComment(id){
@@ -479,13 +574,41 @@ function replyComment(id){
   .then(()=>{input.value='';loadComments();});
 }
 
+// Play song from comment - open in new tab or play inline
+let commentAudio=null;
+function playCommentSong(id,btn){
+  if(!id||id<=0)return;
+  // Try proxy_play
+  const url='/api/proxy_play?id='+id;
+  if(!commentAudio){commentAudio=new Audio();commentAudio.volume=0.8;}
+  if(commentAudio._currentId===id&&!commentAudio.paused){
+    commentAudio.pause();
+    btn.textContent='🎵 播放';
+    return;
+  }
+  commentAudio.src=url;
+  commentAudio._currentId=id;
+  commentAudio.play().then(()=>{
+    btn.textContent='⏸ 暂停';
+    commentAudio.onended=()=>{btn.textContent='🎵 播放';};
+  }).catch(e=>{
+    // If proxy_play fails, try opening in music garden
+    window.open('/#play='+id,'_blank');
+  });
+}
+
+// Hide search results when clicking outside
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.song-search-wrap')){
+    document.getElementById('song-results').style.display='none';
+  }
+});
+
 loadComments();
 setInterval(loadComments,10000);
 </script>
 </body></html>`;
 });
-
-// --- /cookie page (single, no duplicate) ---
 fastify.get('/cookie', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   return `<!DOCTYPE html>
@@ -1104,16 +1227,16 @@ function renderLikedPage() {
   const ids = window._likedIds || [];
   const start = likedPage * LIKED_PAGE_SIZE;
   const pageIds = ids.slice(start, start + LIKED_PAGE_SIZE);
+  // 尝试从SONGS获取歌名（可能不存在）
+  const songsMap = (typeof SONGS !== 'undefined') ? SONGS : [];
   let html = pageIds.map((id, i) => {
-    // 在SONGS里找歌名
-    const s = SONGS.find(s => s.i === id);
+    const s = songsMap.find(x => x.i === id);
     const name = s ? s.n : '歌曲 #' + id;
     const artist = s ? s.a : '';
     return '<div class="song-item">' +
       '<div class="song-idx">' + (start + i + 1) + '</div>' +
       '<div class="song-info"><div class="song-title">' + name + '</div><div class="song-meta">' + artist + '</div></div>' +
       '<div class="song-actions">' +
-        (s ? '<button class="btn-play" onclick="playSong(' + SONGS.indexOf(s) + ')">▶</button>' : '') +
         '<button class="btn-del" onclick="unlikeSong(' + id + ')">💔</button>' +
       '</div></div>';
   }).join('');
