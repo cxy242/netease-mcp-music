@@ -503,8 +503,9 @@ let allSongs=[];
 // Load songs data for search
 fetch('/songs_data.js').then(r=>r.text()).then(t=>{
   try{
-    const m=t.match(/const SONGS = (\[.*\])/s);
-    if(m) allSongs=JSON.parse(m[1]);
+    const start=t.indexOf('[');
+    const end=t.lastIndexOf(']');
+    if(start>=0&&end>start) allSongs=JSON.parse(t.substring(start,end+1));
   }catch(e){console.warn('Songs load failed:',e);}
 }).catch(()=>{});
 
