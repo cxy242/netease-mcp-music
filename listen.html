@@ -140,7 +140,7 @@ body {
   100% { transform: translateX(10%) skewX(5deg); background-position: 100% 50%; }
 }
 
-/* Sakura Petals */
+/* Sakura Petals - Realistic cherry blossom shapes */
 .sakura-petals {
   position: fixed;
   top: 0; left: 0;
@@ -151,33 +151,32 @@ body {
 }
 .petal {
   position: absolute;
-  top: -20px;
+  top: -30px;
   width: var(--size);
   height: var(--size);
   opacity: 0;
   animation: petalFall var(--dur) var(--delay) linear infinite;
 }
+/* Each petal is a single cherry blossom petal shape (teardrop with notch) */
 .petal::before {
   content: '';
   position: absolute;
   width: 100%;
-  height: 50%;
-  top: 0;
-  background: radial-gradient(ellipse at 50% 100%, #ffb7c5 0%, #ff69b4 100%);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  transform: rotate(-30deg);
-  transform-origin: bottom center;
+  height: 100%;
+  background: radial-gradient(ellipse at 30% 30%, #ffd6e0 0%, #ffb7c5 40%, #ff8fa3 100%);
+  border-radius: 80% 0 55% 50% / 55% 0 80% 50%;
+  transform: rotate(-15deg);
+  box-shadow: inset 0 0 3px rgba(255,255,255,0.4);
 }
 .petal::after {
   content: '';
   position: absolute;
   width: 100%;
-  height: 50%;
-  top: 0;
-  background: radial-gradient(ellipse at 50% 100%, #ffb7c5 0%, #ff69b4 100%);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  transform: rotate(30deg);
-  transform-origin: bottom center;
+  height: 100%;
+  background: radial-gradient(ellipse at 70% 30%, #ffd6e0 0%, #ffb7c5 40%, #ff8fa3 100%);
+  border-radius: 0 80% 50% 55% / 0 55% 50% 80%;
+  transform: rotate(15deg);
+  box-shadow: inset 0 0 3px rgba(255,255,255,0.4);
 }
 @keyframes petalFall {
   0% { 
@@ -1104,6 +1103,31 @@ body {
 [data-theme="mint"] .chat-section {
   background: rgba(16,185,129,0.05);
 }
+/* Bouncy buttons in mint theme */
+[data-theme="mint"] .btn {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+[data-theme="mint"] .btn:hover {
+  transform: scale(1.05);
+}
+[data-theme="mint"] .btn:active {
+  transform: scale(0.95);
+}
+[data-theme="mint"] .control-btn {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+[data-theme="mint"] .control-btn:hover {
+  transform: scale(1.2);
+}
+[data-theme="mint"] .avatar {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+[data-theme="mint"] .avatar:hover {
+  transform: scale(1.15);
+}
+[data-theme="mint"] .theme-picker-btn {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
 /* Responsive */
 @media (max-width: 420px) {
@@ -1433,33 +1457,33 @@ function initMintConfetti() {
 function drawPixelCat() {
   const canvas = document.getElementById('pixelCatCanvas');
   const ctx = canvas.getContext('2d');
-  const s = 5; // pixel size
+  const s = 5; // pixel size (20x20 grid = 100x100 canvas)
   
   ctx.clearRect(0, 0, 100, 100);
   
-  // Cat pixel art (20x20 grid)
-  // 0=transparent, 1=black(#111), 2=dark gray(#333), 3=red eyes(#ff1744), 4=pink(#ff69b4), 5=white
+  // Detailed 20x20 pixel art cat
+  // 0=transparent, 1=black(#111), 2=dark gray(#333), 3=red eyes(#ff1744), 4=pink(#ff69b4), 5=white whiskers, 6=dark fur(#222)
   const catData = [
-    [0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0],
-    [0,0,1,4,1,1,0,0,0,0,0,0,1,1,4,1,0,0,0,0],
-    [0,0,1,4,2,1,1,0,0,0,0,1,1,2,4,1,0,0,0,0],
-    [0,0,1,2,2,2,1,1,1,1,1,1,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0],
-    [0,0,1,2,3,3,2,2,2,2,2,2,3,3,2,1,0,0,0,0],
-    [0,0,1,2,3,3,2,2,2,2,2,2,3,3,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,4,2,2,4,2,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,2,4,4,2,2,2,2,2,1,0,0,0,0],
+    [0,0,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0],
+    [0,0,1,4,4,1,0,0,0,0,0,0,0,1,4,4,1,0,0,0],
+    [0,0,1,4,2,1,0,0,0,0,0,0,0,1,2,4,1,0,0,0],
+    [0,0,1,2,2,1,1,1,1,1,1,1,1,1,2,2,1,0,0,0],
+    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+    [0,0,1,2,3,3,3,2,2,2,2,3,3,3,2,2,1,0,0,0],
+    [0,0,1,2,3,6,3,2,2,2,2,3,6,3,2,2,1,0,0,0],
+    [0,0,1,2,2,3,2,2,2,2,2,2,3,2,2,2,1,0,0,0],
+    [0,0,1,2,2,2,2,4,2,2,4,2,2,2,2,2,1,0,0,0],
     [0,5,5,1,2,2,2,2,2,2,2,2,2,2,1,5,5,0,0,0],
     [5,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,5,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
     [0,0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0,0,0,0],
-    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,1,1,1,1,1,1,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,1,0,0,0,0,1,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,1,0,0,0,0,1,2,2,1,1,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0,0,0,0,1,2,2,2,1,1,1,1],
-    [0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,1,2,2,1,1,1,1,2,2,1,0,0,0,0,0,0],
+    [0,0,0,0,1,2,2,1,0,0,1,2,2,1,0,1,1,1,0,0],
+    [0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,2,2,1,1,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0],
   ];
   
   const colors = {
@@ -1468,7 +1492,8 @@ function drawPixelCat() {
     2: '#333',
     3: '#ff1744',
     4: '#ff69b4',
-    5: '#fff'
+    5: '#ffffff',
+    6: '#440000'
   };
   
   for (let y = 0; y < 20; y++) {
@@ -1483,13 +1508,13 @@ function drawPixelCat() {
   
   // Red glow around eyes
   ctx.shadowColor = '#ff1744';
-  ctx.shadowBlur = 8;
-  ctx.fillStyle = 'rgba(255,23,68,0.15)';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = 'rgba(255,23,68,0.12)';
   ctx.beginPath();
-  ctx.arc(4 * s + s, 6 * s + s/2, s * 2.5, 0, Math.PI * 2);
+  ctx.arc(3.5 * s + s, 6 * s, s * 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(12 * s + s, 6 * s + s/2, s * 2.5, 0, Math.PI * 2);
+  ctx.arc(12.5 * s + s, 6 * s, s * 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
 }
@@ -1532,38 +1557,43 @@ function animatePixelCat(timestamp) {
   ctx.save();
   ctx.translate(0, bounceY);
   
-  // Draw cat body
+  // Draw cat body (matching drawPixelCat exactly)
   const catData = [
-    [0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0],
-    [0,0,1,4,1,1,0,0,0,0,0,0,1,1,4,1,0,0,0,0],
-    [0,0,1,4,2,1,1,0,0,0,0,1,1,2,4,1,0,0,0,0],
-    [0,0,1,2,2,2,1,1,1,1,1,1,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,4,2,2,4,2,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,2,4,4,2,2,2,2,2,1,0,0,0,0],
-    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0],
+    [0,0,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0],
+    [0,0,1,4,4,1,0,0,0,0,0,0,0,1,4,4,1,0,0,0],
+    [0,0,1,4,2,1,0,0,0,0,0,0,0,1,2,4,1,0,0,0],
+    [0,0,1,2,2,1,1,1,1,1,1,1,1,1,2,2,1,0,0,0],
+    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+    [0,0,1,2,2,3,2,2,2,2,2,2,3,2,2,2,1,0,0,0],
+    [0,0,1,2,2,2,2,4,2,2,4,2,2,2,2,2,1,0,0,0],
     [0,5,5,1,2,2,2,2,2,2,2,2,2,2,1,5,5,0,0,0],
     [5,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,5,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
     [0,0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0,0,0,0],
-    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,1,1,1,1,1,1,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,1,0,0,0,0,1,2,2,1,0,0,0,0,0],
-    [0,0,0,1,2,2,1,0,0,0,0,1,2,2,1,1,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0,0,0,0,1,2,2,2,1,1,1,1],
-    [0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0],
+    [0,0,0,0,1,2,2,1,1,1,1,2,2,1,0,0,0,0,0,0],
+    [0,0,0,0,1,2,2,1,0,0,1,2,2,1,0,1,1,1,0,0],
+    [0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,2,2,1,1,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0],
   ];
   
-  const colors = { 1: '#111', 2: '#333', 3: '#ff1744', 4: '#ff69b4', 5: '#fff' };
+  const colors = { 1: '#111', 2: '#333', 3: '#ff1744', 4: '#ff69b4', 5: '#fff', 6: '#440000' };
   
   for (let y = 0; y < catData.length; y++) {
     for (let x = 0; x < catData[y].length; x++) {
       let pixel = catData[y][x];
       
-      // Draw eyes
-      if (y === 5 && (x === 4 || x === 5 || x === 12 || x === 13)) {
+      // Draw eyes with blink
+      if (y === 5 && (x === 4 || x === 5 || x === 6 || x === 11 || x === 12 || x === 13)) {
         pixel = catEyeOpen ? 3 : 2;
+      }
+      // Eye pupils (dark centers)
+      if (y === 6 && (x === 5 || x === 12)) {
+        pixel = catEyeOpen ? 6 : 2;
       }
       
       if (pixel !== 0) {
@@ -1576,13 +1606,13 @@ function animatePixelCat(timestamp) {
   // Red glow around eyes
   if (catEyeOpen) {
     ctx.shadowColor = '#ff1744';
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = 'rgba(255,23,68,0.2)';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = 'rgba(255,23,68,0.18)';
     ctx.beginPath();
-    ctx.arc(4.5 * s, 5.5 * s, s * 2, 0, Math.PI * 2);
+    ctx.arc(5 * s, 5.5 * s, s * 2.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(12.5 * s, 5.5 * s, s * 2, 0, Math.PI * 2);
+    ctx.arc(12 * s, 5.5 * s, s * 2.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -1616,13 +1646,61 @@ function initEmojiPicker() {
 
 function openEmojiPicker(target) {
   emojiTarget = target;
-  const picker = document.getElementById('emojiPicker');
+  // 显示选择菜单：emoji还是相册
   const avatar = document.getElementById(target + 'Avatar');
   const rect = avatar.getBoundingClientRect();
   
+  let menu = document.getElementById('avatarMenu');
+  if(!menu) {
+    menu = document.createElement('div');
+    menu.id = 'avatarMenu';
+    menu.style.cssText = 'position:fixed;z-index:9999;background:var(--bg2,#1a1a2e);border:1px solid var(--glass-border,rgba(255,255,255,0.15));border-radius:14px;padding:8px;box-shadow:0 8px 30px rgba(0,0,0,0.4);min-width:160px;display:none';
+    document.body.appendChild(menu);
+  }
+  menu.innerHTML = `
+    <div style="padding:8px 12px;cursor:pointer;font-size:0.9em;border-radius:8px;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="showEmojiGrid()">😊 选择Emoji</div>
+    <div style="padding:8px 12px;cursor:pointer;font-size:0.9em;border-radius:8px;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="pickAvatarImage()">🖼️ 从相册选择</div>
+  `;
+  menu.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
+  menu.style.top = (rect.bottom + 8) + 'px';
+  menu.style.display = 'block';
+  
+  // 点击外部关闭
+  setTimeout(() => {
+    const close = (e) => { if(!menu.contains(e.target) && e.target !== avatar) { menu.style.display='none'; document.removeEventListener('click',close); } };
+    document.addEventListener('click', close);
+  }, 100);
+}
+
+function showEmojiGrid() {
+  document.getElementById('avatarMenu').style.display = 'none';
+  const picker = document.getElementById('emojiPicker');
+  const avatar = document.getElementById(emojiTarget + 'Avatar');
+  const rect = avatar.getBoundingClientRect();
   picker.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
   picker.style.top = (rect.bottom + 8) + 'px';
   picker.classList.add('open');
+}
+
+function pickAvatarImage() {
+  document.getElementById('avatarMenu').style.display = 'none';
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = ev.target.result;
+      const avatar = document.getElementById(emojiTarget + 'Avatar');
+      avatar.innerHTML = '<img src="' + img + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avatar.style.fontSize = '0';
+      showToast('✅ 头像已更新');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
 }
 
 function selectEmoji(emoji) {
