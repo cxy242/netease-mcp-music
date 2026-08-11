@@ -116,6 +116,16 @@ fastify.get('/api/local_audio_list', async () => {
 // 1. STATIC FILES (3 routes)
 // ═════════════════════════════════════════════════════════════════════
 
+// 静态文件：小猫组件
+fastify.get('/cat-mascot.css', async (request, reply) => {
+  reply.type('text/css; charset=utf-8');
+  return readFileSync(join(__dirname, 'cat-mascot.css'), 'utf-8');
+});
+fastify.get('/cat-mascot.js', async (request, reply) => {
+  reply.type('application/javascript; charset=utf-8');
+  return readFileSync(join(__dirname, 'cat-mascot.js'), 'utf-8');
+});
+
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
