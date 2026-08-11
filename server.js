@@ -388,11 +388,16 @@ fastify.post('/api/listen/join', async (request) => {
 });
 
 fastify.post('/api/listen/chat', async (request) => {
-  const { session_id, from, text, is_ai } = request.body || {};
+  const { session_id, from, text, is_ai, song_id, song_name, song_artist, reply_to, image_url } = request.body || {};
   const session = listenSessions[session_id];
   if (!session) return { ok: false, message: '房间不存在' };
-  session.messages.push({ from, text, is_ai: !!is_ai, time: new Date().toISOString() });
-  return { ok: true };
+  const msg = { from, text, is_ai: !!is_ai, time: new Date().toISOString() };
+  if (song_id) { msg.song_id = song_id; msg.song_name = song_name; msg.song_artist = song_artist; }
+  if (reply_to) msg.reply_to = reply_to;
+  if (image_url) msg.image_url = image_url;
+  msg.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+  session.messages.push(msg);
+  return { ok: true, msg_id: msg.id };
 });
 
 fastify.post('/api/listen/song', async (request) => {
@@ -418,6 +423,29 @@ fastify.post('/api/listen/leave', async (request) => {
   session.messages.push({ from: '系统', text: name + ' 离开了一起听', time: new Date().toISOString() });
   if (name === session.host) session.active = false;
   return { ok: true };
+});
+
+// 上传评论图片
+fastify.post('/api/listen/upload_image', async (request) => {
+  try {
+    const data = await request.file();
+    if (!data) return { ok: false, message: 'no file' };
+    const ext = (data.filename || '.jpg').split('.').pop();
+    const fname = Date.now().toString(36) + '_' + Math.random().toString(36).substr(2,4) + '.' + ext;
+    const fpath = join(__dirname, 'uploads', fname);
+    const buffer = await data.toBuffer();
+    writeFileSync(fpath, buffer);
+    return { ok: true, url: '/uploads/' + fname };
+  } catch(e) {
+    return { ok: false, message: e.message };
+  }
+});
+
+// 静态文件：uploads目录
+fastify.get('/uploads/:name', async (request, reply) => {
+  const fpath = join(__dirname, 'uploads', request.params.name);
+  if (!existsSync(fpath)) return reply.status(404).send('Not found');
+  return reply.sendFile(request.params.name, join(__dirname, 'uploads'));
 });
 
 // ═════════════════════════════════════════════════════════════════════
