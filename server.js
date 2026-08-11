@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, createReadStream, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -29,6 +29,22 @@ function getCookieStr() {
 // ─── In-memory stores ────────────────────────────────────────────────
 let commentsDB = [];
 let listenSessions = {};
+
+// ─── Local audio files ──────────────────────────────────────────────
+const LOCAL_AUDIO_DIR = join(__dirname, 'audio');
+let localAudioMap = {};
+try {
+  if (existsSync(LOCAL_AUDIO_DIR)) {
+    const files = readdirSync(LOCAL_AUDIO_DIR);
+    for (const f of files) {
+      const m = f.match(/wy_(\d+)\.flac$/);
+      if (m) localAudioMap[m[1]] = f;
+    }
+    console.log(`[Local Audio] Found ${Object.keys(localAudioMap).length} FLAC files`);
+  }
+} catch (e) {
+  console.warn('[Local Audio] Failed to scan audio dir:', e.message);
+}
 
 const NETEASE_BASE = 'https://music.163.com';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -1556,15 +1572,53 @@ fastify.get('/api/song/play_url', async (request, reply) => {
   }
 });
 
-// 代理播放：服务端获取音频流转发给浏览器（CDN会拦截直接访问）
-// 重定向到CDN URL（浏览器直接请求CDN，服务器IP会被拦截）
+// 本地FLAC音频流（优先使用，绕过CDN封锁）
+fastify.get('/api/local_audio', async (request, reply) => {
+  const { id } = request.query;
+  if (!id) return reply.status(400).send('Missing song id');
+  const filename = localAudioMap[id];
+  if (!filename) return reply.status(404).send('No local audio');
+  const filePath = join(LOCAL_AUDIO_DIR, filename);
+  if (!existsSync(filePath)) return reply.status(404).send('File not found');
+  const stat = statSync(filePath);
+  reply.header('Content-Type', 'audio/flac');
+  reply.header('Content-Length', stat.size);
+  reply.header('Accept-Ranges', 'bytes');
+  reply.header('Cache-Control', 'public, max-age=86400');
+  return reply.send(createReadStream(filePath));
+});
+
+// 兼容路径参数格式 /api/local_audio/12345
+fastify.get('/api/local_audio/:id', async (request, reply) => {
+  const { id } = request.params;
+  const filename = localAudioMap[id];
+  if (!filename) return reply.status(404).send('No local audio');
+  const filePath = join(LOCAL_AUDIO_DIR, filename);
+  if (!existsSync(filePath)) return reply.status(404).send('File not found');
+  const stat = statSync(filePath);
+  reply.header('Content-Type', 'audio/flac');
+  reply.header('Content-Length', stat.size);
+  reply.header('Accept-Ranges', 'bytes');
+  reply.header('Cache-Control', 'public, max-age=86400');
+  return reply.send(createReadStream(filePath));
+});
+
+// 本地音频映射表（前端用来判断哪些歌有本地版本）
+fastify.get('/api/local_audio_map', async (request, reply) => {
+  return localAudioMap;
+});
+
+// 代理播放：优先本地FLAC，fallback到网易云CDN
 fastify.get('/api/proxy_play', async (request, reply) => {
   const { id } = request.query;
   if (!id) return reply.status(400).send('Missing song id');
+  // 优先本地FLAC
+  if (localAudioMap[id]) {
+    return reply.redirect(`/api/local_audio?id=${id}`, 302);
+  }
   try {
     const data = await neteaseApi(`/api/song/enhance/player/url?ids=[${id}]&br=320000`);
     if (data.data && data.data[0] && data.data[0].url) {
-      // 强制HTTPS避免混合内容拦截（浏览器会阻止HTTPS页面加载HTTP音频）
       const url = data.data[0].url.replace(/^http:\/\//, 'https://');
       return reply.redirect(url, 302);
     }
@@ -1627,6 +1681,7 @@ fastify.get('/health', async () => ({
   uid: DEFAULT_UID,
   comments: commentsDB.length,
   sessions: Object.keys(listenSessions).length,
+  local_audio: Object.keys(localAudioMap).length,
 }));
 
 // ═════════════════════════════════════════════════════════════════════
