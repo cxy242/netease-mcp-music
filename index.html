@@ -784,7 +784,9 @@ body.dark-mode .lyrics-header { background: rgba(0,0,0,0.2); }
 
 /* Lyrics body with transform-based scrolling */
 .lyrics-body-wrapper {
-  flex: 1; overflow: hidden; position: relative; z-index: 1;
+  flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; z-index: 1;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 /* Fade mask top and bottom */
 .lyrics-body-wrapper::before,
@@ -3187,14 +3189,25 @@ function playSong(idx) {
 }
 
 function useEmbedPlayer(songId, name, artist) {
-  let frame = document.getElementById('embedPlayer');
-  if(!frame) {
-    frame = document.createElement('iframe');
+  let wrap = document.getElementById('embedWrap');
+  if(!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'embedWrap';
+    wrap.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9998';
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:14px;cursor:pointer;z-index:9999;line-height:1';
+    closeBtn.onclick = () => { wrap.style.display = 'none'; };
+    wrap.appendChild(closeBtn);
+    const frame = document.createElement('iframe');
     frame.id = 'embedPlayer';
-    frame.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:330px;height:100px;border:none;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:9998';
+    frame.style.cssText = 'width:330px;height:100px;border:none;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.2)';
     frame.allow = 'autoplay';
-    document.body.appendChild(frame);
+    wrap.appendChild(frame);
+    document.body.appendChild(wrap);
   }
+  wrap.style.display = '';
+  const frame = wrap.querySelector('iframe');
   frame.src = 'https://music.163.com/outchain/player?type=2&id=' + songId + '&auto=1';
   isPlaying = true;
   document.getElementById('playBtn').textContent = '⏸';
@@ -3695,7 +3708,7 @@ function playRandom() {
 
 function getLuckySong() {
   const playable = [];
-  SONGS.forEach((s, i) => { if(s.u) playable.push(i); });
+  SONGS.forEach((s, i) => { if(s.i) playable.push(i); });
   if(!playable.length) return -1;
   const today = new Date();
   const seed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
@@ -3771,6 +3784,11 @@ function showLyrics() {
   if(!panel) return;
   lyricsVisible = !lyricsVisible;
   panel.classList.toggle('show', lyricsVisible);
+  // 进入歌词时隐藏导航和嵌入播放器
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = lyricsVisible ? 'none' : '';
+  const embedWrap = document.getElementById('embedWrap');
+  if(embedWrap) embedWrap.style.display = lyricsVisible ? 'none' : '';
   if(lyricsVisible && currentIdx >= 0) {
     const s = SONGS[currentIdx];
     if(s) {
@@ -4603,11 +4621,11 @@ function quizNextQuestion(area) {
   }
 
   const numChoices = quizState.difficulty === 'hard' ? 6 : 4;
-  const songsWithUrl = SONGS.filter(s => s.u);
-  if(songsWithUrl.length < numChoices) { area.innerHTML = '<p style="text-align:center">歌曲太少，无法开始</p>'; return; }
+  const songsWithId = SONGS.filter(s => s.i);
+  if(songsWithId.length < numChoices) { area.innerHTML = '<p style="text-align:center">歌曲太少，无法开始</p>'; return; }
 
-  const correctSong = songsWithUrl[Math.floor(Math.random()*songsWithUrl.length)];
-  const otherSongs = songsWithUrl.filter(s => s.n !== correctSong.n);
+  const correctSong = songsWithId[Math.floor(Math.random()*songsWithId.length)];
+  const otherSongs = songsWithId.filter(s => s.n !== correctSong.n);
   shuffle(otherSongs);
   const wrongOptions = otherSongs.slice(0, numChoices - 1);
   let options = [correctSong, ...wrongOptions];
@@ -5025,7 +5043,7 @@ function startPianoFullscreen(songIdx) {
     pianoFsState.running = true;
     pianoFsState.startTime = performance.now() / 1000;
 
-    pianoFsState.songAudio = new Audio(s.u);
+    pianoFsState.songAudio = new Audio('/api/proxy_play?id=' + s.i);
     pianoFsState.songAudio.volume = 0.7;
     pianoFsState.songAudio.play().then(() => {
       pianoFsState.audioPlayed = true;
@@ -5796,7 +5814,7 @@ function renderRecentPlayed() {
       if(!s) return;
       const card = document.createElement('div');
       card.className = 'recent-card';
-      card.onclick = () => { if(s.u) playSong(idx); };
+      card.onclick = () => { if(s.i) playSong(idx); };
       card.innerHTML = '<div class="recent-card-name">' + esc(s.n) + '</div><div class="recent-card-artist">' + esc(s.a) + '</div>';
       list.appendChild(card);
     });
