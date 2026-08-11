@@ -3159,14 +3159,27 @@ function playSong(idx) {
   SFX.pop();
   currentIdx = idx;
 
-  // 立即更新UI（不等fetch）
+  // 立即更新UI
   document.getElementById('nowPlaying').classList.add('show');
   document.getElementById('npTitle').textContent = s.n;
   document.getElementById('npArtist').textContent = s.a;
   document.getElementById('lyricsTitle').textContent = s.a + ' - ' + s.n;
   renderList();
+  if(lyricsVisible) loadLyrics(s.i);
 
-  // 获取播放URL并播放
+  // 优先播放本地保存的音频
+  if(localAudioIds.has(String(s.i))) {
+    audio.src = '/api/local_audio/' + s.i;
+    audio.play().then(() => {
+      isPlaying = true;
+      document.getElementById('playBtn').textContent = '⏸';
+      document.getElementById('npVinyl').classList.add('spin');
+      document.getElementById('npTonearm').classList.add('play');
+    }).catch(e => { console.warn('Local audio play failed:', e); });
+    return;
+  }
+
+  // 没有本地音频 → 从网易云获取URL
   fetch('/api/song/play_url?id=' + s.i)
     .then(r => r.json())
     .then(d => {
@@ -3177,19 +3190,17 @@ function playSong(idx) {
           document.getElementById('playBtn').textContent = '⏸';
           document.getElementById('npVinyl').classList.add('spin');
           document.getElementById('npTonearm').classList.add('play');
-          // 加载歌词
-          if(lyricsVisible) loadLyrics(s.i);
         }).catch(e => {
-          console.warn('audio.play failed:', e);
-          showNeteaseEmbed(s.i, s.n, s.a);
+          console.warn('CDN play failed:', e);
+          showToast('😢 播放失败 · 可上传音频到本地');
         });
       } else {
-        showNeteaseEmbed(s.i, s.n, s.a);
+        showToast('😢 无法获取播放链接');
       }
     })
     .catch(e => {
       console.error('Fetch failed:', e);
-      showNeteaseEmbed(s.i, s.n, s.a);
+      showToast('😢 网络错误');
     });
 
   // Record play
