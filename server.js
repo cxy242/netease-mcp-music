@@ -154,7 +154,20 @@ fastify.get('/api/song/detail', async (request, reply) => {
 fastify.get('/api/playlist/detail', async (request, reply) => {
   const { id } = request.query;
   if (!id) return reply.status(400).send({ error: 'Missing id' });
-  return neteaseApi(`/api/v6/playlist/detail?id=${id}`);
+  const data = await neteaseApi(`/api/v6/playlist/detail?id=${id}`);
+  const playlist = data.playlist || {};
+  const tracks = playlist.tracks || [];
+  const trackIds = (playlist.trackIds || []).map(t => t.id);
+  // 如果API返回的tracks少于trackIds，用song/detail补充
+  if (trackIds.length > tracks.length && trackIds.length > 0) {
+    try {
+      const detailData = await neteaseApi(`/api/song/detail?ids=${JSON.stringify(trackIds.slice(0, 500))}`);
+      if (detailData.songs) {
+        playlist.tracks = detailData.songs;
+      }
+    } catch (e) { /* 降级使用原始tracks */ }
+  }
+  return data;
 });
 
 fastify.get('/api/user/playlist', async (request, reply) => {
