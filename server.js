@@ -471,395 +471,297 @@ fastify.get('/comments', async (request, reply) => {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0d0d1a;color:#e0e0e0;min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+.container{max-width:600px;margin:0 auto;padding:16px}
+.header{text-align:center;padding:24px 0 16px}
+.header h1{font-size:1.5em;background:linear-gradient(135deg,#e91e63,#f06292,#ce93d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.header p{color:rgba(255,255,255,0.4);font-size:0.85em;margin-top:4px}
+.back{display:inline-block;color:#e91e63;text-decoration:none;font-size:0.85em;opacity:0.7;margin-bottom:8px}
+.back:hover{opacity:1}
 
-/* ===== CSS 背景装饰 ===== */
-.bg-deco{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
-/* CSS 音符 */
-.note{position:absolute;font-size:0;animation:noteFloat 8s linear infinite}
-.note::before,.note::after{content:'';position:absolute;background:rgba(233,30,99,0.12);border-radius:50%}
-.note::before{width:12px;height:12px}
-.note::after{width:2px;height:30px;position:absolute;left:10px;bottom:8px;border-radius:1px}
-@keyframes noteFloat{0%{transform:translateY(110vh) rotate(0deg);opacity:0}10%{opacity:0.6}90%{opacity:0.6}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+/* 发布区 */
+.post-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:20px}
+.post-box input,.post-box textarea{width:100%;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:0.9em;outline:none;margin-bottom:10px;font-family:inherit}
+.post-box input:focus,.post-box textarea:focus{border-color:#e91e63}
+.post-box textarea{height:70px;resize:vertical}
+.post-box input::placeholder,.post-box textarea::placeholder{color:rgba(255,255,255,0.3)}
 
-/* CSS 黑胶唱片 */
-.vinyl-deco{position:absolute;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,#1a1a2e 15%,#0d0d1a 16%,#0d0d1a 30%,rgba(233,30,99,0.08) 31%,#0d0d1a 32%,#0d0d1a 48%,rgba(233,30,99,0.05) 49%,#0d0d1a 50%);border:2px solid rgba(233,30,99,0.1);animation:vinylSpin 12s linear infinite}
-.vinyl-deco::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#e91e63}
-@keyframes vinylSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-/* CSS 波形 */
-.wave-deco{position:absolute;bottom:0;left:0;width:200%;height:60px;opacity:0.06}
-.wave-deco::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent,transparent 20px,#e91e63 20px,#e91e63 22px)}
-
-/* ===== 布局 ===== */
-.container{max-width:600px;margin:0 auto;padding:16px;position:relative;z-index:1}
-
-/* ===== 头部 ===== */
-.header{text-align:center;padding:32px 0 24px;position:relative}
-.header h1{font-size:1.6em;background:linear-gradient(135deg,#e91e63,#f06292,#ce93d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;letter-spacing:2px}
-.header p{color:rgba(255,255,255,0.4);font-size:0.85em;margin-top:6px}
-.back-link{display:inline-block;color:#e91e63;text-decoration:none;font-size:0.85em;margin-bottom:12px;opacity:0.7;transition:opacity 0.2s}
-.back-link:hover{opacity:1}
-
-/* ===== 统计栏 ===== */
-.stats-bar{display:flex;justify-content:center;gap:24px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.05)}
-.stat-item{text-align:center}
-.stat-num{font-size:1.2em;font-weight:700;color:#e91e63}
-.stat-label{font-size:0.7em;color:rgba(255,255,255,0.4);margin-top:2px}
-
-/* ===== 发布卡片 ===== */
-.post-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:20px;backdrop-filter:blur(10px)}
-.post-card input,.post-card textarea{width:100%;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:0.9em;outline:none;transition:border-color 0.3s;margin-bottom:10px}
-.post-card input:focus,.post-card textarea:focus{border-color:#e91e63}
-.post-card textarea{height:70px;resize:vertical;font-family:inherit}
-.post-card input::placeholder,.post-card textarea::placeholder{color:rgba(255,255,255,0.3)}
-
-/* 歌曲搜索 */
-.song-search-wrap{position:relative;margin-bottom:10px}
-.song-results{position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:none}
-.song-result{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;display:flex;align-items:center;gap:10px}
-.song-result:hover{background:rgba(233,30,99,0.1)}
-.song-result:last-child{border-bottom:none}
-.song-result-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#e91e63,#f06292);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.song-result-icon::after{content:'';width:0;height:0;border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
-.song-result-info{flex:1;min-width:0}
-.song-result-name{font-weight:600;font-size:0.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.song-result-artist{font-size:0.75em;color:rgba(255,255,255,0.4)}
-
-/* 已选歌曲 */
-.selected-song{display:none;padding:10px 14px;background:rgba(233,30,99,0.08);border:1px solid rgba(233,30,99,0.2);border-radius:10px;margin-bottom:10px;align-items:center;gap:8px;font-size:0.85em}
-.selected-song.show{display:flex}
-.selected-song .name{flex:1;font-weight:600;color:#f06292}
-.clear-btn{background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1.1em;padding:4px;transition:color 0.2s}
-.clear-btn:hover{color:#e91e63}
+/* 已选歌曲标签 */
+.song-tag{display:none;padding:8px 12px;background:rgba(233,30,99,0.1);border:1px solid rgba(233,30,99,0.2);border-radius:10px;margin-bottom:10px;align-items:center;gap:8px;font-size:0.85em}
+.song-tag.show{display:flex}
+.song-tag .name{flex:1;color:#f06292;font-weight:600}
+.song-tag button{background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:1em}
 
 /* 图片预览 */
-.img-preview{display:none;margin-bottom:10px;position:relative}
-.img-preview.show{display:block}
-.img-preview img{max-width:100%;max-height:120px;border-radius:10px}
-.img-preview .clear-btn{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.img-tag{display:none;margin-bottom:10px;position:relative}
+.img-tag.show{display:block}
+.img-tag img{max-width:100%;max-height:120px;border-radius:10px}
+.img-tag button{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;cursor:pointer}
 
 /* 按钮行 */
-.post-actions{display:flex;gap:8px;align-items:center;margin-top:4px}
-.action-btn{background:none;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:6px 12px;border-radius:8px;font-size:0.8em;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:4px}
-.action-btn:hover{border-color:#e91e63;color:#e91e63}
-.action-btn input[type=file]{display:none}
-.post-btn{margin-left:auto;background:linear-gradient(135deg,#e91e63,#f06292);color:#fff;border:none;padding:8px 20px;border-radius:10px;font-weight:600;font-size:0.9em;cursor:pointer;transition:all 0.2s}
-.post-btn:hover{transform:scale(1.02);box-shadow:0 4px 15px rgba(233,30,99,0.3)}
-.post-btn:active{transform:scale(0.98)}
+.btn-row{display:flex;gap:8px;align-items:center}
+.btn-row label{background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);padding:6px 12px;border-radius:8px;font-size:0.8em;cursor:pointer}
+.btn-row label:hover{border-color:#e91e63;color:#e91e63}
+.btn-row label input{display:none}
+.btn-row .submit{margin-left:auto;background:linear-gradient(135deg,#e91e63,#f06292);color:#fff;border:none;padding:8px 20px;border-radius:10px;font-weight:600;font-size:0.9em;cursor:pointer}
+.btn-row .submit:hover{box-shadow:0 4px 15px rgba(233,30,99,0.3)}
 
-/* ===== 评论卡片 ===== */
-.comment-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin-bottom:12px;transition:border-color 0.3s}
-.comment-card:hover{border-color:rgba(233,30,99,0.2)}
-.comment-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.comment-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#9c27b0);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85em;color:#fff;flex-shrink:0}
-.comment-meta{flex:1;min-width:0}
-.comment-author{font-weight:700;font-size:0.95em;color:#f8bbd0}
-.comment-time{font-size:0.7em;color:rgba(255,255,255,0.3);margin-top:2px}
-.comment-text{color:rgba(255,255,255,0.85);line-height:1.7;font-size:0.9em;margin-bottom:10px}
-.comment-img{max-width:100%;max-height:200px;border-radius:10px;margin-bottom:10px;cursor:pointer}
+/* 歌曲选择弹窗 */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:100;justify-content:center;align-items:flex-end}
+.modal-overlay.show{display:flex}
+.modal{background:#1a1a2e;width:100%;max-width:600px;max-height:70vh;border-radius:20px 20px 0 0;padding:20px;overflow-y:auto}
+.modal h3{text-align:center;margin-bottom:16px;color:#f06292}
+.modal input{width:100%;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:0.95em;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:#e91e63}
+.modal-list{max-height:50vh;overflow-y:auto}
+.modal-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;cursor:pointer;transition:background 0.2s}
+.modal-item:hover{background:rgba(233,30,99,0.1)}
+.modal-item .icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#e91e63,#9c27b0);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-item .icon::after{content:'';width:0;height:0;border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
+.modal-item .info{flex:1;min-width:0}
+.modal-item .info .n{font-weight:600;font-size:0.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-item .info .a{font-size:0.75em;color:rgba(255,255,255,0.4)}
+.modal-close{display:block;margin:16px auto 0;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px 30px;border-radius:10px;font-size:0.9em;cursor:pointer}
 
-/* 评论中的歌曲卡片 */
-.comment-song-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(233,30,99,0.06);border:1px solid rgba(233,30,99,0.12);border-radius:10px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
-.comment-song-card:hover{background:rgba(233,30,99,0.12);transform:translateX(4px)}
-.comment-song-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#f06292);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
-.comment-song-icon::before{content:'';width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.8);position:absolute}
-.comment-song-icon::after{content:'';width:4px;height:4px;border-radius:50%;background:#fff;position:absolute}
-.comment-song-info{flex:1;min-width:0}
-.comment-song-name{font-weight:600;font-size:0.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.comment-song-artist{font-size:0.7em;color:rgba(255,255,255,0.4)}
-.comment-song-play{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#e91e63,#f06292);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.2s}
-.comment-song-play::after{content:'';width:0;height:0;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
-.comment-song-card:hover .comment-song-play{transform:scale(1.1)}
+/* 评论卡片 */
+.cmt{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin-bottom:12px}
+.cmt-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cmt-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#9c27b0);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85em;color:#fff;flex-shrink:0}
+.cmt-meta{flex:1}
+.cmt-name{font-weight:700;font-size:0.95em;color:#f8bbd0}
+.cmt-time{font-size:0.7em;color:rgba(255,255,255,0.3)}
+.cmt-text{color:rgba(255,255,255,0.85);line-height:1.7;font-size:0.9em;margin-bottom:8px}
+.cmt-img{max-width:100%;max-height:200px;border-radius:10px;margin-bottom:8px;cursor:pointer}
+.cmt-song{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(233,30,99,0.06);border:1px solid rgba(233,30,99,0.12);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.cmt-song:hover{background:rgba(233,30,99,0.12)}
+.cmt-song .s-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#e91e63,#f06292);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.cmt-song .s-icon::before{content:'';width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.8);position:absolute}
+.cmt-song .s-icon::after{content:'';width:4px;height:4px;border-radius:50%;background:#fff;position:absolute}
+.cmt-song .s-info{flex:1;min-width:0}
+.cmt-song .s-info .n{font-weight:600;font-size:0.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmt-song .s-info .a{font-size:0.7em;color:rgba(255,255,255,0.4)}
+.cmt-song .s-play{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#e91e63,#f06292);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cmt-song .s-play::after{content:'';width:0;height:0;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+.cmt-song:hover .s-play{transform:scale(1.1)}
+.cmt-foot{display:flex;gap:16px;margin-top:6px}
+.cmt-act{font-size:0.75em;color:rgba(255,255,255,0.3);cursor:pointer;transition:color 0.2s}
+.cmt-act:hover{color:#e91e63}
+.cmt-act.on{color:#e91e63}
 
-/* 评论操作栏 */
-.comment-footer{display:flex;gap:16px;margin-top:8px}
-.comment-action{font-size:0.75em;color:rgba(255,255,255,0.3);cursor:pointer;transition:color 0.2s;display:flex;align-items:center;gap:4px}
-.comment-action:hover{color:#e91e63}
-.comment-action.liked{color:#e91e63}
-
-/* 回复区域 */
+/* 回复 */
 .replies{margin-top:10px;padding-left:12px;border-left:2px solid rgba(233,30,99,0.15)}
-.reply-item{padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:6px;font-size:0.85em}
-.reply-author{color:#f06292;font-weight:600;font-size:0.8em}
-.reply-text{color:rgba(255,255,255,0.7);margin-top:2px;line-height:1.5}
-.reply-time{font-size:0.65em;color:rgba(255,255,255,0.2);margin-top:2px}
+.rep{padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:6px;font-size:0.85em}
+.rep .r-name{color:#f06292;font-weight:600;font-size:0.8em}
+.rep .r-text{color:rgba(255,255,255,0.7);margin-top:2px}
+.rep .r-time{font-size:0.65em;color:rgba(255,255,255,0.2);margin-top:2px}
+.rep-box{display:none;margin-top:10px;gap:6px;align-items:center}
+.rep-box.show{display:flex}
+.rep-box input{flex:1;padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e0e0e0;font-size:0.85em;outline:none}
+.rep-box input:focus{border-color:#e91e63}
+.rep-box button{background:#e91e63;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:0.8em;cursor:pointer}
 
-/* 回复输入框 */
-.reply-input-wrap{display:none;margin-top:10px;gap:6px;align-items:center}
-.reply-input-wrap.show{display:flex}
-.reply-input-wrap input{flex:1;padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e0e0e0;font-size:0.85em;outline:none}
-.reply-input-wrap input:focus{border-color:#e91e63}
-.reply-send-btn{background:#e91e63;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:0.8em;cursor:pointer}
+/* 统计 */
+.stats{display:flex;justify-content:center;gap:24px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.05)}
+.stats .s{text-align:center}
+.stats .s .n{font-size:1.2em;font-weight:700;color:#e91e63}
+.stats .s .l{font-size:0.7em;color:rgba(255,255,255,0.4);margin-top:2px}
 
-/* 空状态 */
-.empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3)}
-.empty-icon{font-size:3em;margin-bottom:12px;opacity:0.3}
+.empty{text-align:center;padding:40px;color:rgba(255,255,255,0.3)}
 
-/* CSS 装饰 - 唱片机 */
-.css-record-player{position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,#1a1a2e 20%,#e91e63 21%,#e91e63 22%,#1a1a2e 23%);border:2px solid rgba(233,30,99,0.2);z-index:0;animation:vinylSpin 8s linear infinite;opacity:0.15}
-.css-record-player::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:#e91e63}
-
-/* 滚动条 */
 ::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(233,30,99,0.3);border-radius:2px}
 </style>
 </head>
 <body>
-
-<!-- 背景装饰 -->
-<div class="bg-deco">
-  <div class="note" style="left:10%;animation-delay:0s;animation-duration:10s"></div>
-  <div class="note" style="left:30%;animation-delay:2s;animation-duration:12s"></div>
-  <div class="note" style="left:55%;animation-delay:4s;animation-duration:9s"></div>
-  <div class="note" style="left:75%;animation-delay:1s;animation-duration:11s"></div>
-  <div class="note" style="left:90%;animation-delay:3s;animation-duration:10s"></div>
-  <div class="vinyl-deco" style="top:15%;left:5%;opacity:0.08"></div>
-  <div class="vinyl-deco" style="top:60%;right:3%;width:40px;height:40px;opacity:0.06;animation-duration:16s;animation-direction:reverse"></div>
-</div>
-<div class="css-record-player"></div>
-
 <div class="container">
-  <a href="/" class="back-link">← 返回音乐花园</a>
-  <div class="header">
-    <h1>评论广场</h1>
-    <p>分享你对每一首歌的感受</p>
+  <a href="/" class="back">← 返回音乐花园</a>
+  <div class="header"><h1>评论广场</h1><p>分享你对每一首歌的感受</p></div>
+
+  <div class="stats">
+    <div class="s"><div class="n" id="statCmt">0</div><div class="l">评论</div></div>
+    <div class="s"><div class="n" id="statSong">0</div><div class="l">歌曲</div></div>
+    <div class="s"><div class="n" id="statUser">0</div><div class="l">用户</div></div>
   </div>
 
-  <!-- 统计栏 -->
-  <div class="stats-bar">
-    <div class="stat-item"><div class="stat-num" id="totalComments">0</div><div class="stat-label">评论</div></div>
-    <div class="stat-item"><div class="stat-num" id="totalSongs">0</div><div class="stat-label">歌曲</div></div>
-    <div class="stat-item"><div class="stat-num" id="totalUsers">0</div><div class="stat-label">用户</div></div>
-  </div>
-
-  <!-- 发布卡片 -->
-  <div class="post-card">
+  <div class="post-box">
     <input id="c-author" placeholder="你的名字" maxlength="20">
-    <div class="song-search-wrap">
-      <input class="song-search" id="c-song-search" placeholder="搜索歌曲..." oninput="searchSongs(this.value)" autocomplete="off">
-      <div class="song-results" id="song-results"></div>
+    <div class="song-tag" id="songTag">
+      <span>🎵</span>
+      <span class="name" id="songTagName"></span>
+      <button onclick="clearSong()">✕</button>
     </div>
-    <div class="selected-song" id="selected-song">
-      <span style="font-size:1.1em">🎵</span>
-      <span class="name" id="selected-song-name"></span>
-      <button class="clear-btn" onclick="clearSelectedSong()">✕</button>
-    </div>
-    <input id="c-song-id" type="hidden" value="0">
-    <input id="c-song-name" type="hidden" value="">
-    <div class="img-preview" id="img-preview">
-      <img id="c-img-preview">
-      <button class="clear-btn" onclick="clearImg()">✕</button>
+    <div class="img-tag" id="imgTag">
+      <img id="imgPreview">
+      <button onclick="clearImg()">✕</button>
     </div>
     <textarea id="c-text" placeholder="写下你的感想..."></textarea>
-    <div class="post-actions">
-      <label class="action-btn" title="添加图片">
-        <input type="file" id="c-img-input" accept="image/*" onchange="handleImg(this.files[0])">
-        📷 图片
-      </label>
-      <button class="post-btn" onclick="postComment()">发布评论</button>
+    <div class="btn-row">
+      <button onclick="openSongPicker()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);padding:6px 12px;border-radius:8px;font-size:0.8em;cursor:pointer">🎵 选歌</button>
+      <label>📷 图片<input type="file" id="imgInput" accept="image/*" onchange="pickImg(this.files[0])"></label>
+      <button class="submit" onclick="postComment()">发布评论</button>
     </div>
   </div>
 
-  <!-- 评论列表 -->
-  <div id="comments-list"></div>
+  <div id="cmtList"></div>
+</div>
+
+<!-- 歌曲选择弹窗 -->
+<div class="modal-overlay" id="songModal">
+  <div class="modal">
+    <h3>选择歌曲</h3>
+    <input id="songSearchInput" placeholder="输入歌名或歌手..." oninput="doSongSearch(this.value)">
+    <div class="modal-list" id="songList"></div>
+    <button class="modal-close" onclick="closeSongPicker()">取消</button>
+  </div>
 </div>
 
 <script>
-const saved=localStorage.getItem('draw-player')||localStorage.getItem('playerName')||'';
-if(saved)document.getElementById('c-author').value=saved;
-
-let _commentImgUrl='';
 let allSongs=[];
+let _selSongId=0,_selSongName='',_imgUrl='';
 let searchTimer=null;
 
-// 加载歌曲数据
+const saved=localStorage.getItem('draw-player')||'';
+if(saved)document.getElementById('c-author').value=saved;
+
+// 加载歌曲
 fetch('/songs_data.js').then(r=>r.text()).then(t=>{
-  try{
-    const s=t.indexOf('['),e=t.lastIndexOf(']');
-    if(s>=0&&e>s) allSongs=JSON.parse(t.substring(s,e+1));
-  }catch(e){}
+  try{const s=t.indexOf('['),e=t.lastIndexOf(']');if(s>=0&&e>s)allSongs=JSON.parse(t.substring(s,e+1));}catch(e){}
 }).catch(()=>{});
 
-// 歌曲搜索
-function searchSongs(q){
+// 打开/关闭歌曲选择
+function openSongPicker(){
+  document.getElementById('songModal').classList.add('show');
+  document.getElementById('songSearchInput').value='';
+  document.getElementById('songSearchInput').focus();
+  document.getElementById('songList').innerHTML='<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">输入歌名搜索...</div>';
+}
+function closeSongPicker(){
+  document.getElementById('songModal').classList.remove('show');
+}
+
+// 搜索歌曲
+function doSongSearch(q){
   clearTimeout(searchTimer);
-  const results=document.getElementById('song-results');
-  if(!q.trim()){results.style.display='none';return;}
+  const list=document.getElementById('songList');
+  if(!q.trim()){list.innerHTML='<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">输入歌名搜索...</div>';return;}
   searchTimer=setTimeout(()=>{
     const ql=q.toLowerCase().trim();
-    const matched=allSongs.filter(s=>{
-      return((s.n||'').toLowerCase().includes(ql)||(s.a||'').toLowerCase().includes(ql));
-    }).slice(0,8);
-    if(!matched.length){results.style.display='none';return;}
-    results.innerHTML=matched.map(s=>
-      '<div class="song-result" onclick="selectSong('+s.i+',\\''+esc(s.n)+'\\',\\''+esc(s.a)+'\\')">'+
-      '<div class="song-result-icon"></div>'+
-      '<div class="song-result-info"><div class="song-result-name">'+s.n+'</div>'+
-      '<div class="song-result-artist">'+s.a+'</div></div></div>'
+    const matched=allSongs.filter(s=>((s.n||'').toLowerCase().includes(ql)||(s.a||'').toLowerCase().includes(ql))).slice(0,10);
+    if(!matched.length){list.innerHTML='<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">没有找到</div>';return;}
+    list.innerHTML=matched.map(s=>
+      '<div class="modal-item" onclick="pickSong('+s.i+',this)" data-name="'+(s.n||'').replace(/"/g,'&quot;')+'" data-artist="'+(s.a||'').replace(/"/g,'&quot;')+'">'+
+      '<div class="icon"></div><div class="info"><div class="n">'+s.n+'</div><div class="a">'+s.a+'</div></div></div>'
     ).join('');
-    results.style.display='';
   },200);
 }
 
-function esc(s){return(s||'').replace(/'/g,"\\\\'").replace(/"/g,'&quot;');}
-
-function selectSong(id,name,artist){
-  document.getElementById('c-song-id').value=id;
-  document.getElementById('c-song-name').value=name;
-  document.getElementById('selected-song-name').textContent=artist+' - '+name;
-  document.getElementById('selected-song').classList.add('show');
-  document.getElementById('c-song-search').value='';
-  document.getElementById('song-results').style.display='none';
+// 选择歌曲
+function pickSong(id,el){
+  _selSongId=id;
+  _selSongName=el.dataset.name;
+  const artist=el.dataset.artist;
+  document.getElementById('songTagName').textContent=artist+' - '+_selSongName;
+  document.getElementById('songTag').classList.add('show');
+  closeSongPicker();
+}
+function clearSong(){
+  _selSongId=0;_selSongName='';
+  document.getElementById('songTag').classList.remove('show');
 }
 
-function clearSelectedSong(){
-  document.getElementById('c-song-id').value='0';
-  document.getElementById('c-song-name').value='';
-  document.getElementById('selected-song').classList.remove('show');
-}
-
-// 图片上传
-async function handleImg(file){
+// 图片
+async function pickImg(file){
   if(!file)return;
   const fd=new FormData();fd.append('file',file);
   try{
     const r=await fetch('/api/listen/upload_image',{method:'POST',body:fd});
     const d=await r.json();
-    if(d.ok){
-      _commentImgUrl=d.url;
-      document.getElementById('c-img-preview').src=d.url;
-      document.getElementById('img-preview').classList.add('show');
-    }
-  }catch(e){alert('图片上传失败');}
+    if(d.ok){_imgUrl=d.url;document.getElementById('imgPreview').src=d.url;document.getElementById('imgTag').classList.add('show');}
+  }catch(e){alert('上传失败');}
 }
-function clearImg(){
-  _commentImgUrl='';
-  document.getElementById('img-preview').classList.remove('show');
-  document.getElementById('c-img-input').value='';
-}
+function clearImg(){_imgUrl='';document.getElementById('imgTag').classList.remove('show');document.getElementById('imgInput').value='';}
 
-// 发布评论
+// 发布
 function postComment(){
   const author=document.getElementById('c-author').value.trim();
   const text=document.getElementById('c-text').value.trim();
-  const song_id=parseInt(document.getElementById('c-song-id').value)||0;
-  const song_name=document.getElementById('c-song-name').value.trim();
   if(!author){alert('请输入名字');return;}
-  if(!text&&!song_id&&!_commentImgUrl){alert('请输入内容');return;}
+  if(!text&&!_selSongId&&!_imgUrl){alert('请输入内容');return;}
   if(author)localStorage.setItem('draw-player',author);
   fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({song_id,song_name,author,text,is_ai:false,image_url:_commentImgUrl})
+    body:JSON.stringify({song_id:_selSongId,song_name:_selSongName,author,text,is_ai:false,image_url:_imgUrl})
   }).then(r=>r.json()).then(d=>{
-    if(d.ok){
-      document.getElementById('c-text').value='';
-      clearSelectedSong();clearImg();
-      loadComments();
-    }else{alert('发布失败: '+(d.message||''));}
+    if(d.ok){document.getElementById('c-text').value='';clearSong();clearImg();loadComments();}
+    else alert('发布失败');
   });
 }
 
 // 回复
-function showReplyInput(id){
-  const wrap=document.getElementById('reply-'+id);
-  if(wrap)wrap.classList.toggle('show');
-}
-function submitReply(id){
-  const input=document.getElementById('reply-text-'+id);
-  const text=input.value.trim();
-  if(!text)return;
+function showRep(id){document.getElementById('rep-'+id).classList.toggle('show');}
+function sendRep(id){
+  const inp=document.getElementById('repIn-'+id);
+  const text=inp.value.trim();if(!text)return;
   const author=document.getElementById('c-author').value.trim()||'匿名';
   fetch('/api/comment/reply',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({comment_id:id,author,text,is_ai:false})
-  }).then(()=>{input.value='';loadComments();});
+  }).then(()=>{inp.value='';loadComments();});
 }
 
 // 点赞
-function toggleLike(id){
-  const el=document.querySelector('[data-like="'+id+'"]');
-  if(!el)return;
-  const liked=el.classList.toggle('liked');
-  const count=parseInt(el.dataset.count||'0')+(liked?1:-1);
-  el.dataset.count=count;
-  el.innerHTML='♥ '+count;
+function toggleLike(el){
+  const on=el.classList.toggle('on');
+  const c=parseInt(el.dataset.c||'0')+(on?1:-1);el.dataset.c=c;el.innerHTML='♥ '+c;
 }
 
-// 播放歌曲
-let commentAudio=null;
-function playCommentSong(id){
-  if(!id||id<=0)return;
-  if(!commentAudio){commentAudio=new Audio();commentAudio.volume=0.8;}
-  commentAudio.src='/api/proxy_play?id='+id;
-  commentAudio.play().catch(e=>{});
+// 播放
+let _audio=null;
+function playSong(id){
+  if(!id)return;
+  if(!_audio){_audio=new Audio();_audio.volume=0.8;}
+  _audio.src='/api/proxy_play?id='+id;_audio.play().catch(()=>{});
 }
 
 // 加载评论
-function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function loadComments(){
   fetch('/api/comments').then(r=>r.json()).then(d=>{
-    const list=document.getElementById('comments-list');
-    if(!d.comments||!d.comments.length){
-      list.innerHTML='<div class="empty"><div class="empty-icon">♪</div><div>还没有评论~<br>来做第一个分享感受的人吧</div></div>';
-      return;
-    }
-    // 统计
+    const list=document.getElementById('cmtList');
+    if(!d.comments||!d.comments.length){list.innerHTML='<div class="empty">还没有评论~<br>来做第一个分享感受的人吧</div>';return;}
     const users=new Set(d.comments.map(c=>c.author));
     const songs=new Set(d.comments.filter(c=>c.song_name).map(c=>c.song_name));
-    document.getElementById('totalComments').textContent=d.comments.length;
-    document.getElementById('totalSongs').textContent=songs.size;
-    document.getElementById('totalUsers').textContent=users.size;
+    document.getElementById('statCmt').textContent=d.comments.length;
+    document.getElementById('statSong').textContent=songs.size;
+    document.getElementById('statUser').textContent=users.size;
 
     list.innerHTML=d.comments.map(c=>{
-      const avatar=(c.author||'?')[0].toUpperCase();
-      const timeStr=c.time?c.time.slice(0,16).replace('T',' '):'';
-      // 歌曲卡片
-      let songHtml='';
+      const av=(c.author||'?')[0].toUpperCase();
+      const t=c.time?c.time.slice(0,16).replace('T',' '):'';
+      let songH='';
       if(c.song_id>0&&c.song_name){
-        songHtml='<div class="comment-song-card" onclick="playCommentSong('+c.song_id+')">'+
-          '<div class="comment-song-icon"></div>'+
-          '<div class="comment-song-info"><div class="comment-song-name">'+escHtml(c.song_name)+'</div>'+
-          '<div class="comment-song-artist">'+escHtml(c.song_name)+'</div></div>'+
-          '<div class="comment-song-play"></div></div>';
+        songH='<div class="cmt-song" onclick="playSong('+c.song_id+')">'+
+          '<div class="s-icon"></div><div class="s-info"><div class="n">'+esc(c.song_name)+'</div></div>'+
+          '<div class="s-play"></div></div>';
       }
-      // 图片
-      let imgHtml='';
-      if(c.image_url) imgHtml='<img class="comment-img" src="'+c.image_url+'" onclick="window.open(this.src)">';
-      // 回复
-      let repliesHtml='';
+      let imgH=c.image_url?'<img class="cmt-img" src="'+c.image_url+'" onclick="window.open(this.src)">':'';
+      let reps='';
       if(c.replies&&c.replies.length){
-        repliesHtml='<div class="replies">'+c.replies.map(r=>
-          '<div class="reply-item"><div class="reply-author">'+escHtml(r.author)+'</div>'+
-          '<div class="reply-text">'+escHtml(r.text)+'</div>'+
-          '<div class="reply-time">'+(r.time?r.time.slice(0,16).replace('T',' '):'')+'</div></div>'
+        reps='<div class="replies">'+c.replies.map(r=>
+          '<div class="rep"><div class="r-name">'+esc(r.author)+'</div><div class="r-text">'+esc(r.text)+'</div><div class="r-time">'+(r.time?r.time.slice(0,16).replace('T',' '):'')+'</div></div>'
         ).join('')+'</div>';
       }
-      return '<div class="comment-card">'+
-        '<div class="comment-head">'+
-        '<div class="comment-avatar">'+avatar+'</div>'+
-        '<div class="comment-meta"><div class="comment-author">'+escHtml(c.author)+'</div>'+
-        '<div class="comment-time">'+timeStr+'</div></div></div>'+
-        songHtml+
-        (c.text?'<div class="comment-text">'+escHtml(c.text)+'</div>':'')+
-        imgHtml+
-        '<div class="comment-footer">'+
-        '<span class="comment-action" data-like="'+c.id+'" data-count="0" onclick="toggleLike('+c.id+')">♡ 0</span>'+
-        '<span class="comment-action" onclick="showReplyInput('+c.id+')">回复</span>'+
-        '</div>'+
-        repliesHtml+
-        '<div class="reply-input-wrap" id="reply-'+c.id+'">'+
-        '<input id="reply-text-'+c.id+'" placeholder="回复 '+escHtml(c.author)+'..." onkeydown="if(event.key===\\'Enter\\')submitReply('+c.id+')">'+
-        '<button class="reply-send-btn" onclick="submitReply('+c.id+')">发送</button>'+
-        '</div>'+
+      return '<div class="cmt">'+
+        '<div class="cmt-head"><div class="cmt-avatar">'+av+'</div><div class="cmt-meta"><div class="cmt-name">'+esc(c.author)+'</div><div class="cmt-time">'+t+'</div></div></div>'+
+        songH+(c.text?'<div class="cmt-text">'+esc(c.text)+'</div>':'')+imgH+
+        '<div class="cmt-foot"><span class="cmt-act" data-c="0" onclick="toggleLike(this)">♡ 0</span><span class="cmt-act" onclick="showRep('+c.id+')">回复</span></div>'+
+        reps+
+        '<div class="rep-box" id="rep-'+c.id+'"><input id="repIn-'+c.id+'" placeholder="回复..." onkeydown="if(event.key===\\'Enter\\')sendRep('+c.id+')"><button onclick="sendRep('+c.id+')">发送</button></div>'+
         '</div>';
     }).join('');
   });
 }
 
-// 关闭搜索结果
 document.addEventListener('click',e=>{
-  const sr=document.getElementById('song-results');
-  if(sr&&!e.target.closest('.song-search-wrap'))sr.style.display='none';
+  if(e.target.id==='songModal')closeSongPicker();
 });
 
 loadComments();
