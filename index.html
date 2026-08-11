@@ -3193,13 +3193,14 @@ function showNeteaseEmbed(songId, name, artist) {
   if(!wrap) {
     wrap = document.createElement('div');
     wrap.id = 'embedWrap';
-    wrap.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9998;transition:all 0.3s';
+    wrap.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;transition:all 0.3s;background:rgba(0,0,0,0.6);border-radius:20px;padding:16px;backdrop-filter:blur(10px)';
     wrap.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:12px;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);padding:2px 8px;border-radius:8px">🎵 VIP歌曲 · 请在播放器中登录网易云</span>
-        <button onclick="document.getElementById('embedWrap').style.display='none'" style="width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,0.2);color:#fff;font-size:12px;cursor:pointer">✕</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:13px;color:#fff;font-weight:600">🎵 VIP歌曲播放</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.6)">首次使用需登录网易云账号</span>
+        <button onclick="document.getElementById('embedWrap').style.display='none'" style="margin-left:auto;width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:14px;cursor:pointer">✕</button>
       </div>
-      <iframe id="embedPlayer" style="width:340px;height:110px;border:none;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.3)" allow="autoplay"></iframe>
+      <iframe id="embedPlayer" style="width:360px;height:200px;border:none;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.3)" allow="autoplay"></iframe>
     `;
     document.body.appendChild(wrap);
   }
