@@ -500,7 +500,7 @@ function searchSongs(q){
     }).slice(0,8);
     if(!matched.length){results.style.display='none';return;}
     results.innerHTML=matched.map(s=>
-      '<div class="song-result" onclick="selectSong('+s.i+',\''+esc(s.n)+'\',\''+esc(s.a)+'\')">' +
+      '<div class="song-result" data-id="'+s.i+'" data-name="'+esc(s.n)+'" data-artist="'+esc(s.a)+'" onclick="selectSongFromEl(this)">' +
       '<div><div class="song-result-name">'+s.n+'</div><div class="song-result-artist">'+s.a+'</div></div></div>'
     ).join('');
     results.style.display='';
@@ -509,6 +509,7 @@ function searchSongs(q){
 
 function esc(s){return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 
+function selectSongFromEl(el){selectSong(+el.dataset.id,el.dataset.name,el.dataset.artist);}
 function selectSong(id,name,artist){
   document.getElementById('c-song-id').value=id;
   document.getElementById('c-song-name').value=name;
