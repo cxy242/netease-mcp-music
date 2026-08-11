@@ -302,12 +302,6 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
   display:flex;align-items:center;justify-content:center;font-size:12px;
   color:#fff;flex-shrink:0;transition:transform 0.2s}
 .song-card-mini:hover .song-card-mini-play{transform:scale(1.1)}
-.comment-reply{font-size:11px;opacity:0.6;padding:3px 8px;margin-bottom:4px;
-  border-left:2px solid var(--accent);background:rgba(255,255,255,0.03);border-radius:4px}
-.comment-img{max-width:180px;max-height:120px;border-radius:10px;margin-top:6px;cursor:pointer}
-.comment-actions{display:flex;gap:12px;margin-top:4px;font-size:11px;opacity:0.5}
-.comment-actions span{cursor:pointer;transition:opacity 0.2s}
-.comment-actions span:hover{opacity:1}
 @keyframes msgIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
 
 .chat-input-area{display:flex;gap:8px;padding:10px 0}
@@ -563,35 +557,9 @@ body.theme-mint .input-field:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15)}
   <!-- 评论区 -->
   <div class="chat-section glass-card" style="margin-top:16px">
     <div class="chat-messages" id="chatMessages"></div>
-    <!-- 回复提示 -->
-    <div id="replyIndicator" style="display:none;padding:6px 12px;background:rgba(255,255,255,0.05);border-top:1px solid rgba(255,255,255,0.1);font-size:12px;align-items:center;justify-content:space-between">
-      <span id="replyText" style="opacity:0.7"></span>
-      <button onclick="cancelReply()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">✕</button>
-    </div>
-    <!-- 选歌提示 -->
-    <div id="songIndicator" style="display:none;padding:6px 12px;background:rgba(255,105,180,0.08);border-top:1px solid rgba(255,255,255,0.1);font-size:12px;align-items:center;justify-content:space-between">
-      <span id="songIndicatorText" style="opacity:0.8">🎵 </span>
-      <button onclick="clearSelectedSong()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">✕</button>
-    </div>
-    <!-- 图片预览 -->
-    <div id="imagePreview" style="display:none;padding:6px 12px;border-top:1px solid rgba(255,255,255,0.1)">
-      <div style="position:relative;display:inline-block">
-        <img id="previewImg" style="max-height:80px;border-radius:8px">
-        <button onclick="clearImage()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:11px;cursor:pointer;line-height:1">✕</button>
-      </div>
-    </div>
     <div class="chat-input-area">
-      <button onclick="toggleCommentSongPicker()" style="background:none;border:none;font-size:20px;cursor:pointer;opacity:0.7" title="选择歌曲">🎵</button>
-      <label style="cursor:pointer;font-size:20px;opacity:0.7" title="添加图片">📷
-        <input type="file" id="commentImageInput" accept="image/*" style="display:none" onchange="handleCommentImage(this.files[0])">
-      </label>
-      <input class="input-field" id="chatInput" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendChat()" style="flex:1">
+      <input class="input-field" id="chatInput" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendChat()">
       <button class="chat-send" onclick="sendChat()">➤</button>
-    </div>
-    <!-- 选歌弹窗 -->
-    <div id="commentSongPicker" style="display:none;padding:8px;border-top:1px solid rgba(255,255,255,0.1)">
-      <input class="input-field" id="commentSongSearch" placeholder="搜索歌曲..." oninput="searchCommentSongs(this.value)" style="width:100%;margin-bottom:6px">
-      <div id="commentSongResults" style="max-height:150px;overflow-y:auto"></div>
     </div>
   </div>
 </div>
@@ -916,133 +884,17 @@ document.addEventListener('click',e=>{
   if(sr && !e.target.closest('#songSearch') && !e.target.closest('#songResults')) sr.style.display='none';
 });
 
-// ============ 评论系统 ============
-let _selectedSong = null; // {id, name, artist}
-let _selectedImage = null; // base64 data URL
-let _replyTo = null; // {id, from, text}
-
-// 选歌弹窗
-function toggleCommentSongPicker(){
-  const picker = document.getElementById('commentSongPicker');
-  picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-  if(picker.style.display === 'block') document.getElementById('commentSongSearch').focus();
-}
-function searchCommentSongs(q){
-  const results = document.getElementById('commentSongResults');
-  if(!q.trim()){results.innerHTML='';return;}
-  const ql = q.toLowerCase().trim();
-  const matched = listenSongs.filter(s=> (s.n||'').toLowerCase().includes(ql) || (s.a||'').toLowerCase().includes(ql)).slice(0,6);
-  results.innerHTML = matched.map(s=>
-    '<div style="padding:6px 8px;cursor:pointer;border-radius:6px;display:flex;gap:8px;align-items:center" onclick="selectCommentSong('+s.i+',\''+((s.n||'').replace(/'/g,"\\'"))+'\',\''+((s.a||'').replace(/'/g,"\\'"))+'\')" onmouseover="this.style.background=\'rgba(255,255,255,0.1)\'" onmouseout="this.style.background=\'\'">'+
-    '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.n+'</div>'+
-    '<div style="font-size:11px;opacity:0.6">'+s.a+'</div></div></div>'
-  ).join('');
-}
-function selectCommentSong(id, name, artist){
-  _selectedSong = {id:String(id), name, artist};
-  document.getElementById('commentSongPicker').style.display='none';
-  document.getElementById('commentSongSearch').value='';
-  document.getElementById('commentSongResults').innerHTML='';
-  const indicator = document.getElementById('songIndicator');
-  indicator.style.display='flex';
-  document.getElementById('songIndicatorText').textContent='🎵 '+artist+' - '+name;
-}
-function clearSelectedSong(){
-  _selectedSong = null;
-  document.getElementById('songIndicator').style.display='none';
-}
-
-// 图片上传
-async function handleCommentImage(file){
-  if(!file) return;
-  const fd = new FormData();
-  fd.append('file', file);
-  try{
-    const r = await fetch('/api/listen/upload_image', {method:'POST', body:fd});
-    const d = await r.json();
-    if(d.ok){
-      _selectedImage = d.url;
-      document.getElementById('imagePreview').style.display='block';
-      document.getElementById('previewImg').src = d.url;
-    }
-  }catch(e){showToast('图片上传失败');}
-}
-function clearImage(){
-  _selectedImage = null;
-  document.getElementById('imagePreview').style.display='none';
-  document.getElementById('commentImageInput').value='';
-}
-
-// 回复
-function startReply(msgId, from, text){
-  _replyTo = {id:msgId, from, text};
-  document.getElementById('replyIndicator').style.display='flex';
-  document.getElementById('replyText').textContent='回复 '+from+': '+(text.length>20?text.substr(0,20)+'...':text);
-  document.getElementById('chatInput').focus();
-}
-function cancelReply(){
-  _replyTo = null;
-  document.getElementById('replyIndicator').style.display='none';
-}
-
-// 发送评论
+// ============ CHAT ============
 async function sendChat(){
   const inp = document.getElementById('chatInput');
   const text = inp.value.trim();
-  if(!text && !_selectedSong && !_selectedImage) return;
-  if(!state.sessionId) return;
+  if(!text || !state.sessionId) return;
   inp.value='';
   const from = document.getElementById('nameInput').value.trim()||'匿名';
-  const payload = {session_id:state.sessionId, from, text:text||''};
-  if(_selectedSong){
-    payload.song_id = _selectedSong.id;
-    payload.song_name = _selectedSong.name;
-    payload.song_artist = _selectedSong.artist;
-  }
-  if(_replyTo) payload.reply_to = _replyTo.id;
-  if(_selectedImage) payload.image_url = _selectedImage;
-  await api('chat', payload);
-  // 清除状态
-  clearSelectedSong();
-  clearImage();
-  cancelReply();
-  // 立即刷新
+  await api('chat',{session_id:state.sessionId,from,text});
   pollStatus();
 }
 
-// 渲染评论消息
-function renderMessage(m, isSelf, allMessages){
-  const div = document.createElement('div');
-  div.className='chat-msg '+(isSelf?'self':'other');
-  let html='<div class="msg-from">'+escHtml(m.from)+'</div>';
-  // 回复引用
-  if(m.reply_to && allMessages){
-    const replied = allMessages.find(x=>x.id===m.reply_to);
-    if(replied) html+='<div class="comment-reply">↩ '+escHtml(replied.from)+': '+escHtml((replied.text||'').substr(0,30))+'</div>';
-  }
-  // 文字
-  if(m.text) html+='<div>'+escHtml(m.text)+'</div>';
-  // 歌曲卡片
-  if(m.song_id){
-    html+='<div class="song-card-mini" onclick="playSongFromComment(\''+m.song_id+'\',\''+escHtml(m.song_name||'')+'\',\''+escHtml(m.song_artist||'')+'\')">'+
-      '<div class="song-card-mini-icon">🎵</div>'+
-      '<div class="song-card-mini-info"><div class="song-card-mini-name">'+escHtml(m.song_name||'未知')+'</div>'+
-      '<div class="song-card-mini-artist">'+escHtml(m.song_artist||'')+'</div></div>'+
-      '<div class="song-card-mini-play">▶</div></div>';
-  }
-  // 图片
-  if(m.image_url) html+='<img class="comment-img" src="'+m.image_url+'" onclick="window.open(this.src)">';
-  // 操作按钮
-  html+='<div class="comment-actions">'+
-    '<span onclick="startReply(\''+m.id+'\',\''+escHtml(m.from)+'\',\''+escHtml((m.text||'').replace(/'/g,"\\'"))+'\')">↩ 回复</span>';
-  if(m.song_id) html+='<span onclick="playSongFromComment(\''+m.id+'\',\''+escHtml(m.song_name||'')+'\',\''+escHtml(m.song_artist||'')+'\')">▶ 播放</span>';
-  html+='</div>';
-  div.innerHTML=html;
-  return div;
-}
-function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-// 轮询状态
 async function pollStatus(){
   if(!state.sessionId) return;
   try{
@@ -1059,7 +911,6 @@ async function pollStatus(){
         box.innerHTML='';
         s.messages.forEach(m=>{
           const isSelf = m.from===(state.isHost?'host':'guest');
-          // 系统消息特殊处理
           if(m.from==='系统'){
             const div=document.createElement('div');
             div.className='chat-msg system';
@@ -1067,7 +918,19 @@ async function pollStatus(){
             div.textContent=m.text;
             box.appendChild(div);
           } else {
-            box.appendChild(renderMessage(m, isSelf, s.messages));
+            const div=document.createElement('div');
+            div.className='chat-msg '+(isSelf?'self':'other');
+            let html='<div class="msg-from">'+escHtml(m.from)+'</div>';
+            if(m.text) html+='<div>'+escHtml(m.text)+'</div>';
+            if(m.song_id){
+              html+='<div class="song-card-mini" onclick="playSongFromComment(\''+m.song_id+'\',\''+escHtml(m.song_name||'')+'\',\''+escHtml(m.song_artist||'')+'\')">'+
+                '<div class="song-card-mini-icon">🎵</div>'+
+                '<div class="song-card-mini-info"><div class="song-card-mini-name">'+escHtml(m.song_name||'未知')+'</div>'+
+                '<div class="song-card-mini-artist">'+escHtml(m.song_artist||'')+'</div></div>'+
+                '<div class="song-card-mini-play">▶</div></div>';
+            }
+            div.innerHTML=html;
+            box.appendChild(div);
           }
         });
         box.scrollTop=box.scrollHeight;
@@ -1075,6 +938,7 @@ async function pollStatus(){
     }
   }catch(e){}
 }
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ============ PLAYER CONTROLS ============
 function togglePlay(){
@@ -1185,7 +1049,7 @@ function renderLyrics(container){
     container.appendChild(div);
   }
 }
-// 歌词随歌滚动（只在歌词行变化时触发，避免闪烁）
+// 歌词随歌滚动（只在歌词面板内滚动，不带动整个页面）
 let _lastLyricIdx = -1;
 _listenAudio.addEventListener('timeupdate', function(){
   if(!lyricsVisible || currentLyrics.length===0) return;
@@ -1194,16 +1058,20 @@ _listenAudio.addEventListener('timeupdate', function(){
   for(let i=currentLyrics.length-1;i>=0;i--){
     if(ct >= currentLyrics[i].time){activeIdx=i;break;}
   }
-  if(activeIdx === _lastLyricIdx) return; // 没变化不滚动
+  if(activeIdx === _lastLyricIdx) return;
   _lastLyricIdx = activeIdx;
   const lines = document.querySelectorAll('.lyric-line');
   lines.forEach((el,i)=>{
     if(i===activeIdx){
       el.classList.add('active');
-      // 用平滑滚动，不触发reflow
-      requestAnimationFrame(()=>{
-        el.scrollIntoView({behavior:'smooth',block:'center'});
-      });
+      // 只在歌词面板内滚动，不影响页面
+      const container = el.parentElement;
+      if(container){
+        const elTop = el.offsetTop;
+        const elH = el.offsetHeight;
+        const contH = container.clientHeight;
+        container.scrollTo({top: elTop - contH/2 + elH/2, behavior: 'smooth'});
+      }
     }else{
       el.classList.remove('active');
     }
