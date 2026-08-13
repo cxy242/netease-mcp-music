@@ -667,7 +667,7 @@ body { transition: background 0.5s ease, color 0.3s ease;
   outline: none; margin-bottom: 10px;
 }
 .piano-sel-search:focus { border-color: var(--pink); }
-.piano-sel-list { display: flex; flex-direction: column; gap: 6px; }
+.piano-sel-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; -webkit-overflow-scrolling: touch; max-height: calc(100vh - 200px); }
 .piano-sel-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 14px; border-radius: 12px;
@@ -5426,6 +5426,8 @@ function startPianoFullscreen(songIdx) {
     let t = beatInterval * 2; // start with a short delay
     let beatCount = 0;
     let nextRestAt = 8 + Math.floor(Math.random() * 9); // rest every 8-16 beats
+    // Track the earliest time a tile can appear in each column (prevents overlap)
+    const colLastEnd = new Array(COLS).fill(0);
 
     while(t < duration - beatInterval) {
       // Occasional rest (gap with no tiles)
@@ -5436,17 +5438,42 @@ function startPianoFullscreen(songIdx) {
         continue;
       }
 
-      // Number of dark columns: mostly 1, sometimes 2
-      const numDark = Math.random() < 0.2 ? 2 : 1;
-      const darkCols = [];
-      while(darkCols.length < numDark) {
-        const c = Math.floor(Math.random() * COLS);
-        if(!darkCols.includes(c)) darkCols.push(c);
-      }
-
       // ~18% chance of hold tile
       const isHold = Math.random() < 0.18;
       const holdDuration = isHold ? (0.3 + Math.random() * 0.5) : 0; // 0.3-0.8s
+
+      // Determine candidate dark columns — avoid overlap and adjacent holds
+      let numDark = Math.random() < 0.2 ? 2 : 1;
+      const holdMinGap = 0.3; // minimum gap after hold tile ends
+      const tapMinGap = beatInterval * 0.8; // minimum gap after tap tile
+      const tileOccupied = holdDuration > 0 ? holdDuration + holdMinGap : tapMinGap;
+
+      // Ensure time >= colLastEnd for each chosen column; skip if can't fit
+      const darkCols = [];
+      const shuffled = [0,1,2,3].sort(() => Math.random() - 0.5);
+      for(const c of shuffled) {
+        if(darkCols.length >= numDark) break;
+        // For hold tiles, don't allow in adjacent columns at the same time
+        if(isHold) {
+          const hasAdjacent = darkCols.some(dc => Math.abs(dc - c) === 1);
+          if(hasAdjacent) continue;
+        }
+        if(t >= colLastEnd[c]) {
+          darkCols.push(c);
+        }
+      }
+
+      // If no valid columns found at this time, skip ahead
+      if(darkCols.length === 0) {
+        const minWait = Math.min(...colLastEnd);
+        t = Math.max(t, minWait);
+        continue;
+      }
+
+      // Update colLastEnd for chosen dark columns
+      for(const c of darkCols) {
+        colLastEnd[c] = t + tileOccupied;
+      }
 
       pattern.push({ time: t, darkCols, isHold, holdDuration });
       beatCount++;
@@ -5555,7 +5582,7 @@ function startPianoFullscreen(songIdx) {
         let hitCount = 0;
         for(const tile of pianoFsState.tiles) {
           if(tile.hit || tile.missed || tile.col !== curCol || !tile.dark) continue;
-          const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+          const tileH = tile.tileH || TILE_H;
           if(tile.y + tileH > 0 && tile.y < rect.height) {
             if(tile.type === 'hold') {
               // Start holding instead of instant hit
@@ -5628,7 +5655,7 @@ function startPianoFullscreen(songIdx) {
     for(const tile of pianoFsState.tiles) {
       if(tile.hit || tile.missed || tile.col !== col) continue;
       if(tile.dark) {
-        const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+        const tileH = tile.tileH || TILE_H;
         const dist = Math.abs(tile.y + tileH/2 - H/2);
         if(dist < closestDist) {
           closestDist = dist;
@@ -5678,7 +5705,7 @@ function startPianoFullscreen(songIdx) {
     let hitCount = 0;
     for(const tile of pianoFsState.tiles) {
       if(tile.hit || tile.missed || tile.col !== col || !tile.dark) continue;
-      const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+      const tileH = tile.tileH || TILE_H;
       if(tile.y + tileH > 0 && tile.y < rect.height) {
         if(tile.type === 'hold') {
           // Start holding the hold tile instead of instant hit
@@ -5748,7 +5775,7 @@ function startPianoFullscreen(songIdx) {
       if(mx >= tileLeft - margin && mx <= tileRight + margin) {
         // For dark tiles: find closest one to touch point
         if(tile.dark) {
-          const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+          const tileH = tile.tileH || TILE_H;
           const tileCenterY = tile.y + tileH / 2;
           const dist = Math.abs(my - tileCenterY);
           if(dist < closestDist) {
@@ -5771,7 +5798,7 @@ function startPianoFullscreen(songIdx) {
       }
       // Tap tile: instant score
       closest.hit = true;
-      const tileH = closest.type === 'hold' ? TILE_H * (1 + closest.holdDuration * 2) : TILE_H;
+      const tileH = closest.tileH || TILE_H;
       const dist = Math.abs((closest.y + tileH / 2) - my);
       let points = 10;
       if(dist < tileH * 0.15) {
@@ -5813,16 +5840,29 @@ function startPianoFullscreen(songIdx) {
       const COL_W_ = rect.width / COLS;
       pianoFsState.ripples.push({
         x: tile.col * COL_W_ + COL_W_ / 2,
-        y: tile.y + TILE_H * (1 + tile.holdDuration * 2) / 2,
+        y: tile.y + (tile.tileH || TILE_H) / 2,
         r: 0, maxR: COL_W_ * 1.2, alpha: 0.8
       });
       updatePianoFsUI();
     } else {
-      // Released too early — miss
-      tile.missed = true;
-      pianoFsState.miss++;
-      pianoFsState.combo = 0;
-      SFX.miss();
+      // Released too early — partial score based on hold progress
+      const holdRatio = Math.min(1, elapsed / tile.holdDuration);
+      tile.hit = true;
+      if(holdRatio > 0.3) {
+        // Partial credit — proportional to how long they held
+        const partialBonus = Math.floor((10 + tile.holdDuration * 10) * holdRatio);
+        pianoFsState.score += partialBonus * (1 + pianoFsState.combo * 0.1);
+        pianoFsState.hit++;
+        pianoFsState.combo++;
+        if(pianoFsState.combo > pianoFsState.maxCombo) pianoFsState.maxCombo = pianoFsState.combo;
+        SFX.tileHit();
+      } else {
+        // Too brief — miss
+        tile.missed = true;
+        pianoFsState.miss++;
+        pianoFsState.combo = 0;
+        SFX.miss();
+      }
       updatePianoFsUI();
     }
     pianoFsState.holdTile = null;
@@ -5889,12 +5929,15 @@ function startPianoFullscreen(songIdx) {
         for(let c = 0; c < COLS; c++) {
           const isDark = note.darkCols.includes(c);
           const tileType = isDark && note.isHold ? 'hold' : 'tap';
-          const tileH = tileType === 'hold' ? TILE_H * (1 + note.holdDuration * 2) : TILE_H;
+          // Hold tile height based on holdDuration * base pixelsPerSecond (proportional to fall time)
+          const basePps = (H + TILE_H) / TILE_TRAVEL_TIME;
+          const tileH = tileType === 'hold' ? Math.max(TILE_H, note.holdDuration * basePps) : TILE_H;
           pianoFsState.tiles.push({
             col: c, y: -tileH, dark: isDark, hit: false, missed: false,
             type: tileType,
             holdDuration: tileType === 'hold' ? note.holdDuration : 0,
-            holdProgress: 0, holdStarted: false
+            holdProgress: 0, holdStarted: false,
+            tileH: tileH  // store computed height for consistent rendering
           });
           if(isDark) pianoFsState.totalNotes++;
         }
@@ -5904,7 +5947,7 @@ function startPianoFullscreen(songIdx) {
 
     // Progressive difficulty: speed multiplier increases over time
     const progressRatio = songTime / songDuration;
-    const speedMult = 1.0 + progressRatio * 0.3; // up to 1.3x at end
+    const speedMult = 1.0 + progressRatio * 0.8; // up to 1.8x at end
     const pixelsPerSecond = ((H + TILE_H) / TILE_TRAVEL_TIME) * speedMult * gameSpeedMultiplier;
 
     // Update hold tile progress
@@ -5917,7 +5960,7 @@ function startPianoFullscreen(songIdx) {
     // Move tiles
     pianoFsState.tiles.forEach(t => {
       t.y += pixelsPerSecond * clampDt;
-      const tileH = t.type === 'hold' ? TILE_H * (1 + t.holdDuration * 2) : TILE_H;
+      const tileH = t.tileH || TILE_H;
       // Mark as missed when tile goes off the bottom of screen
       if(t.dark && !t.hit && t.y > H + tileH * 0.5) {
         t.missed = true;
@@ -5935,7 +5978,7 @@ function startPianoFullscreen(songIdx) {
 
     // Remove off-screen tiles (account for variable hold tile heights)
     pianoFsState.tiles = pianoFsState.tiles.filter(t => {
-      const tH = t.type === 'hold' ? TILE_H * (1 + t.holdDuration * 2) : TILE_H;
+      const tH = t.tileH || TILE_H;
       return t.y < H + tH && !t.hit;
     });
 
@@ -5944,7 +5987,7 @@ function startPianoFullscreen(songIdx) {
       const x = t.col * COL_W;
       const pad = 3;
       const rad = 8;
-      const tileH = t.type === 'hold' ? TILE_H * (1 + t.holdDuration * 2) : TILE_H;
+      const tileH = t.tileH || TILE_H;
 
       if(t.hit) {
         ctx.fillStyle = 'rgba(168,230,207,0.6)';
@@ -5991,13 +6034,28 @@ function startPianoFullscreen(songIdx) {
           ctx.stroke();
           ctx.shadowBlur = 0;
 
-          // Progress fill from bottom up
+          // Progress fill from bottom up (clipped to tile bounds)
           if(t.holdProgress > 0) {
             const progH = tileH * t.holdProgress;
-            ctx.fillStyle = 'rgba(168,230,207,0.25)';
+            ctx.save();
+            // Clip to tile bounds
             ctx.beginPath();
-            ctx.roundRect(x + pad, t.y + tileH - pad - progH, COL_W - pad * 2, progH, [rad]);
-            ctx.fill();
+            ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
+            ctx.clip();
+            // Filled progress with gradient
+            const pg = ctx.createLinearGradient(x, t.y + tileH - progH, x, t.y + tileH);
+            pg.addColorStop(0, 'rgba(168,230,207,0.15)');
+            pg.addColorStop(1, 'rgba(168,230,207,0.45)');
+            ctx.fillStyle = pg;
+            ctx.fillRect(x + pad, t.y + tileH - progH, COL_W - pad * 2, progH);
+            // Progress boundary line at current fill level
+            ctx.strokeStyle = 'rgba(168,230,207,0.7)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + pad + 4, t.y + tileH - progH);
+            ctx.lineTo(x + COL_W - pad - 4, t.y + tileH - progH);
+            ctx.stroke();
+            ctx.restore();
           }
 
           // Progress text
@@ -6015,6 +6073,23 @@ function startPianoFullscreen(songIdx) {
           ctx.beginPath();
           ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
           ctx.stroke();
+          // Hold tile: visible boundary markers (top cap, bottom cap, side lines)
+          if(t.type === 'hold') {
+            ctx.setLineDash([4, 3]);
+            ctx.strokeStyle = 'rgba(200,150,255,0.4)';
+            ctx.lineWidth = 1;
+            // Top boundary line
+            ctx.beginPath();
+            ctx.moveTo(x + pad + 4, t.y + pad + 2);
+            ctx.lineTo(x + COL_W - pad - 4, t.y + pad + 2);
+            ctx.stroke();
+            // Bottom boundary line
+            ctx.beginPath();
+            ctx.moveTo(x + pad + 4, t.y + tileH - pad - 2);
+            ctx.lineTo(x + COL_W - pad - 4, t.y + tileH - pad - 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
           ctx.fillStyle = 'rgba(255,255,255,0.5)';
           ctx.font = `${tileH * 0.35}px sans-serif`;
           ctx.textAlign = 'center';
