@@ -7562,15 +7562,19 @@ init();
   <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
 </div>
 <script>
-// Guard: remove duplicate nav-float divs (runs after full DOM parse)
-document.addEventListener('DOMContentLoaded', function(){
-  const navs = document.querySelectorAll('#nav-float');
-  for(let i = 1; i < navs.length; i++) navs[i].remove();
-});
-// Also run immediately in case DOMContentLoaded already fired
+// Guard: keep the nav-float that has userNavBtn, remove others
 (function(){
   const navs = document.querySelectorAll('#nav-float');
-  for(let i = 1; i < navs.length; i++) navs[i].remove();
+  if(navs.length <= 1) return;
+  // Find the one with userNavBtn
+  let keepIdx = -1;
+  for(let i = 0; i < navs.length; i++) {
+    if(navs[i].querySelector('#userNavBtn')) { keepIdx = i; break; }
+  }
+  // If found, remove all others; otherwise keep first
+  for(let i = 0; i < navs.length; i++) {
+    if(i !== (keepIdx >= 0 ? keepIdx : 0)) navs[i].remove();
+  }
 })();
 </script>
 </body>
