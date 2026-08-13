@@ -5547,188 +5547,9 @@ function startPianoFullscreen(songIdx) {
   pianoResizeFn = resizeCanvas;
   window.addEventListener('resize', resizeCanvas);
 
-  // Real audio beat detection using Web Audio API
-  async function detectBeats(songId, duration) {
-    try {
-      // 采样分析：只取前30秒，大幅减少下载和解码时间
-      const sampleDuration = Math.min(30, duration);
-      const sampleBytes = sampleDuration * 128 * 1024; // ~128KB/s for MP3-quality
-      // 8秒超时控制器
-      const fetchCtrl = new AbortController();
-      const fetchTimer = setTimeout(() => fetchCtrl.abort(), 8000);
-      let resp;
-      try {
-        resp = await fetch('/api/proxy_play?id=' + songId, {
-          headers: { 'Range': 'bytes=0-' + sampleBytes }, signal: fetchCtrl.signal
-        });
-      } catch(e) { resp = null; }
-      if(!resp || !resp.ok) {
-        try {
-          resp = await fetch('/api/local_audio/' + songId, {
-            headers: { 'Range': 'bytes=0-' + sampleBytes }, signal: fetchCtrl.signal
-          });
-        } catch(e) { resp = null; }
-      }
-      clearTimeout(fetchTimer);
-      if(!resp || !resp.ok) return null;
-      const arrayBuf = await resp.arrayBuffer();
-      if(arrayBuf.byteLength < 10000) return null;
-      // 超时保护：10秒内完成解码
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const decodePromise = audioCtx.decodeAudioData(arrayBuf.slice(0));
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('decode timeout')), 10000));
-      let audioBuffer;
-      try {
-        audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
-      } catch(e) {
-        audioCtx.close();
-        return null;
-      }
-      audioCtx.close();
 
-      const rawData = audioBuffer.getChannelData(0);
-      const sampleRate = audioBuffer.sampleRate;
-      const windowSize = 1024;
-      const hopSize = 512;
-      const numWindows = Math.floor((rawData.length - windowSize) / hopSize);
-
-      // Calculate RMS energy per window
-      const energies = [];
-      for(let w = 0; w < numWindows; w++) {
-        let sum = 0;
-        const offset = w * hopSize;
-        for(let i = 0; i < windowSize; i++) {
-          const s = rawData[offset + i] || 0;
-          sum += s * s;
-        }
-        energies.push(Math.sqrt(sum / windowSize));
-      }
-
-      // Smooth energies (moving average, 4 windows)
-      const smooth = [];
-      const smoothWin = 4;
-      for(let i = 0; i < energies.length; i++) {
-        let s = 0, cnt = 0;
-        for(let j = Math.max(0, i - smoothWin); j <= Math.min(energies.length - 1, i + smoothWin); j++) {
-          s += energies[j]; cnt++;
-        }
-        smooth.push(s / cnt);
-      }
-
-      // Calculate local average (adaptive threshold) over ~0.5s window
-      const localWin = Math.floor(0.5 * sampleRate / hopSize);
-      const onsets = [];
-      for(let i = 1; i < smooth.length - 1; i++) {
-        // Local average
-        let localSum = 0, localCnt = 0;
-        for(let j = Math.max(0, i - localWin); j <= Math.min(smooth.length - 1, i + localWin); j++) {
-          localSum += smooth[j]; localCnt++;
-        }
-        const localAvg = localSum / localCnt;
-        const threshold = Math.max(localAvg * 1.4, 0.02);
-
-        // Onset: energy spike above local average + rising from previous window
-        if(smooth[i] > threshold && smooth[i] > smooth[i - 1] * 1.2) {
-          const timeSec = (i * hopSize) / sampleRate;
-          // Minimum gap between onsets: 80ms
-          if(onsets.length === 0 || timeSec - onsets[onsets.length - 1] > 0.08) {
-            onsets.push(timeSec);
-          }
-        }
-      }
-
-      // Detect hold candidates: sustained high-energy regions >0.5s
-      const holdCandidates = [];
-      let holdStart = -1;
-      const holdThresh = 0.04;
-      for(let i = 0; i < smooth.length; i++) {
-        const timeSec = (i * hopSize) / sampleRate;
-        if(smooth[i] > holdThresh) {
-          if(holdStart < 0) holdStart = timeSec;
-        } else {
-          if(holdStart >= 0) {
-            const dur = timeSec - holdStart;
-            if(dur > 0.5) {
-              holdCandidates.push({ start: holdStart, duration: dur });
-            }
-            holdStart = -1;
-          }
-        }
-      }
-      // Final region
-      if(holdStart >= 0) {
-        const endT = (smooth.length * hopSize) / sampleRate;
-        if(endT - holdStart > 0.5) {
-          holdCandidates.push({ start: holdStart, duration: endT - holdStart });
-        }
-      }
-
-      // Build pattern from onsets
-      const colLastEnd = new Array(COLS).fill(0);
-      const pattern = [];
-      let holdEndTime = 0;
-      let colCycle = 0; // cycle through columns
-      const tileTravelTime = TILE_TRAVEL_TIME;
-      const minGap = 0.3;
-
-      for(let i = 0; i < onsets.length; i++) {
-        const t = onsets[i];
-        if(t < 0.5 || t > duration - 0.5) continue;
-
-        // Check if this onset falls inside a hold candidate region
-        const holdRegion = holdCandidates.find(hc => t >= hc.start && t <= hc.start + hc.duration);
-        const canHold = t >= holdEndTime && holdRegion && holdRegion.duration > 0.5;
-        const isHold = canHold && Math.random() < 0.25;
-        const holdDuration = isHold ? Math.min(holdRegion.duration, 2.0) : 0;
-
-        // Determine columns
-        let numDark = 1;
-        // If next beat is very close (<0.3s), use 2 columns
-        if(i + 1 < onsets.length && onsets[i + 1] - t < 0.3) {
-          numDark = 2;
-        }
-        if(isHold) numDark = 1;
-
-        const tileOccupied = holdDuration > 0 ? (holdDuration + tileTravelTime + minGap) : (tileTravelTime + 0.2);
-        const darkCols = [];
-
-        if(isHold) {
-          // Pick column with most room
-          let bestCol = colCycle % COLS;
-          for(let c = 0; c < COLS; c++) {
-            if(colLastEnd[c] < colLastEnd[bestCol]) bestCol = c;
-          }
-          if(t >= colLastEnd[bestCol]) {
-            darkCols.push(bestCol);
-            colLastEnd[bestCol] = t + tileOccupied;
-          }
-        } else {
-          const shuffled = [0,1,2,3].sort(() => Math.random() - 0.5);
-          for(const c of shuffled) {
-            if(darkCols.length >= numDark) break;
-            if(t >= colLastEnd[c]) {
-              darkCols.push(c);
-              colLastEnd[c] = t + tileOccupied;
-            }
-          }
-        }
-
-        if(darkCols.length === 0) continue;
-        if(isHold) holdEndTime = t + holdDuration + minGap;
-
-        pattern.push({ time: t, darkCols, isHold, holdDuration });
-        colCycle++;
-      }
-
-      return pattern;
-    } catch(e) {
-      console.warn('Beat detection failed, falling back to generated pattern:', e);
-      return null;
-    }
-  }
-
-  // ============ 10套钢琴块节奏模板 ============
-  // 公共辅助：安全地选取列（避免重叠+长按键冲突）
+  // ============ 20套钢琴块节奏模板 ============
+  // 防重叠辅助：严格检查列占用时间
   function _pickCols(t, numDark, isHold, colLastEnd) {
     const darkCols = [];
     const shuffled = [0,1,2,3].sort(() => Math.random() - 0.5);
@@ -5739,248 +5560,72 @@ function startPianoFullscreen(songIdx) {
     }
     return darkCols;
   }
-  function _tileOccupied(holdDuration, holdMinGap, tapMinGap) {
-    const safeTap = Math.max(tapMinGap, 0.5);
-    const safeHold = Math.max(holdMinGap, 0.5);
-    return holdDuration > 0 ? (holdDuration + TILE_TRAVEL_TIME + safeHold) : (TILE_TRAVEL_TIME + safeTap);
+  function _tileOcc(hd, bi) {
+    // 长按键：占用 = 按键时长 + 下落时间 + 安全间距
+    // 短按键：占用 = 下落时间 + 安全间距（至少0.5s）
+    const gap = Math.max(bi * 0.8, 0.5);
+    return hd > 0 ? (hd + TILE_TRAVEL_TIME + 0.5) : (TILE_TRAVEL_TIME + gap);
   }
-  // 通用模板骨架：保证节奏均匀分布，不稀疏不重叠
-  function _templateBase(duration, BPM, opts) {
+
+  // 通用模板引擎：保证节奏均匀、无重叠
+  function _gen(duration, BPM, opts) {
     const bi = 60 / BPM;
-    const p = [];
-    let t = bi * 1.5;
-    const col = new Array(COLS).fill(0);
-    let he = 0;
-    let bc = 0;
-    const maxRest = opts.maxRestBeats || 2;
-    const holdChance = opts.holdChance || 0.15;
-    const doubleChance = opts.doubleChance || 0.2;
-    const intervalMul = opts.intervalMul || [0.9, 1.1];
-    const restEvery = opts.restEvery || [12, 20];
-    let nextRest = restEvery[0] + Math.floor(Math.random() * (restEvery[1] - restEvery[0]));
+    const p = []; let t = bi * 1.5;
+    const col = [0,0,0,0]; let he = 0; let bc = 0;
+    const mr = opts.maxRest || 2;
+    const hc = opts.holdChance || 0.14;
+    const dc = opts.doubleChance || 0.18;
+    const im = opts.im || [0.9, 1.1];
+    const re = opts.re || [14, 22];
+    let nr = re[0] + Math.floor(Math.random() * (re[1] - re[0]));
     while(t < duration - bi) {
-      // 休息（最多 maxRest 拍）
-      if(bc >= nextRest) {
-        t += bi * (1 + Math.random() * maxRest);
-        bc = 0;
-        nextRest = restEvery[0] + Math.floor(Math.random() * (restEvery[1] - restEvery[0]));
-        if(t >= duration - bi) break;
-      }
-      // 自定义列选取
-      let dc;
-      const canH = t >= he;
-      const isH = canH && Math.random() < holdChance;
-      const hd = isH ? (0.3 + Math.random() * 1.2) : 0;
-      if(opts.pickFn) {
-        dc = opts.pickFn(t, isH, hd, col, bc, duration);
-      } else {
-        const nd = isH ? 1 : (Math.random() < doubleChance ? 2 : 1);
-        dc = _pickCols(t, nd, isH, col);
-      }
-      if(!dc || !dc.length) {
-        t = Math.max(t, Math.min(...col)) + 0.05;
-        continue;
-      }
-      const occ = _tileOccupied(hd, 0.3, bi * 0.8);
-      for(const c of dc) col[c] = t + occ;
-      if(isH) he = t + hd + 0.3;
-      p.push({time: t, darkCols: dc, isHold: isH, holdDuration: hd});
+      if(bc >= nr) { t += bi * (1 + Math.random() * mr); bc = 0; nr = re[0] + Math.floor(Math.random() * (re[1] - re[0])); if(t >= duration - bi) break; }
+      const ch = t >= he;
+      const ih = ch && Math.random() < hc;
+      const hd = ih ? (0.3 + Math.random() * 1.2) : 0;
+      let dc_;
+      if(opts.pickFn) { dc_ = opts.pickFn(t, ih, hd, col, bc, duration, bi); }
+      else { const nd = ih ? 1 : (Math.random() < dc ? 2 : 1); dc_ = _pickCols(t, nd, ih, col); }
+      if(!dc_ || !dc_.length) { t = Math.max(t, Math.min(...col)) + 0.05; continue; }
+      const occ = _tileOcc(hd, bi);
+      for(const c of dc_) col[c] = t + occ;
+      if(ih) he = t + hd + 0.5;
+      p.push({time:t, darkCols:dc_, isHold:ih, holdDuration:hd});
       bc++;
-      const mul = intervalMul[0] + Math.random() * (intervalMul[1] - intervalMul[0]);
-      t += bi * mul;
+      t += bi * (im[0] + Math.random() * (im[1] - im[0]));
     }
     return p;
   }
 
-  // 模板1: 稳定节拍 — 经典匀速
-  function _patSteady(d) { return _templateBase(d, 125 + Math.random()*15, {holdChance:0.15, doubleChance:0.15, restEvery:[14,22]}); }
-
-  // 模板2: 切分音 — 附点节奏，长-短交替
-  function _patSyncopated(d) {
-    return _templateBase(d, 110 + Math.random()*10, {
-      holdChance:0.2, doubleChance:0.2, restEvery:[16,24],
-      intervalMul:[0.7, 1.3], // 更大变化产生swing感
-    });
-  }
-
-  // 模板3: 急速连击 — 快速密集+短休息
-  function _patRapid(d) { return _templateBase(d, 150 + Math.random()*15, {holdChance:0.1, doubleChance:0.3, restEvery:[8,14], maxRestBeats:1.5, intervalMul:[0.85, 1.15]}); }
-
-  // 模板4: 波浪起伏 — 速度正弦波动
-  function _patWave(d) {
-    return _templateBase(d, 115, {
-      holdChance:0.15, restEvery:[16,22],
-      intervalMul:[0.75, 1.25],
-      pickFn: (t, isH, hd, col, bc) => {
-        const phase = (t / d) * Math.PI * 3; // 3个波浪周期
-        const bias = Math.sin(phase); // -1~1
-        // 根据波浪偏向选择列
-        const nd = isH ? 1 : 1;
-        if(bias > 0.3) {
-          // 偏右列
-          const right = [2,3].filter(c => t >= col[c]);
-          if(right.length) return [right[Math.floor(Math.random()*right.length)]];
-        } else if(bias < -0.3) {
-          const left = [0,1].filter(c => t >= col[c]);
-          if(left.length) return [left[Math.floor(Math.random()*left.length)]];
-        }
-        return _pickCols(t, nd, isH, col);
-      }
-    });
-  }
-
-  // 模板5: 瀑布级联 — 列从左→右→左扫过去
-  function _patCascade(d) {
-    return _templateBase(d, 130 + Math.random()*10, {
-      holdChance:0.15, doubleChance:0.15, restEvery:[14,20],
-      pickFn: (t, isH, hd, col, bc) => {
-        const sweep = bc % 8;
-        const dir = Math.floor(bc / 8) % 2; // 0=左→右, 1=右→左
-        const target = dir === 0 ? sweep % 4 : 3 - (sweep % 4);
-        const dc = [];
-        if(t >= col[target]) dc.push(target);
-        if(!isH && Math.random() < 0.2) {
-          const adj = target + (Math.random() < 0.5 ? 1 : -1);
-          if(adj >= 0 && adj < 4 && t >= col[adj]) dc.push(adj);
-        }
-        return dc;
-      }
-    });
-  }
-
-  // 模板6: 爆裂节奏 — 密集爆发+短静默
-  function _patBurst(d) {
-    return _templateBase(d, 140 + Math.random()*15, {
-      holdChance:0.1, doubleChance:0.35, restEvery:[6,10], maxRestBeats:1.5, intervalMul:[0.85, 1.15],
-    });
-  }
-
-  // 模板7: 双键交替 — 每行2个键，对称排列
-  function _patDouble(d) {
-    return _templateBase(d, 120 + Math.random()*15, {
-      holdChance:0.1, restEvery:[16,22],
-      pickFn: (t, isH, hd, col, bc) => {
-        if(isH) return _pickCols(t, 1, true, col);
-        const pair = bc % 2 === 0 ? [0,3] : [1,2];
-        return pair.filter(c => t >= col[c]);
-      }
-    });
-  }
-
-  // 模板8: 随机漫步 — 完全不可预测
-  function _patRandom(d) { return _templateBase(d, 115 + Math.random()*20, {holdChance:0.18, doubleChance:0.25, restEvery:[12,18], intervalMul:[0.7, 1.3]}); }
-
-  // 模板9: 单列密集 — 只用2列快速交替
-  function _patNarrow(d) {
-    const cols = [0,1,2,3].sort(() => Math.random()-0.5).slice(0,2);
-    return _templateBase(d, 135 + Math.random()*15, {
-      holdChance:0.12, restEvery:[14,20], intervalMul:[0.85, 1.15],
-      pickFn: (t, isH, hd, col, bc) => {
-        const target = cols[bc % 2];
-        return t >= col[target] ? [target] : [];
-      }
-    });
-  }
-
-  // 模板10: 渐强加速 — BPM从慢到快
-  function _patCrescendo(d) {
-    const p = []; let t = 1.5;
-    const col = new Array(COLS).fill(0); let he = 0; let bc = 0;
-    while(t < d - 0.3) {
-      const progress = t / d;
-      const BPM = 90 + progress * 120; // 90→210 BPM
-      const bi = 60 / BPM;
-      if(bc % 20 === 0 && bc > 0 && progress < 0.8) { t += bi * 1.5; }
-      const canH = t >= he; const isH = canH && Math.random() < 0.12;
-      const hd = isH ? (0.3 + Math.random() * 0.8) : 0;
-      const nd = isH ? 1 : 1;
-      const dc = _pickCols(t, nd, isH, col);
-      if(!dc.length) { t = Math.max(t, Math.min(...col)) + 0.05; continue; }
-      const occ = _tileOccupied(hd, 0.3, bi * 0.8);
-      for(const c of dc) col[c] = t + occ;
-      if(isH) he = t + hd + 0.3;
-      p.push({time:t, darkCols:dc, isHold:isH, holdDuration:hd});
-      bc++; t += bi * (0.9 + Math.random() * 0.2);
-    }
-    return p;
-  }
+  // --- 20套模板 ---
+  function _p01(d) { return _gen(d, 125+Math.random()*10, {}); } // 稳定节拍
+  function _p02(d) { return _gen(d, 110+Math.random()*10, {holdChance:0.2, im:[0.7,1.3]}); } // 切分音
+  function _p03(d) { return _gen(d, 148+Math.random()*12, {doubleChance:0.3, re:[8,14], maxRest:1.5}); } // 急速连击
+  function _p04(d) { return _gen(d, 120, {im:[0.75,1.25], pickFn:(t,ih,hd,col,bc,dur)=>{ const ph=(t/d)*Math.PI*3; const b=Math.sin(ph); if(b>0.3){const r=[2,3].filter(c=>t>=col[c]); if(r.length)return[r[Math.floor(Math.random()*r.length)]];} if(b<-0.3){const l=[0,1].filter(c=>t>=col[c]); if(l.length)return[l[Math.floor(Math.random()*l.length)]];} return _pickCols(t,ih?1:1,ih,col); }}); } // 波浪
+  function _p05(d) { return _gen(d, 128+Math.random()*8, {pickFn:(t,ih,hd,col,bc)=>{ const s=bc%8, dir=Math.floor(bc/8)%2, tgt=dir===0?s%4:3-(s%4); const dc=[]; if(t>=col[tgt])dc.push(tgt); if(!ih&&Math.random()<0.2){const a=tgt+(Math.random()<0.5?1:-1); if(a>=0&&a<4&&t>=col[a])dc.push(a);} return dc; }}); } // 瀑布级联
+  function _p06(d) { return _gen(d, 138+Math.random()*12, {doubleChance:0.35, re:[6,10], maxRest:1.5}); } // 爆裂节奏
+  function _p07(d) { return _gen(d, 118+Math.random()*12, {holdChance:0.1, pickFn:(t,ih,hd,col,bc)=>{ if(ih)return _pickCols(t,1,true,col); const pr=bc%2===0?[0,3]:[1,2]; return pr.filter(c=>t>=col[c]); }}); } // 双键交替
+  function _p08(d) { return _gen(d, 112+Math.random()*18, {holdChance:0.18, doubleChance:0.25, im:[0.7,1.3]}); } // 随机漫步
+  function _p09(d) { const cs=[0,1,2,3].sort(()=>Math.random()-0.5).slice(0,2); return _gen(d, 132+Math.random()*12, {pickFn:(t,ih,hd,col,bc)=>{const tgt=cs[bc%2]; return t>=col[tgt]?[tgt]:[];}}); } // 单列密集
+  function _p10(d) { return _gen(d, 100, {im:[0.85,1.15], pickFn:(t,ih,hd,col,bc,dur)=>{ return _pickCols(t,ih?1:1,ih,col); }}); } // 渐强(用模板引擎的固定BPM，节奏由im控制)
+  function _p11(d) { return _gen(d, 140+Math.random()*10, {pickFn:(t,ih,hd,col,bc)=>{ const tgt=bc%4; const dc=[]; if(t>=col[tgt])dc.push(tgt); return dc; }}); } // 逐列扫描
+  function _p12(d) { return _gen(d, 115+Math.random()*10, {holdChance:0.25, im:[0.8,1.2]}); } // 长按主打
+  function _p13(d) { return _gen(d, 130+Math.random()*10, {pickFn:(t,ih,hd,col,bc)=>{ if(bc%3===0){const pr=[0,3].filter(c=>t>=col[c]); return pr.length?[pr[0]]:[];} if(bc%3===1){const pr=[1,2].filter(c=>t>=col[c]); return pr.length?[pr[0]]:[];} return _pickCols(t,1,ih,col); }}); } // 左右摇摆
+  function _p14(d) { return _gen(d, 122+Math.random()*8, {pickFn:(t,ih,hd,col,bc,dur)=>{ const phase=Math.sin((t/d)*Math.PI*4)*2; const tgt=Math.round(1.5+phase); const c=Math.max(0,Math.min(3,tgt)); return t>=col[c]?[c]:[]; }}); } // 正弦漂移
+  function _p15(d) { return _gen(d, 145+Math.random()*10, {doubleChance:0.4, re:[8,12], maxRest:1.5, im:[0.85,1.15]}); } // 双键风暴
+  function _p16(d) { return _gen(d, 108+Math.random()*8, {holdChance:0.2, pickFn:(t,ih,hd,col,bc)=>{ const tgt=[0,1,2,3,3,2,1,0][bc%8]; return t>=col[tgt]?[tgt]:[]; }}); } // 锯齿波
+  function _p17(d) { return _gen(d, 125+Math.random()*10, {pickFn:(t,ih,hd,col,bc)=>{ if(bc%4<2){const c=bc%2===0?0:3; return t>=col[c]?[c]:[];} return _pickCols(t,1,ih,col); }}); } // 边缘打击
+  function _p18(d) { return _gen(d, 135+Math.random()*10, {pickFn:(t,ih,hd,col,bc)=>{ const pair=bc%2===0?[0,1]:[2,3]; return pair.filter(c=>t>=col[c]).slice(0,1); }}); } // 半场切换
+  function _p19(d) { return _gen(d, 118+Math.random()*8, {im:[0.6,1.4], holdChance:0.18}); } // 自由散拍
+  function _p20(d) { return _gen(d, 130+Math.random()*10, {pickFn:(t,ih,hd,col,bc)=>{ const r=Math.floor(Math.random()*4); const dc=[]; if(t>=col[r])dc.push(r); const r2=(r+(Math.random()<0.5?1:3))%4; if(!ih&&Math.random()<0.25&&t>=col[r2])dc.push(r2); return dc; }}); } // 随机冲击
 
   // 随机选一套模板
   function generatePattern(duration) {
-    const templates = [_patSteady, _patSyncopated, _patRapid, _patWave, _patCascade, _patBurst, _patDouble, _patRandom, _patNarrow, _patCrescendo];
-    const names = ['稳定节拍', '切分音', '急速连击', '波浪起伏', '瀑布级联', '爆裂节奏', '双键交替', '随机漫步', '单列密集', '渐强加速'];
-    const idx = Math.floor(Math.random() * templates.length);
-    const result = templates[idx](duration);
-    // 确保至少有一些按键
-    if(result.length < 5) return _patSteady(duration);
-    return result;
+    const tpls = [_p01,_p02,_p03,_p04,_p05,_p06,_p07,_p08,_p09,_p10,_p11,_p12,_p13,_p14,_p15,_p16,_p17,_p18,_p19,_p20];
+    const r = tpls[Math.floor(Math.random() * tpls.length)](duration);
+    return r.length < 5 ? _p01(duration) : r;
   }
 
-  let pattern = generatePattern(s.d || 120);
-  let patternIdx = 0;
-
-  // Close / exit handlers
-  function doClose() { closePianoFullscreen(); }
-  document.getElementById('pianoFsBack').onclick = doClose;
-  document.getElementById('pianoFsExit').onclick = doClose;
-
-  // Start button — game starts immediately, beat detection runs in background
-  document.getElementById('pianoFsStartBtn').onclick = async () => {
-    SFX.gameStart();
-
-    // Hide start screen and start game IMMEDIATELY with generated pattern
-    document.getElementById('pianoFsStart').style.display = 'none';
-    pianoFsState.running = true;
-    pianoFsState.startTime = performance.now() / 1000;
-
-    // Start audio — 3-level fallback: local → proxy → play_url (CDN)
-    pianoFsState.songAudio = new Audio();
-    pianoFsState.songAudio.volume = 0.7;
-    const pAudio = pianoFsState.songAudio;
-    pAudio.onerror = () => {
-      // Level 3: try direct CDN via play_url API
-      fetch('/api/song/play_url?id=' + s.i).then(r => r.json()).then(d => {
-        if(d.ok && d.url) { pAudio.src = d.url; pAudio.play().catch(()=>{}); }
-      }).catch(() => {});
-    };
-    if(localAudioIds.has(String(s.i))) {
-      // Level 1: local audio
-      pAudio.src = '/api/local_audio/' + s.i;
-      pAudio.play().then(() => { pianoFsState.audioPlayed = true; })
-        .catch(() => { pianoFsState.audioPlayed = true; });
-    } else {
-      // Level 2: proxy (302 redirect to local or CDN)
-      pAudio.src = '/api/proxy_play?id=' + s.i;
-      pAudio.play().then(() => { pianoFsState.audioPlayed = true; })
-        .catch(() => { pianoFsState.audioPlayed = true; });
-    }
-
-    pianoRafId = requestAnimationFrame(pianoGameLoop);
-    pianoFsState.rafId = pianoRafId;
-
-    // Beat detection with user feedback
-    const _statusEl = document.createElement('div');
-    _statusEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(0,0,0,0.85);color:#fff;padding:12px 28px;border-radius:16px;font-size:16px;pointer-events:none;transition:opacity 0.5s;letter-spacing:1px;box-shadow:0 4px 20px rgba(0,0,0,0.4)';
-    _statusEl.textContent = '🎵 节奏识别中...';
-    document.body.appendChild(_statusEl);
-    detectBeats(s.i, s.d || 120).then(detected => {
-      if(detected && detected.length > 2) {
-        pattern = detected;
-        patternIdx = 0;
-        const elapsed = pianoFsState.songAudio.currentTime || 0;
-        while(patternIdx < pattern.length && pattern[patternIdx].time < elapsed) {
-          patternIdx++;
-        }
-        _statusEl.textContent = '✅ 节奏已识别！(' + detected.length + '个节拍)';
-      } else {
-        _statusEl.textContent = '🎵 使用随机节奏模板';
-      }
-      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 2000);
-    }).catch(() => {
-      _statusEl.textContent = '🎵 使用随机节奏模板';
-      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 2000);
-    });
-  };
 
   // Theme selector click handler
   const themeSelector = document.getElementById('pianoThemeSelector');
@@ -6823,7 +6468,7 @@ function startPianoFullscreen(songIdx) {
 
     // Progressive difficulty: smooth exponential speed increase
     const progressRatio = songTime / songDuration;
-    const targetSpeed = 1.0 + progressRatio * 1.0; // up to 2.0x at end
+    const targetSpeed = 1.2 + progressRatio * 0.8;
     // Smooth interpolation — exponential moving average
     pianoFsState.smoothSpeedMult = pianoFsState.smoothSpeedMult * 0.97 + targetSpeed * 0.03;
     const speedMult = pianoFsState.smoothSpeedMult;
