@@ -4172,8 +4172,7 @@ function showLyrics() {
   lyricsVisible = !lyricsVisible;
   panel.classList.toggle('show', lyricsVisible);
   // 进入歌词时隐藏导航
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = lyricsVisible ? 'none' : '';
+  updateNav();
   // 不再自动显示/隐藏嵌入播放器，避免退回主界面时突然出现
   if(lyricsVisible && currentIdx >= 0) {
     const s = SONGS[currentIdx];
@@ -4383,14 +4382,30 @@ function updateLyricsProgressBar() {
 
 // ============================================================
 // ============================================================
+// ===== NAV BUTTONS MANAGEMENT =====
+// ============================================================
+function hideNav() {
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = 'none';
+}
+function updateNav() {
+  // 只在所有面板都关闭时才显示导航
+  const nav = document.getElementById('nav-float');
+  if(!nav) return;
+  const gamesOpen = document.getElementById('gamesPanel')?.classList.contains('show');
+  const pianoOpen = !!document.getElementById('pianoFullscreen');
+  const lyricsOpen = typeof lyricsVisible !== 'undefined' && lyricsVisible;
+  nav.style.display = (gamesOpen || pianoOpen || lyricsOpen) ? 'none' : '';
+}
+
+// ============================================================
 // ===== MINI GAMES =====
 // ============================================================
 // ============================================================
 function showGames() {
   SFX.pop();
   SFX.slide();
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = 'none';
+  hideNav();
   document.getElementById('gamesPanel').classList.add('show');
   document.getElementById('gamesOverlay').classList.add('show');
   switchGame(gameType, document.querySelector('.game-tab.active'));
@@ -4402,8 +4417,7 @@ function hideGames() {
   stopGameSong();
   document.getElementById('gamesPanel').classList.remove('show');
   document.getElementById('gamesOverlay').classList.remove('show');
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = '';
+  updateNav();
   // Re-render song list to fix any stale DOM after game switching
   setTimeout(() => renderList(), 100);
 }
@@ -5332,8 +5346,7 @@ function startPianoFullscreen(songIdx) {
   overlay.id = 'pianoFullscreen';
   document.body.appendChild(overlay);
   // 隐藏导航按钮
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = 'none';
+  hideNav();
 
   const durM = Math.floor((s.d || 0) / 60);
   const durS = Math.floor((s.d || 0) % 60).toString().padStart(2, '0');
@@ -6140,9 +6153,8 @@ function closePianoFullscreen() {
   pianoFsState = null;
   pianoResizeFn = null;
   overlay.remove();
-  // 恢复导航按钮
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = '';
+  // 恢复导航按钮（统一管理）
+  updateNav();
 }
 
 function updatePianoUI() {
