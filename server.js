@@ -376,14 +376,7 @@ fastify.get('/', async (request, reply) => {
   reply.header('Pragma', 'no-cache');
   reply.header('Expires', '0');
   const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
-  const nav = `
-<div id="nav-float" style="position:fixed;top:0;left:0;right:0;z-index:99999;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:8px 12px;background:rgba(10,14,26,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06)">
-  <a href="/netease" style="padding:8px 14px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(233,30,99,0.3)">🎵 网易云</a>
-  <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
-  <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
-  <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
-  <span id="userNavBtn" style="padding:8px 14px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(255,152,0,0.3)">👤 登录</span>
-</div>`;
+  const nav = ''; // nav-float removed, FAB handles navigation
     // Inject auth script
   const authScript = `
 <script>
