@@ -1153,10 +1153,6 @@ body.dark-mode .lyric-line.active {
 .sleep-option:hover { background:rgba(200,150,200,0.15); }
 
 /* FAB */
-.fab-container {
-  position:fixed; bottom:175px; right:16px; z-index:90;
-  display:flex; flex-direction:column; gap:8px; align-items:flex-end;
-}
 .fab-btn {
   width:48px; height:48px; border-radius:50%; border:none;
   background:linear-gradient(135deg,var(--pink),var(--lavender));
@@ -1204,7 +1200,7 @@ body.dark-mode .lyric-line.active {
   .mac-btn { padding:8px 12px; font-size:12px; }
   .game2048-cell { font-size:18px; }
   .game2048-ctrl { width:44px; height:44px; }
-  .fab-container { bottom:110px; }
+
   .rhythm-lane { width:54px; }
   .rhythm-note { width:42px; height:42px; left:6px; font-size:14px; }
 }
@@ -1691,7 +1687,7 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
     });
     document.querySelectorAll('div[style*="position: fixed"],div[style*="position: absolute"]').forEach(function(el){
       var z=parseInt(el.style.zIndex)||0;
-      if(z>9000&&!el.classList.length&&!el.id&&!el.closest('.now-playing,.fab-container,.mascot-container,.cat-mascot,.header,.overlay,.popup-panel'))el.remove();
+      if(z>9000&&!el.classList.length&&!el.id&&!el.closest('.now-playing,.mascot-container,.cat-mascot,.header,.overlay,.popup-panel'))el.remove();
     });
   }
   var obs=new MutationObserver(function(m){m.forEach(function(x){x.addedNodes.forEach(function(n){
@@ -1925,44 +1921,36 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
   <div class="hidden-msg-text">小艾永远陪着你 💜</div>
 </div>
 
-<!-- FAB -->
-<div class="fab-container" id="fabContainer">
-  <div class="fab-menu" id="fabMenu">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">个人中心</span>
-      <button class="fab-mini" onclick="window.location.href='/profile'">👤</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">网易云</span>
-      <button class="fab-mini" onclick="window.location.href='/netease'">🎵</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">评论</span>
-      <button class="fab-mini" onclick="window.location.href='/comments'">💬</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">Cookie</span>
-      <button class="fab-mini" onclick="window.location.href='/cookie'">🍪</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">一起听</span>
-      <button class="fab-mini" onclick="window.location.href='/listen'">🎧</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">随机</span>
-      <button class="fab-mini" onclick="playRandom();toggleFab()">🎲</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">歌词</span>
-      <button class="fab-mini" onclick="showLyrics();toggleFab()">📝</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;color:var(--text-light)">收藏</span>
-      <button class="fab-mini" onclick="setMode('fav',document.querySelector('.mode-tab:nth-child(4)'));toggleFab()">💖</button>
-    </div>
+<!-- Draggable FAB -->
+<div id="fab" style="position:fixed;right:16px;bottom:80px;z-index:99998;touch-action:none;user-select:none">
+  <button id="fab-main" style="width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(135deg,#f8a4c8,#c3a6e8,#7ec8e3);color:white;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(200,150,200,0.4);display:flex;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s">🎵</button>
+  <div id="fab-menu" style="position:absolute;bottom:62px;right:0;display:flex;flex-direction:column;gap:8px;align-items:flex-end;opacity:0;pointer-events:none;transform:translateY(8px) scale(0.95);transition:all 0.25s cubic-bezier(.4,0,.2,1)">
+    <a href="/profile" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">👤 个人中心</a>
+    <a href="/netease" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">🎵 网易云</a>
+    <a href="/comments" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">💬 评论</a>
+    <a href="/cookie" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">🍪 Cookie</a>
+    <a href="/listen" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">🎧 一起听</a>
   </div>
-  <button class="fab-btn" onclick="toggleFab()">🎵</button>
 </div>
+<div id="fab-backdrop" style="position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s"></div>
+<script>
+(function(){
+  var fab=document.getElementById('fab');
+  var btn=document.getElementById('fab-main');
+  var menu=document.getElementById('fab-menu');
+  var bd=document.getElementById('fab-backdrop');
+  var open=false,drag=false,moved=false,sx,sy,ox,oy;
+  try{var p=JSON.parse(localStorage.getItem('fab_pos'));if(p){fab.style.right='auto';fab.style.bottom='auto';fab.style.left=p.x+'px';fab.style.top=p.y+'px';}}catch(e){}
+  function getE(e){return e.touches?e.touches[0]:e;}
+  function toggle(){if(moved)return;open=!open;menu.style.opacity=open?1:0;menu.style.pointer-events=open?'auto':'none';menu.style.transform=open?'translateY(0) scale(1)':'translateY(8px) scale(0.95)';bd.style.opacity=open?1:0;bd.style.pointer-events=open?'auto':'none';}
+  function close(){open=false;menu.style.opacity=0;menu.style.pointer-events='none';menu.style.transform='translateY(8px) scale(0.95)';bd.style.opacity=0;bd.style.pointer-events='none';}
+  function down(e){var ev=getE(e);drag=false;moved=false;sx=ev.clientX;sy=ev.clientY;var r=fab.getBoundingClientRect();ox=r.left;oy=r.top;document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);document.addEventListener('touchmove',move,{passive:false});document.addEventListener('touchend',up);}
+  function move(e){var ev=getE(e);var dx=ev.clientX-sx,dy=ev.clientY-sy;if(!drag&&(Math.abs(dx)>5||Math.abs(dy)>5)){drag=true;moved=true;close();}if(drag){e.preventDefault();var nx=Math.max(0,Math.min(window.innerWidth-58,ox+dx));var ny=Math.max(0,Math.min(window.innerHeight-58,oy+dy));fab.style.right='auto';fab.style.bottom='auto';fab.style.left=nx+'px';fab.style.top=ny+'px';}}
+  function up(){document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up);if(drag){var r=fab.getBoundingClientRect();var tx=r.left<window.innerWidth/2?12:window.innerWidth-68;fab.style.transition='left 0.2s';fab.style.left=tx+'px';setTimeout(function(){fab.style.transition='';},250);try{localStorage.setItem('fab_pos',JSON.stringify({x:tx,y:r.top}));}catch(e){drag=false;}setTimeout(function(){moved=false;},100);}else{toggle();}}
+  btn.addEventListener('mousedown',down);btn.addEventListener('touchstart',down,{passive:false});
+  bd.addEventListener('click',close);
+})();
+</script>
 
 <div class="shortcut-hint" id="shortcutHint"></div>
 <div class="toast" id="toast"></div>
