@@ -1683,6 +1683,60 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
   display: block;
 }
 
+
+/* ── 悬浮球 ── */
+.nb-wrap{position:fixed;left:20px;bottom:100px;z-index:99998;touch-action:none;-webkit-user-select:none;user-select:none}
+.nb-ball{
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+  background:conic-gradient(from 0deg,var(--pink),var(--lavender),var(--sky),var(--mint),var(--pink));
+  box-shadow:0 4px 24px rgba(200,150,200,0.5),inset 0 0 20px rgba(255,255,255,0.3);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .25s,box-shadow .25s;
+  animation:nb-spin 8s linear infinite;
+  position:relative;overflow:hidden;
+}
+.nb-ball::before{
+  content:'';position:absolute;inset:3px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,rgba(255,255,255,0.6),transparent 60%);
+  pointer-events:none;
+}
+.nb-ball::after{
+  content:'🌸';font-size:22px;position:relative;z-index:1;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+.nb-ball:hover{transform:scale(1.12);box-shadow:0 6px 32px rgba(200,150,200,0.7),inset 0 0 20px rgba(255,255,255,0.4)}
+.nb-ball:active{transform:scale(0.95)}
+@keyframes nb-spin{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+.nb-menu{
+  position:absolute;bottom:62px;left:50%;transform:translateX(-50%) translateY(8px) scale(0.9);
+  display:flex;flex-direction:column;gap:8px;align-items:center;
+  opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  min-width:140px;
+}
+.nb-menu.open{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0) scale(1)}
+.nb-item{
+  display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:24px;
+  font-size:13px;font-weight:600;text-decoration:none;color:#fff;
+  white-space:nowrap;cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,0.15);
+  transition:transform .2s,box-shadow .2s;
+  backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);
+}
+.nb-item:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+.nb-item:active{transform:scale(0.97)}
+.nb-i1{background:linear-gradient(135deg,rgba(255,152,0,0.85),rgba(245,124,0,0.85))}
+.nb-i2{background:linear-gradient(135deg,rgba(233,30,99,0.85),rgba(255,87,34,0.85))}
+.nb-i3{background:linear-gradient(135deg,rgba(33,150,243,0.85),rgba(21,101,192,0.85))}
+.nb-i4{background:linear-gradient(135deg,rgba(76,175,80,0.85),rgba(46,125,50,0.85))}
+.nb-i5{background:linear-gradient(135deg,rgba(156,39,176,0.85),rgba(106,27,154,0.85))}
+.nb-bd{position:fixed;inset:0;z-index:99997;background:rgba(10,14,26,0.2);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .3s}
+.nb-bd.open{opacity:1;pointer-events:auto}
+.nb-dot{
+  position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.8);
+  animation:nb-orbit 4s linear infinite;
+}
+@keyframes nb-orbit{0%{transform:rotate(0deg) translateX(30px) rotate(0deg)}100%{transform:rotate(360deg) translateX(30px) rotate(-360deg)}}
+
 </style>
 <script>
 // ===== 安全防护：防止浏览器劫持和注入 =====
@@ -1952,44 +2006,6 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
   </div>
   <button class="fab-btn" onclick="toggleFab()">⚡</button>
 </div>
-
-<!-- 悬浮球（导航） -->
-<div id="navBall" style="position:fixed;left:16px;bottom:80px;z-index:99998;touch-action:none;user-select:none">
-  <div id="navBallBtn" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f8a4c8,#c3a6e8,#7ec8e3);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 4px 20px rgba(200,150,200,0.4);transition:transform 0.2s,box-shadow 0.2s;animation:ballPulse 3s ease-in-out infinite">🌐</div>
-  <div id="navBallMenu" style="position:absolute;bottom:60px;left:0;display:flex;flex-direction:column;gap:8px;opacity:0;pointer-events:none;transform:translateY(8px) scale(0.95);transition:all 0.25s cubic-bezier(.4,0,.2,1)">
-    <a href="/profile" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">👤 个人中心</a>
-    <a href="/netease" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">🎵 网易云</a>
-    <a href="/comments" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">💬 评论</a>
-    <a href="/cookie" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">🍪 Cookie</a>
-    <a href="/listen" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:24px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,0.2);white-space:nowrap">🎧 一起听</a>
-  </div>
-  <div id="navBallBackdrop" style="position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s"></div>
-</div>
-<style>
-@keyframes ballPulse { 0%,100%{box-shadow:0 4px 20px rgba(200,150,200,0.4)} 50%{box-shadow:0 4px 30px rgba(200,150,200,0.7)} }
-#navBallBtn:hover { transform:scale(1.1); box-shadow:0 6px 25px rgba(200,150,200,0.6) }
-#navBallBtn:active { transform:scale(0.95) }
-#navBallMenu a:hover { transform:translateX(-4px); box-shadow:0 5px 18px rgba(0,0,0,0.3) }
-#navBallMenu a:active { transform:scale(0.97) }
-</style>
-<script>
-(function(){
-  var ball=document.getElementById('navBall');
-  var btn=document.getElementById('navBallBtn');
-  var menu=document.getElementById('navBallMenu');
-  var bd=document.getElementById('navBallBackdrop');
-  var open=false,drag=false,moved=false,sx,sy,ox,oy;
-  try{var p=JSON.parse(localStorage.getItem('navball_pos'));if(p){ball.style.left='auto';ball.style.bottom='auto';ball.style.left=p.x+'px';ball.style.top=p.y+'px';}}catch(e){}
-  function getE(e){return e.touches?e.touches[0]:e;}
-  function toggle(){if(moved)return;open=!open;menu.style.opacity=open?1:0;menu.style.pointer-events=open?'auto':'none';menu.style.transform=open?'translateY(0) scale(1)':'translateY(8px) scale(0.95)';bd.style.opacity=open?1:0;bd.style.pointer-events=open?'auto':'none';bd.style.zIndex=open?'99997':'-1';}
-  function close(){open=false;menu.style.opacity=0;menu.style.pointer-events='none';menu.style.transform='translateY(8px) scale(0.95)';bd.style.opacity=0;bd.style.pointer-events='none';bd.style.zIndex='-1';}
-  function down(e){var ev=getE(e);drag=false;moved=false;sx=ev.clientX;sy=ev.clientY;var r=ball.getBoundingClientRect();ox=r.left;oy=r.top;document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);document.addEventListener('touchmove',move,{passive:false});document.addEventListener('touchend',up);}
-  function move(e){var ev=getE(e);var dx=ev.clientX-sx,dy=ev.clientY-sy;if(!drag&&(Math.abs(dx)>5||Math.abs(dy)>5)){drag=true;moved=true;close();}if(drag){e.preventDefault();var nx=Math.max(0,Math.min(window.innerWidth-56,ox+dx));var ny=Math.max(0,Math.min(window.innerHeight-56,oy+dy));ball.style.left=nx+'px';ball.style.top=ny+'px';ball.style.bottom='auto';}}
-  function up(){document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up);if(drag){var r=ball.getBoundingClientRect();var tx=r.left<window.innerWidth/2?12:window.innerWidth-68;ball.style.transition='left 0.2s';ball.style.left=tx+'px';setTimeout(function(){ball.style.transition='';},250);try{localStorage.setItem('navball_pos',JSON.stringify({x:tx,y:r.top}));}catch(e){}drag=false;setTimeout(function(){moved=false;},100);}else{toggle();}}
-  btn.addEventListener('mousedown',down);btn.addEventListener('touchstart',down,{passive:false});
-  bd.addEventListener('click',close);
-})();
-</script>
 
 
 <div class="shortcut-hint" id="shortcutHint"></div>
@@ -7746,5 +7762,55 @@ init();
 </script>
 
 
+
+<!-- 悬浮球 -->
+<div class="nb-wrap" id="nbWrap">
+  <div class="nb-ball" id="nbBall">
+    <div class="nb-dot" style="animation-delay:-1s"></div>
+    <div class="nb-dot" style="animation-delay:-3s;animation-direction:reverse"></div>
+  </div>
+  <nav class="nb-menu" id="nbMenu">
+    <a class="nb-item nb-i1" href="/profile"><span>👤</span>个人中心</a>
+    <a class="nb-item nb-i2" href="/netease"><span>🎵</span>网易云</a>
+    <a class="nb-item nb-i3" href="/comments"><span>💬</span>评论</a>
+    <a class="nb-item nb-i4" href="/cookie"><span>🍪</span>Cookie</a>
+    <a class="nb-item nb-i5" href="/listen"><span>🎧</span>一起听</a>
+  </nav>
+</div>
+<div class="nb-bd" id="nbBd"></div>
+<script>
+(function(){
+  var w=document.getElementById('nbWrap'),b=document.getElementById('nbBall'),
+      m=document.getElementById('nbMenu'),d=document.getElementById('nbBd');
+  var open=0,drag=0,moved=0,sx,sy,ox,oy;
+  // restore pos
+  try{var p=JSON.parse(localStorage.getItem('nb_pos'));
+    if(p){w.style.left=p.x+'px';w.style.top=p.y+'px';w.style.bottom='auto';}}catch(e){}
+  function ge(e){return e.touches?e.touches[0]:e}
+  function tg(){if(moved)return;open^=1;m.classList.toggle('open',open);d.classList.toggle('open',open)}
+  function cl(){open=0;m.classList.remove('open');d.classList.remove('open')}
+  function dn(e){var ev=ge(e);drag=0;moved=0;sx=ev.clientX;sy=ev.clientY;
+    var r=w.getBoundingClientRect();ox=r.left;oy=r.top;
+    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    document.addEventListener('touchmove',mv,{passive:false});document.addEventListener('touchend',up)}
+  function mv(e){var ev=ge(e),dx=ev.clientX-sx,dy=ev.clientY-sy;
+    if(!drag&&(Math.abs(dx)>4||Math.abs(dy)>4)){drag=1;moved=1;cl()}
+    if(drag){e.preventDefault();
+      var nx=Math.max(0,Math.min(innerWidth-56,ox+dx));
+      var ny=Math.max(0,Math.min(innerHeight-56,oy+dy));
+      w.style.left=nx+'px';w.style.top=ny+'px';w.style.bottom='auto'}}
+  function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);
+    document.removeEventListener('touchmove',mv);document.removeEventListener('touchend',up);
+    if(drag){var r=w.getBoundingClientRect();
+      var tx=r.left<innerWidth/2?16:innerWidth-68;
+      w.style.transition='left .3s cubic-bezier(.34,1.56,.64,1)';
+      w.style.left=tx+'px';
+      setTimeout(function(){w.style.transition='';},350);
+      try{localStorage.setItem('nb_pos',JSON.stringify({x:tx,y:r.top}))}catch(e){}
+      drag=0;setTimeout(function(){moved=0},120)}else{tg()}}
+  b.addEventListener('mousedown',dn);b.addEventListener('touchstart',dn,{passive:false});
+  d.addEventListener('click',cl);
+})();
+</script>
 </body>
 </html>
