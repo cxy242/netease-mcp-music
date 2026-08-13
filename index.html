@@ -5824,7 +5824,15 @@ function startPianoFullscreen(songIdx) {
     pianoFsState.running = true;
     pianoFsState.startTime = performance.now() / 1000;
 
-    pianoFsState.songAudio = new Audio('/api/local_audio/' + s.i);
+    // 获取可播放的音频URL（优先网易云MP3，回退本地FLAC）
+    let audioUrl = '/api/local_audio/' + s.i;
+    try {
+      const urlResp = await fetch('/api/song/play_url?id=' + s.i);
+      const urlData = await urlResp.json();
+      if(urlData.ok && urlData.url) audioUrl = urlData.url;
+    } catch(e) {}
+
+    pianoFsState.songAudio = new Audio(audioUrl);
     pianoFsState.songAudio.volume = 0.7;
     pianoFsState.songAudio.play().then(() => {
       pianoFsState.audioPlayed = true;
