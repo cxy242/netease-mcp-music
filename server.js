@@ -300,6 +300,21 @@ fastify.get('/login', async (request, reply) => {
   return readFileSync(join(__dirname, 'login.html'), 'utf-8');
 });
 
+fastify.get('/profile', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return readFileSync(join(__dirname, 'profile.html'), 'utf-8');
+});
+
+fastify.get('/admin', async (request, reply) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) {
+    reply.code(403).type('text/html');
+    return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>无权限</title></head><body style="background:#0a0e1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif"><div style="text-align:center"><h1>🔒 需要管理员权限</h1><p style="color:rgba(255,255,255,0.5);margin-top:12px"><a href="/" style="color:#f8a4c8">返回首页</a></p></div></body></html>';
+  }
+  reply.type('text/html; charset=utf-8');
+  return readFileSync(join(__dirname, 'admin.html'), 'utf-8');
+});
+
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
@@ -327,12 +342,7 @@ fastify.get('/', async (request, reply) => {
         const user = JSON.parse(userInfo);
         navBtn.textContent = '👤 ' + user.username;
         navBtn.onclick = function() {
-          if (confirm('退出登录？')) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_info');
-            fetch('/api/logout', { method: 'POST' });
-            window.location.reload();
-          }
+          window.location.href = '/profile';
         };
       } catch(e) {}
     } else if (!guestMode) {
@@ -2290,6 +2300,87 @@ fastify.post('/api/user/settings', async (request) => {
   const settings = request.body || {};
   saveUserData(user.userId, 'settings.json', settings);
   return { ok: true };
+});
+
+// ─── Profile & Admin Endpoints ──────────────────────────────────────
+fastify.get('/api/user/profile', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const favs = loadUserData(user.userId, 'favorites.json', { songs: [] });
+  const history = loadUserData(user.userId, 'history.json', { plays: [] });
+  return {
+    ok: true,
+    user: {
+      userId: user.userId,
+      username: user.username,
+      avatar: user.avatar || '',
+      isAdmin: !!user.isAdmin,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin
+    },
+    stats: {
+      favorites: favs.songs ? favs.songs.length : 0,
+      playCount: history.plays ? history.plays.length : 0
+    }
+  };
+});
+
+// Admin: list all users
+fastify.get('/api/admin/users', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const users = Object.values(usersDB).map(u => ({
+    userId: u.userId,
+    username: u.username,
+    isAdmin: !!u.isAdmin,
+    createdAt: u.createdAt,
+    lastLogin: u.lastLogin
+  }));
+  return { ok: true, users, total: users.length };
+});
+
+// Admin: delete user
+fastify.post('/api/admin/delete_user', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { userId } = request.body || {};
+  if (!userId) return { ok: false, message: 'Missing userId' };
+  if (userId === user.userId) return { ok: false, message: '不能删除自己' };
+  if (!usersDB[userId]) return { ok: false, message: '用户不存在' };
+  const username = usersDB[userId].username;
+  delete usersDB[userId];
+  saveUsers();
+  return { ok: true, message: `已删除用户 ${username}` };
+});
+
+// Admin: toggle admin status
+fastify.post('/api/admin/toggle_admin', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { userId } = request.body || {};
+  if (!userId) return { ok: false, message: 'Missing userId' };
+  if (userId === user.userId) return { ok: false, message: '不能修改自己的权限' };
+  if (!usersDB[userId]) return { ok: false, message: '用户不存在' };
+  usersDB[userId].isAdmin = !usersDB[userId].isAdmin;
+  saveUsers();
+  return { ok: true, isAdmin: usersDB[userId].isAdmin };
+});
+
+// Admin: view user data
+fastify.get('/api/admin/user_data', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { userId } = request.query;
+  if (!userId || !usersDB[userId]) return { ok: false, message: '用户不存在' };
+  const target = usersDB[userId];
+  const favs = loadUserData(userId, 'favorites.json', { songs: [] });
+  const history = loadUserData(userId, 'history.json', { plays: [] });
+  const settings = loadUserData(userId, 'settings.json', {});
+  return {
+    ok: true,
+    user: { userId: target.userId, username: target.username, isAdmin: !!target.isAdmin, createdAt: target.createdAt },
+    data: { favorites: favs, history: history, settings: settings }
+  };
 });
 
 fastify.get('/health', async () => ({
