@@ -5558,6 +5558,8 @@ function startPianoFullscreen(songIdx) {
     let nextRestAt = 8 + Math.floor(Math.random() * 9); // rest every 8-16 beats
     // Track the earliest time a tile can appear in each column (prevents overlap)
     const colLastEnd = new Array(COLS).fill(0);
+    // 全局长按键结束时间 — 长按键范围内不允许任何列出现长按键
+    let holdEndTime = 0;
 
     while(t < duration - beatInterval) {
       // Occasional rest (gap with no tiles)
@@ -5569,7 +5571,9 @@ function startPianoFullscreen(songIdx) {
       }
 
       // ~18% chance of hold tile
-      const isHold = Math.random() < 0.18;
+      // 长按键必须在上一个长按键结束后才能出现（任何列）
+      const canHold = t >= holdEndTime;
+      const isHold = canHold && Math.random() < 0.18;
       const holdDuration = isHold ? (0.3 + Math.random() * 1.5) : 0; // 0.3-1.8s (短中长都有)
 
       // Determine candidate dark columns — avoid overlap and adjacent holds
@@ -5605,6 +5609,10 @@ function startPianoFullscreen(songIdx) {
       // Update colLastEnd for chosen dark columns
       for(const c of darkCols) {
         colLastEnd[c] = t + tileOccupied;
+      }
+      // 更新全局长按键结束时间
+      if(isHold) {
+        holdEndTime = t + holdDuration + holdMinGap;
       }
 
       pattern.push({ time: t, darkCols, isHold, holdDuration });
@@ -7054,7 +7062,12 @@ init();
   <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
 </div>
 <script>
-// Guard: remove duplicate nav-float divs (keep only the first)
+// Guard: remove duplicate nav-float divs (runs after full DOM parse)
+document.addEventListener('DOMContentLoaded', function(){
+  const navs = document.querySelectorAll('#nav-float');
+  for(let i = 1; i < navs.length; i++) navs[i].remove();
+});
+// Also run immediately in case DOMContentLoaded already fired
 (function(){
   const navs = document.querySelectorAll('#nav-float');
   for(let i = 1; i < navs.length; i++) navs[i].remove();
