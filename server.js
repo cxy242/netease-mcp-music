@@ -349,6 +349,14 @@ fastify.get('/profile', async (request, reply) => {
   return readFileSync(join(__dirname, 'profile.html'), 'utf-8');
 });
 
+fastify.get('/history', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  reply.header('Pragma', 'no-cache');
+  reply.header('Expires', '0');
+  return readFileSync(join(__dirname, 'history.html'), 'utf-8');
+});
+
 fastify.get('/admin', async (request, reply) => {
   reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
   reply.header('Pragma', 'no-cache');
