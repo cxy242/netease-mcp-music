@@ -5565,7 +5565,8 @@ function startPianoFullscreen(songIdx) {
       const holdDuration = isHold ? (0.3 + Math.random() * 0.5) : 0; // 0.3-0.8s
 
       // Determine candidate dark columns — avoid overlap and adjacent holds
-      let numDark = Math.random() < 0.2 ? 2 : 1;
+      // IMPORTANT: hold tiles can only appear alone (1 per row)
+      let numDark = isHold ? 1 : (Math.random() < 0.2 ? 2 : 1);
       const holdMinGap = 0.3; // minimum gap after hold tile ends
       const tapMinGap = beatInterval * 0.8; // minimum gap after tap tile
       const tileOccupied = holdDuration > 0 ? holdDuration + holdMinGap : tapMinGap;
