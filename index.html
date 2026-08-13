@@ -5500,7 +5500,7 @@ function startPianoFullscreen(songIdx) {
   // Constants
   const COLS = 4;
   const TILE_H_RATIO = 0.22;
-  const TILE_TRAVEL_TIME = 3.0;
+  const TILE_TRAVEL_TIME = 2.2;
 
   // State
   pianoFsState = {
@@ -5740,12 +5740,15 @@ function startPianoFullscreen(songIdx) {
     return darkCols;
   }
   function _tileOccupied(holdDuration, holdMinGap, tapMinGap) {
-    return holdDuration > 0 ? (holdDuration + TILE_TRAVEL_TIME + holdMinGap) : (TILE_TRAVEL_TIME + tapMinGap);
+    // 至少留 0.5s 间距，防止重叠
+    const safeTapGap = Math.max(tapMinGap, 0.5);
+    const safeHoldGap = Math.max(holdMinGap, 0.5);
+    return holdDuration > 0 ? (holdDuration + TILE_TRAVEL_TIME + safeHoldGap) : (TILE_TRAVEL_TIME + safeTapGap);
   }
 
   // 模板1: 稳定节拍 — 经典钢琴块节奏，匀速稳定
   function _patSteady(duration) {
-    const BPM = 110 + Math.random() * 20;
+    const BPM = 125 + Math.random() * 20;
     const bi = 60 / BPM;
     const p = []; let t = bi * 2; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5768,7 +5771,7 @@ function startPianoFullscreen(songIdx) {
 
   // 模板2: 切分音 — 附点节奏+swing感，有跳跃感
   function _patSyncopated(duration) {
-    const BPM = 95 + Math.random() * 15;
+    const BPM = 110 + Math.random() * 15;
     const bi = 60 / BPM;
     const p = []; let t = bi * 1.5; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5794,7 +5797,7 @@ function startPianoFullscreen(songIdx) {
 
   // 模板3: 急速连击 — 快速密集连打+长休息
   function _patRapid(duration) {
-    const BPM = 135 + Math.random() * 20;
+    const BPM = 150 + Math.random() * 20;
     const bi = 60 / BPM;
     const p = []; let t = bi * 2; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5848,7 +5851,7 @@ function startPianoFullscreen(songIdx) {
 
   // 模板5: 瀑布级联 — 列从左到右再从右到左扫过去
   function _patCascade(duration) {
-    const BPM = 115 + Math.random() * 15;
+    const BPM = 130 + Math.random() * 15;
     const bi = 60 / BPM;
     const p = []; let t = bi * 2; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5911,7 +5914,7 @@ function startPianoFullscreen(songIdx) {
 
   // 模板7: 双键交替 — 每行2个键，左右对称
   function _patDouble(duration) {
-    const BPM = 105 + Math.random() * 20;
+    const BPM = 135 + Math.random() * 20;
     const bi = 60 / BPM;
     const p = []; let t = bi * 2; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5940,7 +5943,7 @@ function startPianoFullscreen(songIdx) {
 
   // 模板8: 随机漫步 — 完全随机列，不可预测
   function _patRandom(duration) {
-    const BPM = 100 + Math.random() * 30;
+    const BPM = 115 + Math.random() * 30;
     const bi = 60 / BPM;
     const p = []; let t = bi * 2; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5962,7 +5965,7 @@ function startPianoFullscreen(songIdx) {
 
   // 模板9: 单列密集 — 只用2列，快速交替
   function _patNarrow(duration) {
-    const BPM = 120 + Math.random() * 20;
+    const BPM = 135 + Math.random() * 20;
     const bi = 60 / BPM;
     const p = []; let t = bi * 2; let bc = 0;
     const col = new Array(COLS).fill(0); let he = 0;
@@ -5990,7 +5993,7 @@ function startPianoFullscreen(songIdx) {
     const col = new Array(COLS).fill(0); let he = 0;
     while(t < duration - 0.3) {
       const progress = t / duration; // 0→1
-      const BPM = 80 + progress * 100; // 80→180 BPM
+      const BPM = 95 + progress * 110; // 80→180 BPM
       const bi = 60 / BPM;
       if(bc % 20 === 0 && bc > 0 && progress < 0.8) { t += bi * 1.5; }
       const canH = t >= he; const isH = canH && Math.random() < 0.12;
@@ -6062,7 +6065,7 @@ function startPianoFullscreen(songIdx) {
 
     // Beat detection with user feedback
     const _statusEl = document.createElement('div');
-    _statusEl.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.7);color:#fff;padding:6px 16px;border-radius:20px;font-size:13px;pointer-events:none;transition:opacity 0.5s';
+    _statusEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(0,0,0,0.85);color:#fff;padding:12px 28px;border-radius:16px;font-size:16px;pointer-events:none;transition:opacity 0.5s;letter-spacing:1px;box-shadow:0 4px 20px rgba(0,0,0,0.4)';
     _statusEl.textContent = '🎵 节奏识别中...';
     document.body.appendChild(_statusEl);
     detectBeats(s.i, s.d || 120).then(detected => {
@@ -6073,14 +6076,14 @@ function startPianoFullscreen(songIdx) {
         while(patternIdx < pattern.length && pattern[patternIdx].time < elapsed) {
           patternIdx++;
         }
-        _statusEl.textContent = '✅ 节奏已识别！';
+        _statusEl.textContent = '✅ 节奏已识别！(' + detected.length + '个节拍)';
       } else {
-        _statusEl.textContent = '⚠️ 使用随机节奏';
+        _statusEl.textContent = '🎵 使用随机节奏模板';
       }
-      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 1500);
+      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 2000);
     }).catch(() => {
-      _statusEl.textContent = '⚠️ 识别失败，使用随机节奏';
-      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 1500);
+      _statusEl.textContent = '🎵 使用随机节奏模板';
+      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 2000);
     });
   };
 
