@@ -97,6 +97,142 @@ async function neteaseApi(path, options = {}) {
 const fastify = Fastify({ logger: false });
 await fastify.register(import('@fastify/multipart'), { limits: { fileSize: 50 * 1024 * 1024 } });
 
+// ─── User Auth System ───────────────────────────────────────────────
+const USERS_FILE = join(__dirname, 'users.json');
+const TOKEN_SECRET = crypto.randomBytes(32).toString('hex');
+const TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Load users
+let usersDB = {};
+try {
+  if (existsSync(USERS_FILE)) {
+    usersDB = JSON.parse(readFileSync(USERS_FILE, 'utf-8'));
+    console.log(`[Auth] Loaded ${Object.keys(usersDB).length} users`);
+  }
+} catch(e) {
+  console.warn('[Auth] Failed to load users:', e.message);
+}
+
+function saveUsers() {
+  writeFileSync(USERS_FILE, JSON.stringify(usersDB, null, 2));
+}
+
+// Password hashing with PBKDF2
+function hashPassword(password, salt) {
+  if (!salt) salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+}
+
+function verifyPassword(password, salt, hash) {
+  const result = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+  return result === hash;
+}
+
+// Token generation
+function generateToken(userId) {
+  const payload = JSON.stringify({ userId, exp: Date.now() + TOKEN_EXPIRY });
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('hex');
+  return Buffer.from(payload).toString('base64') + '.' + sig;
+}
+
+function verifyToken(token) {
+  try {
+    const [payloadB64, sig] = token.split('.');
+    const payload = Buffer.from(payloadB64, 'base64').toString();
+    const expectedSig = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('hex');
+    if (sig !== expectedSig) return null;
+    const data = JSON.parse(payload);
+    if (data.exp < Date.now()) return null;
+    return data.userId;
+  } catch(e) { return null; }
+}
+
+// Auth middleware
+function getTokenFromRequest(request) {
+  const authHeader = request.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7);
+  const cookie = request.headers.cookie || '';
+  const match = cookie.match(/auth_token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
+function getCurrentUser(request) {
+  const token = getTokenFromRequest(request);
+  if (!token) return null;
+  const userId = verifyToken(token);
+  if (!userId || !usersDB[userId]) return null;
+  return usersDB[userId];
+}
+
+// User-scoped data storage
+const USER_DATA_DIR = join(__dirname, 'user_data');
+if (!existsSync(USER_DATA_DIR)) mkdirSync(USER_DATA_DIR, { recursive: true });
+
+function getUserDataPath(userId, filename) {
+  const userDir = join(USER_DATA_DIR, userId);
+  if (!existsSync(userDir)) mkdirSync(userDir, { recursive: true });
+  return join(userDir, filename);
+}
+
+function loadUserData(userId, filename, defaultVal = {}) {
+  try {
+    const path = getUserDataPath(userId, filename);
+    if (existsSync(path)) return JSON.parse(readFileSync(path, 'utf-8'));
+  } catch(e) {}
+  return defaultVal;
+}
+
+function saveUserData(userId, filename, data) {
+  writeFileSync(getUserDataPath(userId, filename), JSON.stringify(data, null, 2));
+}
+
+// ─── Auth API Endpoints ─────────────────────────────────────────────
+fastify.post('/api/register', async (request, reply) => {
+  const { username, password } = request.body || {};
+  if (!username || !password) return reply.code(400).send({ ok: false, message: '用户名和密码不能为空' });
+  if (username.length < 2 || username.length > 20) return reply.code(400).send({ ok: false, message: '用户名2-20个字符' });
+  if (password.length < 4) return reply.code(400).send({ ok: false, message: '密码至少4个字符' });
+  // Check if username exists
+  const existing = Object.values(usersDB).find(u => u.username === username);
+  if (existing) return reply.code(400).send({ ok: false, message: '用户名已存在' });
+  const userId = 'u_' + crypto.randomBytes(8).toString('hex');
+  const { salt, hash } = hashPassword(password);
+  usersDB[userId] = {
+    userId, username, salt, hash,
+    avatar: '', createdAt: Date.now(), lastLogin: Date.now()
+  };
+  saveUsers();
+  const token = generateToken(userId);
+  reply.header('Set-Cookie', `auth_token=${token}; Path=/; HttpOnly; Max-Age=${TOKEN_EXPIRY / 1000}`);
+  return { ok: true, token, user: { userId, username } };
+});
+
+fastify.post('/api/login', async (request, reply) => {
+  const { username, password } = request.body || {};
+  if (!username || !password) return reply.code(400).send({ ok: false, message: '用户名和密码不能为空' });
+  const user = Object.values(usersDB).find(u => u.username === username);
+  if (!user) return reply.code(401).send({ ok: false, message: '用户名或密码错误' });
+  if (!verifyPassword(password, user.salt, user.hash)) return reply.code(401).send({ ok: false, message: '用户名或密码错误' });
+  user.lastLogin = Date.now();
+  saveUsers();
+  const token = generateToken(user.userId);
+  reply.header('Set-Cookie', `auth_token=${token}; Path=/; HttpOnly; Max-Age=${TOKEN_EXPIRY / 1000}`);
+  return { ok: true, token, user: { userId: user.userId, username: user.username } };
+});
+
+fastify.get('/api/me', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false };
+  return { ok: true, user: { userId: user.userId, username: user.username, avatar: user.avatar, createdAt: user.createdAt } };
+});
+
+fastify.post('/api/logout', async (request, reply) => {
+  reply.header('Set-Cookie', 'auth_token=; Path=/; HttpOnly; Max-Age=0');
+  return { ok: true };
+});
+
+
 // CORS + 安全防护
 fastify.addHook('onSend', async (request, reply) => {
   reply.header('Access-Control-Allow-Origin', '*');
@@ -158,6 +294,12 @@ fastify.get('/listen-cat.js', async (request, reply) => {
   return readFileSync(join(__dirname, 'listen-cat.js'), 'utf-8');
 });
 
+// Login page
+fastify.get('/login', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return readFileSync(join(__dirname, 'login.html'), 'utf-8');
+});
+
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
@@ -167,8 +309,61 @@ fastify.get('/', async (request, reply) => {
   <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
   <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
   <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
+  <span id="userNavBtn" style="padding:8px 14px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(255,152,0,0.3)" onclick="handleUserNav()">👤 登录</span>
 </div>`;
-  return raw.replace('</body>', nav + '</body>');
+    // Inject auth script
+  const authScript = `
+<script>
+(function() {
+  const token = localStorage.getItem('auth_token');
+  const userInfo = localStorage.getItem('user_info');
+  const guestMode = localStorage.getItem('guest_mode');
+  
+  // Update nav button
+  const navBtn = document.getElementById('userNavBtn');
+  if (navBtn) {
+    if (token && userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+        navBtn.textContent = '👤 ' + user.username;
+        navBtn.onclick = function() {
+          if (confirm('退出登录？')) {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_info');
+            fetch('/api/logout', { method: 'POST' });
+            window.location.reload();
+          }
+        };
+      } catch(e) {}
+    } else if (!guestMode) {
+      // Not logged in and not guest, redirect to login
+      // But don't redirect if already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    } else {
+      navBtn.textContent = '👤 游客';
+      navBtn.onclick = function() {
+        localStorage.removeItem('guest_mode');
+        window.location.href = '/login';
+      };
+    }
+  }
+  
+  // Add auth header to fetch
+  const origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (!opts) opts = {};
+    if (!opts.headers) opts.headers = {};
+    const t = localStorage.getItem('auth_token');
+    if (t && !opts.headers['Authorization']) {
+      opts.headers['Authorization'] = 'Bearer ' + t;
+    }
+    return origFetch.call(this, url, opts);
+  };
+})();
+</script>`;
+  return raw.replace('</body>', nav + authScript + '</body>');
 });
 
 fastify.get('/songs_data.js', async (request, reply) => {
@@ -2032,6 +2227,70 @@ fastify.post('/mcp', async (request, reply) => {
 // ═════════════════════════════════════════════════════════════════════
 // 8. HEALTH CHECK
 // ═════════════════════════════════════════════════════════════════════
+
+// ─── User-Scoped Data Endpoints ──────────────────────────────────────
+// Favorites
+fastify.get('/api/user/favorites', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const favs = loadUserData(user.userId, 'favorites.json', { songs: [] });
+  return { ok: true, ...favs };
+});
+
+fastify.post('/api/user/favorites', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const { songId, action } = request.body || {};
+  if (!songId) return { ok: false, message: 'Missing songId' };
+  const favs = loadUserData(user.userId, 'favorites.json', { songs: [] });
+  const idx = favs.songs.indexOf(songId);
+  if (action === 'add' && idx === -1) {
+    favs.songs.push(songId);
+    saveUserData(user.userId, 'favorites.json', favs);
+  } else if (action === 'remove' && idx !== -1) {
+    favs.songs.splice(idx, 1);
+    saveUserData(user.userId, 'favorites.json', favs);
+  }
+  return { ok: true, songs: favs.songs };
+});
+
+// Play History
+fastify.get('/api/user/history', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const history = loadUserData(user.userId, 'history.json', { plays: [] });
+  return { ok: true, ...history };
+});
+
+fastify.post('/api/user/history', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const { songId } = request.body || {};
+  if (!songId) return { ok: false, message: 'Missing songId' };
+  const history = loadUserData(user.userId, 'history.json', { plays: [] });
+  // Add to front, remove duplicates, keep last 500
+  history.plays = history.plays.filter(p => p.songId !== songId);
+  history.plays.unshift({ songId, time: Date.now() });
+  if (history.plays.length > 500) history.plays = history.plays.slice(0, 500);
+  saveUserData(user.userId, 'history.json', history);
+  return { ok: true };
+});
+
+// User Settings
+fastify.get('/api/user/settings', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const settings = loadUserData(user.userId, 'settings.json', { theme: 'moonlight', volume: 0.7 });
+  return { ok: true, settings };
+});
+
+fastify.post('/api/user/settings', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const settings = request.body || {};
+  saveUserData(user.userId, 'settings.json', settings);
+  return { ok: true };
+});
 
 fastify.get('/health', async () => ({
   status: 'ok',
