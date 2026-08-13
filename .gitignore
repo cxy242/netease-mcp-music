@@ -5,3 +5,6 @@ node_modules/
 backups/
 deploy.cjs
 deploy.sh
+users.json
+user_data/
+announcements.json
