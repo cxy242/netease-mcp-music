@@ -18,5 +18,15 @@
     "createdAt": 1786634468739,
     "lastLogin": 1786634468739,
     "isAdmin": false
+  },
+  "u_8afd3bc338f3aee6": {
+    "userId": "u_8afd3bc338f3aee6",
+    "username": "艾因",
+    "salt": "9a3466e6dc9bc8b104fda0c50b683f8a",
+    "hash": "fa82ab72b99b69353bc51b99dbe12dd1466a05c08b8dec3e3a82a600b62d8b2297aba4c51c3a881d91a3f5938567b6581d9b5f7a5d0243d4db27abc79ecf635d",
+    "avatar": "",
+    "createdAt": 1786640655179,
+    "lastLogin": 1786640655179,
+    "isAdmin": false
   }
 }
