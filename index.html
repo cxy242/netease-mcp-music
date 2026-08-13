@@ -5582,7 +5582,7 @@ function startPianoFullscreen(songIdx) {
       if(bc >= nr) { t += bi * (1 + Math.random() * mr); bc = 0; nr = re[0] + Math.floor(Math.random() * (re[1] - re[0])); if(t >= duration - bi) break; }
       const ch = t >= he;
       const ih = ch && Math.random() < hc;
-      const hd = ih ? (0.3 + Math.random() * 1.2) : 0;
+      const hd = ih ? (0.2 + Math.random() * 0.4) : 0;
       let dc_;
       if(opts.pickFn) { dc_ = opts.pickFn(t, ih, hd, col, bc, duration, bi); }
       else { const nd = ih ? 1 : (Math.random() < dc ? 2 : 1); dc_ = _pickCols(t, nd, ih, col); }
@@ -6085,7 +6085,7 @@ function startPianoFullscreen(songIdx) {
     const tile = pianoFsState.holdTile;
     const elapsed = (performance.now() - pianoFsState.holdStartTime) / 1000;
 
-    if(elapsed >= tile.holdDuration * 0.8) {
+    if(elapsed >= tile.holdDuration * 0.6) {
       // Held long enough — success! Score bonus (2x tap points)
       tile.hit = true;
       const bonus = 20 + Math.floor(tile.holdDuration * 20);
