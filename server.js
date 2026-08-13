@@ -32,7 +32,25 @@ let listenSessions = {};
 
 // ─── Local audio files ──────────────────────────────────────────────
 const LOCAL_AUDIO_DIR = join(__dirname, 'audio');
-const REMOTE_AUDIO_BASE = process.env.REMOTE_AUDIO_BASE || 'https://skin-florist-inexpensive-principal.trycloudflare.com';
+let REMOTE_AUDIO_BASE = process.env.REMOTE_AUDIO_BASE || '';
+const TUNNEL_URL_FILE = join(__dirname, 'tunnel_url.txt');
+
+// 启动时从 tunnel_url.txt 读取隧道地址
+try {
+  if (existsSync(TUNNEL_URL_FILE)) {
+    const saved = readFileSync(TUNNEL_URL_FILE, 'utf-8').trim();
+    if (saved && saved.startsWith('https://')) {
+      REMOTE_AUDIO_BASE = saved;
+      console.log(`[Tunnel] Loaded URL from file: ${saved}`);
+    }
+  }
+} catch (e) {}
+
+// 如果还是空，用默认值
+if (!REMOTE_AUDIO_BASE) {
+  REMOTE_AUDIO_BASE = 'https://skin-florist-inexpensive-principal.trycloudflare.com';
+}
+
 let localAudioMap = {};
 try {
   if (existsSync(LOCAL_AUDIO_DIR)) {
@@ -2023,7 +2041,29 @@ fastify.get('/health', async () => ({
   comments: commentsDB.length,
   sessions: Object.keys(listenSessions).length,
   local_audio: Object.keys(localAudioMap).length,
+  tunnel: REMOTE_AUDIO_BASE,
 }));
+
+// 隧道 URL 自动更新（由 start_tunnel.sh 调用）
+fastify.post('/api/update_tunnel', async (request) => {
+  const { url } = request.body || {};
+  if (!url || !url.startsWith('https://')) {
+    return { ok: false, message: 'Invalid URL' };
+  }
+  REMOTE_AUDIO_BASE = url;
+  try { writeFileSync(TUNNEL_URL_FILE, url, 'utf-8'); } catch (e) {}
+  console.log(`[Tunnel] URL updated: ${url}`);
+  // 重新加载远程音频映射
+  try {
+    const resp = await fetch(`${url}/api/local_audio_map`);
+    const m = await resp.json();
+    localAudioMap = m;
+    console.log(`[Tunnel] Reloaded ${Object.keys(m).length} FLAC mappings`);
+  } catch (e) {
+    console.warn('[Tunnel] Failed to reload mappings:', e.message);
+  }
+  return { ok: true, url };
+});
 
 // ═════════════════════════════════════════════════════════════════════
 // START
