@@ -5550,7 +5550,9 @@ function startPianoFullscreen(songIdx) {
   // Real audio beat detection using Web Audio API
   async function detectBeats(songId, duration) {
     try {
-      const resp = await fetch('/api/proxy_play?id=' + songId);
+      // Try local audio first, then proxy_play
+      let resp = await fetch('/api/local_audio/' + songId);
+      if(!resp.ok) resp = await fetch('/api/proxy_play?id=' + songId);
       if(!resp.ok) throw new Error('fetch failed: ' + resp.status);
       const arrayBuf = await resp.arrayBuffer();
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
