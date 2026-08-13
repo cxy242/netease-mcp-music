@@ -381,44 +381,18 @@ fastify.get('/', async (request, reply) => {
   const authScript = `
 <script>
 (function() {
-  function initAuth() {
-    const token = localStorage.getItem('auth_token');
-    const userInfo = localStorage.getItem('user_info');
-    const guestMode = localStorage.getItem('guest_mode');
-    
-    // Update nav button
-    const navBtn = document.getElementById('userNavBtn');
-    if (navBtn) {
-      if (token && userInfo) {
-        try {
-          const user = JSON.parse(userInfo);
-          navBtn.textContent = '👤 ' + user.username;
-          navBtn.style.display = 'inline-block';
-          navBtn.onclick = function() {
-            window.location.href = '/profile';
-          };
-        } catch(e) {}
-      } else if (!guestMode) {
-        // Not logged in and not guest, redirect to login
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-      } else {
-        navBtn.textContent = '👤 游客';
-        navBtn.style.display = 'inline-block';
-        navBtn.onclick = function() {
-          localStorage.removeItem('guest_mode');
-          window.location.href = '/login';
-        };
-      }
-    }
+  var _token = localStorage.getItem('auth_token');
+  var _guest = localStorage.getItem('guest_mode');
+  var _path = window.location.pathname;
+  
+  // Login redirect: no token + no guest + not on login page → go to login
+  if (!_token && !_guest && !_path.includes('/login') && !_path.includes('/register')) {
+    window.location.href = '/login';
   }
   
-  // Run immediately if DOM ready, otherwise wait
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAuth);
-  } else {
-    initAuth();
+  // On login page with valid token → go to home
+  if (_token && _path.includes('/login')) {
+    window.location.href = '/';
   }
   
   // Fetch and display announcements
@@ -451,16 +425,7 @@ fastify.get('/', async (request, reply) => {
 })();
 </script>`;
   // Add global error handler
-  const errorHandler = `<script>
-window.onerror = function(msg, url, line, col, error) {
-  document.title = 'ERROR: ' + msg + ' line:' + line;
-  var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#ff0000;color:#fff;padding:10px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-all';
-  el.textContent = 'JS Error: ' + msg + ' at line ' + line + ':' + col;
-  document.body.appendChild(el);
-};
-</script>`;
-  return raw.replace('</body>', errorHandler + authScript + '</body>');
+  return raw.replace('</body>', authScript + '</body>');
 });
 
 fastify.get('/songs_data.js', async (request, reply) => {
