@@ -324,9 +324,12 @@ body{
   margin-bottom:24px;color:var(--text);
 }
 .mood-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
-  margin-bottom:20px;
+  display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+  margin-bottom:20px;max-height:280px;overflow-y:auto;
+  padding-right:4px;
 }
+.mood-grid::-webkit-scrollbar{width:3px}
+.mood-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
 .mood-item{
   display:flex;flex-direction:column;align-items:center;gap:6px;
   padding:14px 8px;
@@ -589,9 +592,15 @@ body{
         <span class="checkin-title-dot"></span>
         本月打卡
       </div>
-      <div class="streak-pill">
-        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        连续 <span id="streak">0</span> 天
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="streak-pill">
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          连续 <span id="streak">0</span> 天
+        </div>
+        <a href="/history" style="display:flex;align-items:center;gap:4px;padding:5px 12px;background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(129,140,248,.08));border:1px solid rgba(168,85,247,.15);border-radius:20px;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;transition:all .3s" onmouseover="this.style.background='rgba(168,85,247,.2)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(168,85,247,.12),rgba(129,140,248,.08))'">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          查看历史
+        </a>
       </div>
     </div>
     <div class="cal-weekdays" id="calWeekdays"></div>
@@ -675,6 +684,17 @@ body{
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Checkin Detail Modal -->
+<div class="modal-overlay" id="checkinDetailModal">
+  <div class="modal" style="text-align:center;padding:36px 28px 28px">
+    <div id="detailMoodEmoji" style="font-size:52px;margin-bottom:12px"></div>
+    <div id="detailDate" style="font-size:13px;color:var(--text-faint);margin-bottom:8px"></div>
+    <div id="detailComment" style="font-size:15px;color:var(--text);margin-bottom:20px;word-break:break-all;min-height:20px"></div>
+    <div id="detailTime" style="font-size:11px;color:var(--text-faint);margin-bottom:20px"></div>
+    <button class="modal-btn confirm" style="width:100%" onclick="document.getElementById('checkinDetailModal').classList.remove('active')">关闭</button>
+  </div>
+</div>
+
 <script>
 // ── Auth check ──
 const token = localStorage.getItem('auth_token');
@@ -689,7 +709,19 @@ const MOODS = [
   { emoji: '🥰', label: '甜蜜' },
   { emoji: '😢', label: '难过' },
   { emoji: '😤', label: '生气' },
-  { emoji: '😴', label: '困倦' }
+  { emoji: '😴', label: '困倦' },
+  { emoji: '🤩', label: '兴奋' },
+  { emoji: '😌', label: '放松' },
+  { emoji: '💭', label: '思考' },
+  { emoji: '🎵', label: '音乐' },
+  { emoji: '☕', label: '慵懒' },
+  { emoji: '🌙', label: '深夜' },
+  { emoji: '🔥', label: '热血' },
+  { emoji: '💤', label: '犯困' },
+  { emoji: '🍰', label: '满足' },
+  { emoji: '😱', label: '惊喜' },
+  { emoji: '💪', label: '加油' },
+  { emoji: '🌈', label: '希望' }
 ];
 
 let currentSettings = {};
@@ -900,6 +932,7 @@ function loadCheckin() {
         if (entry) {
           cell.classList.add('checked');
           checkedCount++;
+          cell.style.cursor = 'pointer';
           // Show mood dot if entry has mood
           if (typeof entry === 'object' && entry.mood) {
             const dot = document.createElement('span');
@@ -907,6 +940,10 @@ function loadCheckin() {
             dot.textContent = entry.mood;
             cell.appendChild(dot);
           }
+          // Click to show detail
+          cell.addEventListener('click', function() {
+            showCheckinDetail(key, entry);
+          });
         }
         if (day === today) cell.classList.add('today');
         grid.appendChild(cell);
@@ -939,6 +976,25 @@ function loadCheckin() {
       }
     });
 }
+
+// ── Checkin Detail ──
+function showCheckinDetail(key, entry) {
+  const parts = key.split('-');
+  const dateStr = parts[0] + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日';
+  document.getElementById('detailMoodEmoji').textContent = (typeof entry === 'object' && entry.mood) ? entry.mood : '✅';
+  document.getElementById('detailDate').textContent = dateStr;
+  document.getElementById('detailComment').textContent = (typeof entry === 'object' && entry.comment) ? entry.comment : '（没有留言）';
+  if (typeof entry === 'object' && entry.time) {
+    document.getElementById('detailTime').textContent = '打卡时间：' + new Date(entry.time).toLocaleString('zh-CN');
+    document.getElementById('detailTime').style.display = 'block';
+  } else {
+    document.getElementById('detailTime').style.display = 'none';
+  }
+  document.getElementById('checkinDetailModal').classList.add('active');
+}
+document.getElementById('checkinDetailModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
 
 // ── Load profile ──
 async function loadProfile() {
