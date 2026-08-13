@@ -333,34 +333,44 @@ fastify.get('/', async (request, reply) => {
   const authScript = `
 <script>
 (function() {
-  const token = localStorage.getItem('auth_token');
-  const userInfo = localStorage.getItem('user_info');
-  const guestMode = localStorage.getItem('guest_mode');
-  
-  // Update nav button
-  const navBtn = document.getElementById('userNavBtn');
-  if (navBtn) {
-    if (token && userInfo) {
-      try {
-        const user = JSON.parse(userInfo);
-        navBtn.textContent = '👤 ' + user.username;
+  function initAuth() {
+    const token = localStorage.getItem('auth_token');
+    const userInfo = localStorage.getItem('user_info');
+    const guestMode = localStorage.getItem('guest_mode');
+    
+    // Update nav button
+    const navBtn = document.getElementById('userNavBtn');
+    if (navBtn) {
+      if (token && userInfo) {
+        try {
+          const user = JSON.parse(userInfo);
+          navBtn.textContent = '👤 ' + user.username;
+          navBtn.style.display = 'inline-block';
+          navBtn.onclick = function() {
+            window.location.href = '/profile';
+          };
+        } catch(e) {}
+      } else if (!guestMode) {
+        // Not logged in and not guest, redirect to login
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      } else {
+        navBtn.textContent = '👤 游客';
+        navBtn.style.display = 'inline-block';
         navBtn.onclick = function() {
-          window.location.href = '/profile';
+          localStorage.removeItem('guest_mode');
+          window.location.href = '/login';
         };
-      } catch(e) {}
-    } else if (!guestMode) {
-      // Not logged in and not guest, redirect to login
-      // But don't redirect if already on login page
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
       }
-    } else {
-      navBtn.textContent = '👤 游客';
-      navBtn.onclick = function() {
-        localStorage.removeItem('guest_mode');
-        window.location.href = '/login';
-      };
     }
+  }
+  
+  // Run immediately if DOM ready, otherwise wait
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuth);
+  } else {
+    initAuth();
   }
   
   // Add auth header to fetch
