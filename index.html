@@ -673,10 +673,10 @@ body { transition: background 0.5s ease, color 0.3s ease;
   border-color: white; transform: scale(1.15);
   box-shadow: 0 0 12px rgba(255,255,255,0.4);
 }
-.piano-theme-btn[data-theme="sakura"] { background: radial-gradient(circle, #ffb6c1, #2a1a3a); }
-.piano-theme-btn[data-theme="ocean"] { background: radial-gradient(circle, #64c8ff, #0d2847); }
-.piano-theme-btn[data-theme="galaxy"] { background: radial-gradient(circle, #c896ff, #1a0a3a); }
-.piano-theme-btn[data-theme="flame"] { background: radial-gradient(circle, #ff6432, #3a1a0a); }
+.piano-theme-btn[data-theme="moonlight"] { background: radial-gradient(circle, #c0d8ff, #1a1a3a); }
+.piano-theme-btn[data-theme="firefly"] { background: radial-gradient(circle, #7dff7d, #1a2a1a); }
+.piano-theme-btn[data-theme="aurora"] { background: radial-gradient(circle, #00ffa0, #0a1a2a); }
+.piano-theme-btn[data-theme="porcelain"] { background: radial-gradient(circle, #4488cc, #1a2a4a); }
 /* Floating decorative shapes */
 .piano-deco-shape {
   position: absolute; pointer-events: none; z-index: 1;
@@ -4464,7 +4464,11 @@ function hideGames() {
   stopGameSong();
   document.getElementById('gamesPanel').classList.remove('show');
   document.getElementById('gamesOverlay').classList.remove('show');
-  updateNav();
+  // 恢复导航按钮 — 直接操作，不用updateNav避免重复
+  const nav = document.getElementById('nav-float');
+  if(nav && !document.getElementById('pianoFullscreen') && !lyricsVisible) {
+    nav.style.display = '';
+  }
   // Re-render song list to fix any stale DOM after game switching
   setTimeout(() => renderList(), 100);
 }
@@ -5328,65 +5332,65 @@ let pianoResizeFn = null;     // track resize listener for cleanup
 
 // Piano themes
 const PIANO_THEMES = {
-  sakura: {
-    name: '🌸 樱花',
-    bg: ['#1a0a1e', '#2d1b3d', '#1a0a1e'],
-    bgAccent: 'rgba(255,182,193,0.08)',
-    tileColor: '#2a1a3a',
-    tileGlow: 'rgba(255,182,193,0.6)',
-    holdColor: '#3d2a5c',
-    holdGlow: 'rgba(255,150,200,0.8)',
-    hitColor: 'rgba(255,182,193,0.7)',
-    columnLine: 'rgba(255,182,193,0.12)',
-    particleColors: ['#ffb6c1', '#ff69b4', '#fff0f5', '#ffc0cb'],
-    hudBg: 'rgba(26,10,30,0.85)',
-    accent: '#ffb6c1',
-    decoBg: 'radial-gradient(circle at 20% 80%, rgba(255,182,193,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,105,180,0.1) 0%, transparent 50%)',
+  moonlight: {
+    name: '🌙 月华',
+    bg: ['#080818', '#0a0a2e', '#080818'],
+    bgAccent: 'rgba(192,216,255,0.06)',
+    tileColor: '#1a1a3a',
+    tileGlow: 'rgba(192,216,255,0.6)',
+    holdColor: '#2a2a5c',
+    holdGlow: 'rgba(180,200,255,0.9)',
+    hitColor: 'rgba(192,216,255,0.8)',
+    columnLine: 'rgba(192,216,255,0.08)',
+    particleColors: ['#c0d8ff', '#8aa8d0', '#e0eaff', '#6090c0'],
+    hudBg: 'rgba(8,8,24,0.9)',
+    accent: '#c0d8ff',
+    decoBg: 'radial-gradient(circle at 20% 30%, rgba(192,216,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 70%, rgba(138,168,208,0.08) 0%, transparent 50%)',
   },
-  ocean: {
-    name: '🌊 海洋',
-    bg: ['#0a0e1a', '#0d1b2a', '#0a0e1a'],
-    bgAccent: 'rgba(100,200,255,0.06)',
-    tileColor: '#0d2847',
-    tileGlow: 'rgba(100,200,255,0.6)',
-    holdColor: '#1a3a5c',
-    holdGlow: 'rgba(80,180,255,0.8)',
-    hitColor: 'rgba(100,200,255,0.7)',
-    columnLine: 'rgba(100,200,255,0.1)',
-    particleColors: ['#64c8ff', '#00bfff', '#e0f0ff', '#40a0d0'],
-    hudBg: 'rgba(10,14,26,0.85)',
-    accent: '#64c8ff',
-    decoBg: 'radial-gradient(circle at 30% 70%, rgba(100,200,255,0.12) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(0,150,255,0.08) 0%, transparent 50%)',
+  firefly: {
+    name: '🌿 萤火',
+    bg: ['#0a120a', '#0d1f0d', '#0a120a'],
+    bgAccent: 'rgba(125,255,125,0.05)',
+    tileColor: '#1a2a1a',
+    tileGlow: 'rgba(125,255,125,0.5)',
+    holdColor: '#2a3a2a',
+    holdGlow: 'rgba(100,255,100,0.8)',
+    hitColor: 'rgba(125,255,125,0.7)',
+    columnLine: 'rgba(125,255,125,0.06)',
+    particleColors: ['#7dff7d', '#40c040', '#b0ffb0', '#208020'],
+    hudBg: 'rgba(10,18,10,0.9)',
+    accent: '#7dff7d',
+    decoBg: 'radial-gradient(circle at 30% 60%, rgba(125,255,125,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(64,192,64,0.06) 0%, transparent 50%)',
   },
-  galaxy: {
-    name: '🌌 星空',
-    bg: ['#0a0015', '#15002a', '#0a0015'],
-    bgAccent: 'rgba(200,150,255,0.06)',
-    tileColor: '#1a0a3a',
-    tileGlow: 'rgba(200,150,255,0.6)',
-    holdColor: '#2a1a4a',
-    holdGlow: 'rgba(180,130,255,0.8)',
-    hitColor: 'rgba(200,150,255,0.7)',
-    columnLine: 'rgba(200,150,255,0.1)',
-    particleColors: ['#c896ff', '#9b59b6', '#e8d0ff', '#7b42b0'],
-    hudBg: 'rgba(10,0,21,0.85)',
-    accent: '#c896ff',
-    decoBg: 'radial-gradient(circle at 25% 75%, rgba(200,150,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 25%, rgba(155,89,182,0.08) 0%, transparent 50%)',
+  aurora: {
+    name: '❄️ 极光',
+    bg: ['#050510', '#0a0520', '#050510'],
+    bgAccent: 'rgba(0,255,160,0.05)',
+    tileColor: '#0a1a2a',
+    tileGlow: 'rgba(0,255,160,0.5)',
+    holdColor: '#1a2a3a',
+    holdGlow: 'rgba(0,200,255,0.8)',
+    hitColor: 'rgba(0,255,160,0.7)',
+    columnLine: 'rgba(0,255,160,0.06)',
+    particleColors: ['#00ffa0', '#00c0ff', '#a080ff', '#ff60a0'],
+    hudBg: 'rgba(5,5,16,0.9)',
+    accent: '#00ffa0',
+    decoBg: 'radial-gradient(circle at 25% 40%, rgba(0,255,160,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(0,192,255,0.06) 0%, transparent 50%)',
   },
-  flame: {
-    name: '🔥 烈焰',
-    bg: ['#1a0a0a', '#2a0a0a', '#1a0a0a'],
-    bgAccent: 'rgba(255,100,50,0.06)',
-    tileColor: '#3a1a0a',
-    tileGlow: 'rgba(255,100,50,0.6)',
-    holdColor: '#4a2a1a',
-    holdGlow: 'rgba(255,80,30,0.8)',
-    hitColor: 'rgba(255,100,50,0.7)',
-    columnLine: 'rgba(255,100,50,0.1)',
-    particleColors: ['#ff6432', '#ff9800', '#ffe0b2', '#e65100'],
-    hudBg: 'rgba(26,10,10,0.85)',
-    accent: '#ff6432',
-    decoBg: 'radial-gradient(circle at 50% 80%, rgba(255,100,50,0.12) 0%, transparent 50%), radial-gradient(circle at 30% 30%, rgba(255,152,0,0.08) 0%, transparent 50%)',
+  porcelain: {
+    name: '🔥 琉璃',
+    bg: ['#0a0a1e', '#10103a', '#0a0a1e'],
+    bgAccent: 'rgba(68,136,204,0.06)',
+    tileColor: '#1a2a4a',
+    tileGlow: 'rgba(68,136,204,0.5)',
+    holdColor: '#2a3a5c',
+    holdGlow: 'rgba(68,136,204,0.9)',
+    hitColor: 'rgba(100,180,255,0.7)',
+    columnLine: 'rgba(68,136,204,0.08)',
+    particleColors: ['#4488cc', '#6699dd', '#aaccee', '#2266aa'],
+    hudBg: 'rgba(10,10,30,0.9)',
+    accent: '#4488cc',
+    decoBg: 'radial-gradient(circle at 40% 70%, rgba(68,136,204,0.1) 0%, transparent 50%), radial-gradient(circle at 65% 25%, rgba(102,153,221,0.07) 0%, transparent 50%)',
   }
 };
 
@@ -5459,9 +5463,9 @@ function startPianoFullscreen(songIdx) {
   // 隐藏导航按钮
   hideNav();
 
-  // Theme — load saved or default to sakura
-  const savedPianoTheme = localStorage.getItem('pianoTheme') || 'sakura';
-  const activeTheme = PIANO_THEMES[savedPianoTheme] ? savedPianoTheme : 'sakura';
+  // Theme — load saved or default to moonlight
+  const savedPianoTheme = localStorage.getItem('pianoTheme') || 'moonlight';
+  const activeTheme = PIANO_THEMES[savedPianoTheme] ? savedPianoTheme : 'moonlight';
 
   const durM = Math.floor((s.d || 0) / 60);
   const durS = Math.floor((s.d || 0) % 60).toString().padStart(2, '0');
@@ -5562,14 +5566,15 @@ function startPianoFullscreen(songIdx) {
 
       // ~18% chance of hold tile
       const isHold = Math.random() < 0.18;
-      const holdDuration = isHold ? (0.3 + Math.random() * 0.5) : 0; // 0.3-0.8s
+      const holdDuration = isHold ? (0.3 + Math.random() * 1.5) : 0; // 0.3-1.8s (短中长都有)
 
       // Determine candidate dark columns — avoid overlap and adjacent holds
       // IMPORTANT: hold tiles can only appear alone (1 per row)
       let numDark = isHold ? 1 : (Math.random() < 0.2 ? 2 : 1);
       const holdMinGap = 0.3; // minimum gap after hold tile ends
       const tapMinGap = beatInterval * 0.8; // minimum gap after tap tile
-      const tileOccupied = holdDuration > 0 ? holdDuration + holdMinGap : tapMinGap;
+      // 长按键需要考虑下落时间，否则会和后面的按键重叠
+      const tileOccupied = holdDuration > 0 ? (holdDuration + TILE_TRAVEL_TIME + holdMinGap) : (TILE_TRAVEL_TIME + tapMinGap);
 
       // Ensure time >= colLastEnd for each chosen column; skip if can't fit
       const darkCols = [];
@@ -5659,20 +5664,40 @@ function startPianoFullscreen(songIdx) {
     if(!startEl) return;
     const theme = PIANO_THEMES[pianoFsState.theme];
     const colors = theme.particleColors;
+    const themeKey = pianoFsState.theme;
     for(let i = 0; i < 12; i++) {
       const shape = document.createElement('div');
       shape.className = 'piano-deco-shape';
-      const isCircle = Math.random() > 0.5;
       const size = 8 + Math.random() * 16;
       const color = colors[Math.floor(Math.random() * colors.length)];
+      let cssExtra = '';
+      if(themeKey === 'moonlight') {
+        // Crescent / circle shapes
+        const isCrescent = Math.random() > 0.5;
+        cssExtra = `border-radius: 50%; ${isCrescent ? 'clip-path: inset(0 0 0 30%);' : ''}`;
+      } else if(themeKey === 'firefly') {
+        // Leaf / dot shapes
+        const isLeaf = Math.random() > 0.4;
+        cssExtra = isLeaf ? `border-radius: 0 50% 50% 50%; transform: rotate(${Math.random()*360}deg);` : 'border-radius: 50%;';
+      } else if(themeKey === 'aurora') {
+        // Ribbon / wave shapes — elongated ovals
+        const isRibbon = Math.random() > 0.4;
+        cssExtra = isRibbon ? `border-radius: 50%; width: ${size*2}px; height: ${size*0.5}px; transform: rotate(${Math.random()*180}deg);` : 'border-radius: 50%;';
+      } else if(themeKey === 'porcelain') {
+        // Geometric / triangle shapes
+        const isTri = Math.random() > 0.5;
+        cssExtra = isTri ? `width:0;height:0;background:none;border-left:${size/2}px solid transparent;border-right:${size/2}px solid transparent;border-bottom:${size}px solid ${color}40;` : 'border-radius: 2px;';
+      } else {
+        const isCircle = Math.random() > 0.5;
+        cssExtra = `border-radius: ${isCircle ? '50%' : '0'}; transform: ${isCircle ? '' : 'rotate(45deg)'};`;
+      }
       shape.style.cssText = `
         left: ${Math.random() * 100}%;
         bottom: -20px;
         width: ${size}px; height: ${size}px;
         background: ${color}40;
         border: 1px solid ${color}60;
-        border-radius: ${isCircle ? '50%' : '0'};
-        transform: ${isCircle ? '' : 'rotate(45deg)'};
+        ${cssExtra}
         animation-duration: ${6 + Math.random() * 8}s;
         animation-delay: ${Math.random() * 6}s;
       `;
@@ -6084,7 +6109,7 @@ function startPianoFullscreen(songIdx) {
     ctx.clearRect(0, 0, W, H);
 
     // Background — use theme colors
-    const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.sakura;
+    const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.moonlight;
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, theme.bg[0]);
     grad.addColorStop(0.5, theme.bg[1]);
@@ -6107,22 +6132,80 @@ function startPianoFullscreen(songIdx) {
     // Decorative floating background particles
     if(!pianoFsState.bgParticles || pianoFsState.bgParticles.length === 0) {
       pianoFsState.bgParticles = [];
-      for(let i = 0; i < 20; i++) {
+      const pCount = pianoFsState.theme === 'firefly' ? 30 : 20;
+      for(let i = 0; i < pCount; i++) {
         pianoFsState.bgParticles.push({
           x: Math.random() * W, y: Math.random() * H,
           r: 1 + Math.random() * 3, speed: 0.2 + Math.random() * 0.5,
           alpha: 0.1 + Math.random() * 0.3,
-          color: theme.particleColors[Math.floor(Math.random() * theme.particleColors.length)]
+          color: theme.particleColors[Math.floor(Math.random() * theme.particleColors.length)],
+          phase: Math.random() * Math.PI * 2, // for sine/twinkle
+          hueShift: 0, // for aurora color shifting
         });
       }
     }
     pianoFsState.bgParticles.forEach(p => {
-      p.y -= p.speed;
-      if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
-      ctx.fill();
+      const t = performance.now() / 1000;
+      if(pianoFsState.theme === 'moonlight') {
+        // Slow-falling star sparkles that twinkle
+        p.y -= p.speed * 0.3;
+        p.alpha = 0.15 + 0.25 * Math.sin(t * 2 + p.phase);
+        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 0.8, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+      } else if(pianoFsState.theme === 'firefly') {
+        // Sine-wave drifting with warm glow
+        p.x += Math.sin(t * 0.8 + p.phase) * 0.6;
+        p.y -= p.speed * 0.5;
+        p.alpha = 0.2 + 0.3 * Math.sin(t * 1.5 + p.phase);
+        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+        // Warm amber glow halo
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
+        grd.addColorStop(0, 'rgba(255,200,80,' + (p.alpha * 0.15).toFixed(2) + ')');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if(pianoFsState.theme === 'aurora') {
+        // Multi-colored hue-shifting particles
+        p.y -= p.speed * 0.4;
+        p.x += Math.sin(t * 0.5 + p.phase) * 0.4;
+        p.hueShift = (p.hueShift + 0.5) % 360;
+        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        const pc = theme.particleColors;
+        const ci = Math.floor((t * 0.5 + p.phase) % pc.length);
+        const col = pc[ci < 0 ? 0 : ci % pc.length];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = col + Math.floor(p.alpha * 200).toString(16).padStart(2, '0');
+        ctx.fill();
+      } else if(pianoFsState.theme === 'porcelain') {
+        // Delicate brush-stroke particles — elongated, drifting slowly
+        p.y -= p.speed * 0.25;
+        p.x += Math.sin(t * 0.3 + p.phase) * 0.3;
+        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.phase);
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 200).toString(16).padStart(2, '0');
+        ctx.fillRect(-p.r * 2, -p.r * 0.3, p.r * 4, p.r * 0.6);
+        ctx.restore();
+      } else {
+        // Default behavior
+        p.y -= p.speed;
+        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+      }
     });
 
     // Tap anywhere hint (subtle, fades out over time)
@@ -6394,7 +6477,7 @@ function startPianoFullscreen(songIdx) {
 
 function updatePianoFsUI() {
   if(!pianoFsState) return;
-  const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.sakura;
+  const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.moonlight;
   const scoreEl = document.getElementById('pianoFsScore');
   const comboEl = document.getElementById('pianoFsCombo');
   if(scoreEl) { scoreEl.textContent = Math.floor(pianoFsState.score); scoreEl.style.color = theme.accent; }
@@ -6418,7 +6501,7 @@ function showPianoGameOver() {
   const accuracy = total > 0 ? Math.round((pianoFsState.hit / total) * 100) : 0;
   const grade = accuracy >= 95 ? 'S' : accuracy >= 85 ? 'A' : accuracy >= 70 ? 'B' : accuracy >= 50 ? 'C' : 'D';
 
-  const goTheme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.sakura;
+  const goTheme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.moonlight;
   const goDiv = document.createElement('div');
   goDiv.className = 'piano-fs-gameover';
   goDiv.innerHTML = `
