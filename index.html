@@ -1595,10 +1595,9 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
   <button class="mac-btn random-btn" onclick="playRandom()">🎲 随机一曲</button>
   <button class="mac-btn" onclick="showConverter()" style="background:linear-gradient(135deg,#ff6b9d,#c44dff);color:#fff">🔗 转换器</button>
   <button class="mac-btn" onclick="showFortune()">🔮 今日运势</button>
-  <button class="mac-btn" onclick="showCalendar()">📅 打卡</button>
+
   <button class="mac-btn" onclick="showThemePicker()">🎨 主题</button>
-  <button class="mac-btn" onclick="saveTxt()">💾 保存链接</button>
-  <button class="mac-btn" onclick="saveM3U()">📋 M3U列表</button>
+
   <button class="mac-btn" id="darkModeBtn" onclick="toggleDarkMode()">🌙 深夜</button>
 </div>
 
@@ -7555,7 +7554,7 @@ window.addEventListener('resize', debounce(() => {
 init();
 </script>
 
-<div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:50;display:flex;gap:10px;flex-wrap:wrap;max-width:360px;justify-content:flex-end">
+<div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:1;display:flex;gap:10px;flex-wrap:wrap;max-width:360px;justify-content:flex-end">
   <a href="/netease" style="padding:8px 14px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(233,30,99,0.3)">🎵 网易云</a>
   <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
   <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
