@@ -658,6 +658,12 @@ body{
 <div class="modal-overlay" id="avatarModal">
   <div class="modal">
     <div class="modal-title">选择头像</div>
+    <div style="margin-bottom:16px;text-align:center">
+      <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,#f8a4c8,#c3a6e8);border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;color:#fff;transition:all 0.3s">
+        <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
+        📷 从相册选择
+      </label>
+    </div>
     <div class="avatar-grid" id="avatarGrid"></div>
     <div class="modal-btns">
       <button class="modal-btn cancel" onclick="closeAvatarModal()">取消</button>
@@ -702,7 +708,11 @@ function showToast(msg) {
 // ── Avatar rendering ──
 function renderAvatar(value, initial) {
   const el = document.getElementById('avatar');
-  if (value && value !== 'default') {
+  if (value && value.startsWith('data:image/')) {
+    el.innerHTML = '<img src="' + value + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
+    el.style.fontSize = '';
+    el.style.background = '';
+  } else if (value && value !== 'default') {
     el.textContent = value;
     el.style.fontSize = '40px';
     el.style.background = 'linear-gradient(135deg, rgba(168,85,247,.2), rgba(236,72,153,.15))';
@@ -737,6 +747,32 @@ function openAvatarModal() {
 function closeAvatarModal() {
   document.getElementById('avatarModal').classList.remove('active');
 }
+async function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('图片不能超过2MB'); return; }
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const dataUrl = e.target.result;
+    try {
+      const resp = await fetch('/api/user/avatar', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: dataUrl })
+      });
+      const d = await resp.json();
+      if (d.ok) {
+        showToast('头像已更新');
+        closeAvatarModal();
+        loadProfile();
+      } else {
+        showToast(d.message || '上传失败');
+      }
+    } catch(err) { showToast('网络错误'); }
+  };
+  reader.readAsDataURL(file);
+}
+
 async function confirmAvatar() {
   try {
     currentSettings.avatar = selectedAvatar;
