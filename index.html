@@ -1860,7 +1860,7 @@ let audio = new Audio();
 let mode = 'all';
 let filteredSongs = [...SONGS];
 let gameType = 'bubble';
-let gameSpeedMultiplier = 0.8;
+let gameSpeedMultiplier = 1.0;
 let favorites = JSON.parse(localStorage.getItem('yueXiFavs') || '[]');
 let isDarkMode = localStorage.getItem('yueXiDark') === 'true';
 let titleClickCount = 0;
@@ -5500,7 +5500,7 @@ function startPianoFullscreen(songIdx) {
   // Constants
   const COLS = 4;
   const TILE_H_RATIO = 0.22;
-  const TILE_TRAVEL_TIME = 2.2;
+  const TILE_TRAVEL_TIME = 1.8;
 
   // State
   pianoFsState = {
@@ -6823,9 +6823,9 @@ function startPianoFullscreen(songIdx) {
 
     // Progressive difficulty: smooth exponential speed increase
     const progressRatio = songTime / songDuration;
-    const targetSpeed = 1.0 + progressRatio * 0.8; // up to 1.8x at end
+    const targetSpeed = 1.0 + progressRatio * 1.0; // up to 2.0x at end
     // Smooth interpolation — exponential moving average
-    pianoFsState.smoothSpeedMult = pianoFsState.smoothSpeedMult * 0.995 + targetSpeed * 0.005;
+    pianoFsState.smoothSpeedMult = pianoFsState.smoothSpeedMult * 0.97 + targetSpeed * 0.03;
     const speedMult = pianoFsState.smoothSpeedMult;
     const pixelsPerSecond = ((H + TILE_H) / TILE_TRAVEL_TIME) * speedMult * gameSpeedMultiplier;
 
