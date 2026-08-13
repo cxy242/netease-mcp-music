@@ -32,7 +32,7 @@ let listenSessions = {};
 
 // ─── Local audio files ──────────────────────────────────────────────
 const LOCAL_AUDIO_DIR = join(__dirname, 'audio');
-const REMOTE_AUDIO_BASE = process.env.REMOTE_AUDIO_BASE || 'https://wifi-semiconductor-calibration-sec.trycloudflare.com';
+const REMOTE_AUDIO_BASE = process.env.REMOTE_AUDIO_BASE || 'https://skin-florist-inexpensive-principal.trycloudflare.com';
 let localAudioMap = {};
 try {
   if (existsSync(LOCAL_AUDIO_DIR)) {
