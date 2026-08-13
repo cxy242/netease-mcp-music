@@ -5627,6 +5627,42 @@ function startPianoFullscreen(songIdx) {
   }
 
 
+  let pattern = generatePattern(s.d || 120);
+  let patternIdx = 0;
+
+  // Close / exit handlers
+  function doClose() { closePianoFullscreen(); }
+  document.getElementById('pianoFsBack').onclick = doClose;
+  document.getElementById('pianoFsExit').onclick = doClose;
+
+  // Start button — game starts immediately
+  document.getElementById('pianoFsStartBtn').onclick = () => {
+    SFX.gameStart();
+    document.getElementById('pianoFsStart').style.display = 'none';
+    pianoFsState.running = true;
+    pianoFsState.startTime = performance.now() / 1000;
+
+    // Audio — 3-level fallback
+    pianoFsState.songAudio = new Audio();
+    pianoFsState.songAudio.volume = 0.7;
+    const pAudio = pianoFsState.songAudio;
+    pAudio.onerror = () => {
+      fetch('/api/song/play_url?id=' + s.i).then(r => r.json()).then(d => {
+        if(d.ok && d.url) { pAudio.src = d.url; pAudio.play().catch(()=>{}); }
+      }).catch(() => {});
+    };
+    if(localAudioIds.has(String(s.i))) {
+      pAudio.src = '/api/local_audio/' + s.i;
+      pAudio.play().catch(() => {});
+    } else {
+      pAudio.src = '/api/proxy_play?id=' + s.i;
+      pAudio.play().catch(() => {});
+    }
+
+    pianoRafId = requestAnimationFrame(pianoGameLoop);
+    pianoFsState.rafId = pianoRafId;
+  };
+
   // Theme selector click handler
   const themeSelector = document.getElementById('pianoThemeSelector');
   if(themeSelector) {
