@@ -5550,21 +5550,39 @@ function startPianoFullscreen(songIdx) {
   // Real audio beat detection using Web Audio API
   async function detectBeats(songId, duration) {
     try {
-      // Try local audio first, then proxy_play
-      let resp = await fetch('/api/local_audio/' + songId);
-      if(!resp.ok) resp = await fetch('/api/proxy_play?id=' + songId);
-      if(!resp.ok) return null;
+      // 采样分析：只取前30秒，大幅减少下载和解码时间
+      const sampleDuration = Math.min(30, duration);
+      const sampleBytes = sampleDuration * 128 * 1024; // ~128KB/s for MP3-quality
+      // 8秒超时控制器
+      const fetchCtrl = new AbortController();
+      const fetchTimer = setTimeout(() => fetchCtrl.abort(), 8000);
+      let resp;
+      try {
+        resp = await fetch('/api/proxy_play?id=' + songId, {
+          headers: { 'Range': 'bytes=0-' + sampleBytes }, signal: fetchCtrl.signal
+        });
+      } catch(e) { resp = null; }
+      if(!resp || !resp.ok) {
+        try {
+          resp = await fetch('/api/local_audio/' + songId, {
+            headers: { 'Range': 'bytes=0-' + sampleBytes }, signal: fetchCtrl.signal
+          });
+        } catch(e) { resp = null; }
+      }
+      clearTimeout(fetchTimer);
+      if(!resp || !resp.ok) return null;
       const arrayBuf = await resp.arrayBuffer();
-      // 超时保护：5秒内必须完成解码
+      if(arrayBuf.byteLength < 10000) return null;
+      // 超时保护：10秒内完成解码
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const decodePromise = audioCtx.decodeAudioData(arrayBuf);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('decode timeout')), 5000));
+      const decodePromise = audioCtx.decodeAudioData(arrayBuf.slice(0));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('decode timeout')), 10000));
       let audioBuffer;
       try {
         audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
       } catch(e) {
         audioCtx.close();
-        return null; // 解码失败（FLAC不支持等），回退到随机
+        return null;
       }
       audioCtx.close();
 
@@ -5891,10 +5909,108 @@ function startPianoFullscreen(songIdx) {
     return p;
   }
 
+  // 模板7: 双键交替 — 每行2个键，左右对称
+  function _patDouble(duration) {
+    const BPM = 105 + Math.random() * 20;
+    const bi = 60 / BPM;
+    const p = []; let t = bi * 2; let bc = 0;
+    const col = new Array(COLS).fill(0); let he = 0;
+    while(t < duration - bi) {
+      if(bc % 20 === 0 && bc > 0) { t += bi * 2; }
+      const canH = t >= he; const isH = canH && Math.random() < 0.12;
+      const hd = isH ? (0.3 + Math.random() * 1.0) : 0;
+      let dc;
+      if(isH) {
+        dc = _pickCols(t, 1, true, col);
+      } else {
+        // 固定双键模式：[0,3] 或 [1,2] 交替
+        const pair = bc % 2 === 0 ? [0,3] : [1,2];
+        dc = pair.filter(c => t >= col[c]);
+        if(dc.length > 2) dc = dc.slice(0, 2);
+      }
+      if(!dc.length) { t = Math.max(t, Math.min(...col)) + 0.05; continue; }
+      const occ = _tileOccupied(hd, 0.3, bi * 0.8);
+      for(const c of dc) col[c] = t + occ;
+      if(isH) he = t + hd + 0.3;
+      p.push({time:t, darkCols:dc, isHold:isH, holdDuration:hd});
+      bc++; t += bi * (0.9 + Math.random() * 0.2);
+    }
+    return p;
+  }
+
+  // 模板8: 随机漫步 — 完全随机列，不可预测
+  function _patRandom(duration) {
+    const BPM = 100 + Math.random() * 30;
+    const bi = 60 / BPM;
+    const p = []; let t = bi * 2; let bc = 0;
+    const col = new Array(COLS).fill(0); let he = 0;
+    while(t < duration - bi) {
+      if(bc % 18 === 0 && bc > 0) { t += bi * (1 + Math.random() * 2); }
+      const canH = t >= he; const isH = canH && Math.random() < 0.18;
+      const hd = isH ? (0.3 + Math.random() * 1.5) : 0;
+      const nd = isH ? 1 : (Math.random() < 0.25 ? 2 : 1);
+      const dc = _pickCols(t, nd, isH, col);
+      if(!dc.length) { t = Math.max(t, Math.min(...col)) + 0.05; continue; }
+      const occ = _tileOccupied(hd, 0.3, bi * 0.7);
+      for(const c of dc) col[c] = t + occ;
+      if(isH) he = t + hd + 0.3;
+      p.push({time:t, darkCols:dc, isHold:isH, holdDuration:hd});
+      bc++; t += bi * (0.7 + Math.random() * 0.6);
+    }
+    return p;
+  }
+
+  // 模板9: 单列密集 — 只用2列，快速交替
+  function _patNarrow(duration) {
+    const BPM = 120 + Math.random() * 20;
+    const bi = 60 / BPM;
+    const p = []; let t = bi * 2; let bc = 0;
+    const col = new Array(COLS).fill(0); let he = 0;
+    // 随机选2列
+    const cols = [0,1,2,3].sort(() => Math.random() - 0.5).slice(0, 2);
+    while(t < duration - bi) {
+      if(bc % 16 === 0 && bc > 0) { t += bi * 1.5; }
+      const canH = t >= he; const isH = canH && Math.random() < 0.15;
+      const hd = isH ? (0.3 + Math.random() * 1.0) : 0;
+      const target = cols[bc % 2];
+      const dc = t >= col[target] ? [target] : [];
+      if(!dc.length) { t = Math.max(t, Math.min(...col)) + 0.05; continue; }
+      const occ = _tileOccupied(hd, 0.3, bi * 0.7);
+      for(const c of dc) col[c] = t + occ;
+      if(isH) he = t + hd + 0.3;
+      p.push({time:t, darkCols:dc, isHold:isH, holdDuration:hd});
+      bc++; t += bi * (0.85 + Math.random() * 0.3);
+    }
+    return p;
+  }
+
+  // 模板10: 渐强加速 — 越来越快，最后爆发
+  function _patCrescendo(duration) {
+    const p = []; let t = 1.5; let bc = 0;
+    const col = new Array(COLS).fill(0); let he = 0;
+    while(t < duration - 0.3) {
+      const progress = t / duration; // 0→1
+      const BPM = 80 + progress * 100; // 80→180 BPM
+      const bi = 60 / BPM;
+      if(bc % 20 === 0 && bc > 0 && progress < 0.8) { t += bi * 1.5; }
+      const canH = t >= he; const isH = canH && Math.random() < 0.12;
+      const hd = isH ? (0.3 + Math.random() * 0.8) : 0;
+      const nd = isH ? 1 : (progress > 0.7 && Math.random() < 0.4 ? 2 : 1);
+      const dc = _pickCols(t, nd, isH, col);
+      if(!dc.length) { t = Math.max(t, Math.min(...col)) + 0.05; continue; }
+      const occ = _tileOccupied(hd, 0.2, bi * 0.7);
+      for(const c of dc) col[c] = t + occ;
+      if(isH) he = t + hd + 0.2;
+      p.push({time:t, darkCols:dc, isHold:isH, holdDuration:hd});
+      bc++; t += bi * (0.9 + Math.random() * 0.2);
+    }
+    return p;
+  }
+
   // 随机选一套模板
   function generatePattern(duration) {
-    const templates = [_patSteady, _patSyncopated, _patRapid, _patWave, _patCascade, _patBurst];
-    const names = ['稳定节拍', '切分音', '急速连击', '波浪起伏', '瀑布级联', '爆裂节奏'];
+    const templates = [_patSteady, _patSyncopated, _patRapid, _patWave, _patCascade, _patBurst, _patDouble, _patRandom, _patNarrow, _patCrescendo];
+    const names = ['稳定节拍', '切分音', '急速连击', '波浪起伏', '瀑布级联', '爆裂节奏', '双键交替', '随机漫步', '单列密集', '渐强加速'];
     const idx = Math.floor(Math.random() * templates.length);
     const result = templates[idx](duration);
     // 确保至少有一些按键
@@ -5919,38 +6035,53 @@ function startPianoFullscreen(songIdx) {
     pianoFsState.running = true;
     pianoFsState.startTime = performance.now() / 1000;
 
-    // Start audio — same fallback chain as main player (proxy_play)
+    // Start audio — 3-level fallback: local → proxy → play_url (CDN)
     pianoFsState.songAudio = new Audio();
     pianoFsState.songAudio.volume = 0.7;
     const pAudio = pianoFsState.songAudio;
-    const startPlay = (url) => {
-      pAudio.src = url;
-      pAudio.play().then(() => { pianoFsState.audioPlayed = true; })
-        .catch(() => { pianoFsState.audioPlayed = true; });
+    pAudio.onerror = () => {
+      // Level 3: try direct CDN via play_url API
+      fetch('/api/song/play_url?id=' + s.i).then(r => r.json()).then(d => {
+        if(d.ok && d.url) { pAudio.src = d.url; pAudio.play().catch(()=>{}); }
+      }).catch(() => {});
     };
     if(localAudioIds.has(String(s.i))) {
-      startPlay('/api/local_audio/' + s.i);
+      // Level 1: local audio
+      pAudio.src = '/api/local_audio/' + s.i;
+      pAudio.play().then(() => { pianoFsState.audioPlayed = true; })
+        .catch(() => { pianoFsState.audioPlayed = true; });
     } else {
-      fetch('/api/proxy_play?id=' + s.i, { method: 'HEAD', redirect: 'follow' })
-        .then(r => { startPlay(r.ok ? '/api/proxy_play?id=' + s.i : '/api/local_audio/' + s.i); })
-        .catch(() => { startPlay('/api/local_audio/' + s.i); });
+      // Level 2: proxy (302 redirect to local or CDN)
+      pAudio.src = '/api/proxy_play?id=' + s.i;
+      pAudio.play().then(() => { pianoFsState.audioPlayed = true; })
+        .catch(() => { pianoFsState.audioPlayed = true; });
     }
 
     pianoRafId = requestAnimationFrame(pianoGameLoop);
     pianoFsState.rafId = pianoRafId;
 
-    // Beat detection runs in background — hot-swap pattern if it succeeds
+    // Beat detection with user feedback
+    const _statusEl = document.createElement('div');
+    _statusEl.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.7);color:#fff;padding:6px 16px;border-radius:20px;font-size:13px;pointer-events:none;transition:opacity 0.5s';
+    _statusEl.textContent = '🎵 节奏识别中...';
+    document.body.appendChild(_statusEl);
     detectBeats(s.i, s.d || 120).then(detected => {
       if(detected && detected.length > 2) {
         pattern = detected;
         patternIdx = 0;
-        // Skip tiles that have already passed
         const elapsed = pianoFsState.songAudio.currentTime || 0;
         while(patternIdx < pattern.length && pattern[patternIdx].time < elapsed) {
           patternIdx++;
         }
+        _statusEl.textContent = '✅ 节奏已识别！';
+      } else {
+        _statusEl.textContent = '⚠️ 使用随机节奏';
       }
-    }).catch(() => {});
+      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 1500);
+    }).catch(() => {
+      _statusEl.textContent = '⚠️ 识别失败，使用随机节奏';
+      setTimeout(() => { _statusEl.style.opacity = '0'; setTimeout(() => _statusEl.remove(), 600); }, 1500);
+    });
   };
 
   // Theme selector click handler
