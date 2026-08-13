@@ -48,7 +48,7 @@ try {
 
 // 如果还是空，用默认值
 if (!REMOTE_AUDIO_BASE) {
-  REMOTE_AUDIO_BASE = 'https://skin-florist-inexpensive-principal.trycloudflare.com';
+  REMOTE_AUDIO_BASE = 'https://wisconsin-closure-seriously-restored.trycloudflare.com';
 }
 
 let localAudioMap = {};
