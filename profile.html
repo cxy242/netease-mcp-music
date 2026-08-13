@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>个人中心 - 月汐音乐花园</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a1040 50%, #0a0e1a 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #fff;
+  padding: 20px;
+}
+.container { max-width: 480px; margin: 0 auto; }
+/* 头部 */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 30px;
+}
+.back-btn {
+  padding: 8px 16px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+  color: #fff; font-size: 14px; cursor: pointer; text-decoration: none;
+}
+.back-btn:hover { background: rgba(255,255,255,0.15); }
+.page-title { font-size: 20px; font-weight: 700; }
+/* 用户卡片 */
+.user-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
+  margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; color: #fff; font-weight: 700;
+}
+.username { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.user-id { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+.admin-badge {
+  display: inline-block; padding: 4px 12px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  border-radius: 10px; font-size: 11px; font-weight: 600;
+  margin-bottom: 12px;
+}
+/* 统计 */
+.stats {
+  display: flex; gap: 12px; margin-bottom: 20px;
+}
+.stat-card {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+}
+.stat-num { font-size: 28px; font-weight: 700; }
+.stat-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+/* 菜单 */
+.menu { margin-bottom: 20px; }
+.menu-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.menu-item:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateX(4px);
+}
+.menu-item:active { transform: translateX(2px) scale(0.98); }
+.menu-icon { font-size: 20px; margin-right: 12px; }
+.menu-text { flex: 1; font-size: 15px; }
+.menu-arrow { color: rgba(255,255,255,0.3); font-size: 18px; }
+/* 退出按钮 */
+.logout-btn {
+  width: 100%; padding: 16px;
+  background: rgba(255,107,107,0.15);
+  border: 1px solid rgba(255,107,107,0.3);
+  border-radius: 14px;
+  color: #ff6b6b; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  margin-bottom: 12px;
+}
+.logout-btn:hover { background: rgba(255,107,107,0.25); }
+.switch-btn {
+  width: 100%; padding: 16px;
+  background: rgba(100,200,255,0.1);
+  border: 1px solid rgba(100,200,255,0.2);
+  border-radius: 14px;
+  color: #64c8ff; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.switch-btn:hover { background: rgba(100,200,255,0.2); }
+/* 时间 */
+.time-info {
+  text-align: center; margin-top: 20px;
+  font-size: 12px; color: rgba(255,255,255,0.3);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <a href="/" class="back-btn">← 返回</a>
+    <div class="page-title">个人中心</div>
+    <div style="width:60px"></div>
+  </div>
+
+  <div class="user-card">
+    <div class="avatar" id="avatar">?</div>
+    <div class="username" id="username">加载中...</div>
+    <div class="user-id" id="userId"></div>
+    <div id="adminBadge" style="display:none"><span class="admin-badge">👑 管理员</span></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="favCount">-</div>
+      <div class="stat-label">收藏歌曲</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="playCount">-</div>
+      <div class="stat-label">播放次数</div>
+    </div>
+  </div>
+
+  <div class="menu" id="adminMenu" style="display:none">
+    <div class="menu-item" onclick="location.href='/admin'">
+      <span class="menu-icon">👑</span>
+      <span class="menu-text">管理后台</span>
+      <span class="menu-arrow">›</span>
+    </div>
+  </div>
+
+  <div class="menu">
+    <div class="menu-item" onclick="showAbout()">
+      <span class="menu-icon">ℹ️</span>
+      <span class="menu-text">关于音乐花园</span>
+      <span class="menu-arrow">›</span>
+    </div>
+  </div>
+
+  <button class="logout-btn" onclick="doLogout()">退出登录</button>
+  <button class="switch-btn" onclick="doSwitch()">切换账号</button>
+
+  <div class="time-info" id="timeInfo"></div>
+</div>
+
+<script>
+const token = localStorage.getItem('auth_token');
+
+if (!token) {
+  window.location.href = '/login';
+}
+
+async function loadProfile() {
+  try {
+    const resp = await fetch('/api/user/profile', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      window.location.href = '/login';
+      return;
+    }
+    const u = data.user;
+    document.getElementById('avatar').textContent = u.username.charAt(0).toUpperCase();
+    document.getElementById('username').textContent = u.username;
+    document.getElementById('userId').textContent = 'ID: ' + u.userId;
+    document.getElementById('favCount').textContent = data.stats.favorites;
+    document.getElementById('playCount').textContent = data.stats.playCount;
+
+    if (u.isAdmin) {
+      document.getElementById('adminBadge').style.display = 'block';
+      document.getElementById('adminMenu').style.display = 'block';
+    }
+
+    if (u.createdAt) {
+      const created = new Date(u.createdAt).toLocaleDateString('zh-CN');
+      const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleString('zh-CN') : '未知';
+      document.getElementById('timeInfo').textContent = '注册于 ' + created + ' · 上次登录 ' + lastLogin;
+    }
+  } catch(e) {
+    console.error('Load profile failed:', e);
+  }
+}
+
+function doLogout() {
+  if (confirm('确定要退出登录吗？')) {
+    fetch('/api/logout', { method: 'POST' });
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_info');
+    localStorage.removeItem('guest_mode');
+    window.location.href = '/login';
+  }
+}
+
+function doSwitch() {
+  if (confirm('切换到其他账号？当前账号会退出。')) {
+    fetch('/api/logout', { method: 'POST' });
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_info');
+    localStorage.removeItem('guest_mode');
+    window.location.href = '/login';
+  }
+}
+
+function showAbout() {
+  alert('月汐音乐花园 v1.0\n一个充满音乐与温暖的小世界 🌸');
+}
+
+loadProfile();
+</script>
+</body>
+</html>
