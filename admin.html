@@ -17,56 +17,61 @@ body {
     radial-gradient(ellipse 70% 50% at 30% 30%, rgba(255,100,100,0.08) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 70% 70%, rgba(100,100,255,0.06) 0%, transparent 50%);
 }
-.container { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+.container { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 16px 12px 40px; }
 
 /* Header */
-.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .back-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; background: rgba(255,255,255,0.06);
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 8px 14px; background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-  color: rgba(255,255,255,0.7); font-size: 14px; text-decoration: none; transition: all 0.3s;
+  color: rgba(255,255,255,0.7); font-size: 13px; text-decoration: none; transition: all 0.3s;
 }
 .back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-.page-title { font-size: 20px; font-weight: 700; }
+.page-title { font-size: 18px; font-weight: 700; }
 
-/* Stats Grid */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+/* Stats Grid — 2x2 on mobile */
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
 .stat-card {
   background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-  padding: 16px 8px; text-align: center; transition: all 0.3s;
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+  padding: 14px 8px; text-align: center; transition: all 0.3s;
 }
 .stat-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
 .stat-num {
-  font-size: 24px; font-weight: 800;
+  font-size: 22px; font-weight: 800;
   background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+@media (min-width: 480px) {
+  .stats { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .stat-card { padding: 16px 8px; border-radius: 16px; }
+  .stat-num { font-size: 24px; }
+}
 
 /* Section */
-.section { margin-bottom: 24px; }
+.section { margin-bottom: 20px; }
 .section-title {
-  font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5);
-  margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase;
+  font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.5);
+  margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase;
 }
 
 /* Announcement */
 .announce-box {
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px; padding: 16px; margin-bottom: 24px;
+  border-radius: 14px; padding: 14px; margin-bottom: 20px;
 }
 .announce-input {
-  width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+  width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
   color: #fff; font-size: 14px; outline: none; resize: none;
   transition: border-color 0.3s;
 }
 .announce-input:focus { border-color: rgba(248,164,200,0.5); }
 .announce-input::placeholder { color: rgba(255,255,255,0.3); }
 .announce-btn {
-  margin-top: 10px; padding: 10px 20px;
+  margin-top: 10px; padding: 10px 20px; width: 100%;
   background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
   border: none; border-radius: 10px; color: #fff;
   font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s;
@@ -76,45 +81,58 @@ body {
 /* User List */
 .user-list { margin-bottom: 24px; }
 .user-item {
-  padding: 14px 16px; margin-bottom: 10px;
+  padding: 12px; margin-bottom: 10px;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 16px; transition: all 0.3s;
+  border-radius: 14px; transition: all 0.3s;
   overflow: hidden;
 }
 .user-item:hover { background: rgba(255,255,255,0.06); }
 .user-item.banned { border-color: rgba(255,100,100,0.3); opacity: 0.7; }
-.user-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+
+/* Card top: avatar + name + badges (horizontal row) */
+.user-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .user-avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
   background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 700;
+  font-size: 16px; font-weight: 700;
 }
-.user-info { flex: 1; min-width: 0; overflow: hidden; }
+.user-info { flex: 1; min-width: 0; }
 .user-name {
-  font-size: 15px; font-weight: 600;
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  word-break: break-all;
+  font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  overflow-wrap: break-word;
 }
+
+/* Card middle: meta info line */
 .user-meta {
-  font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 3px;
-  word-break: break-all;
+  font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
 }
+
+/* Badges */
 .badge {
-  padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 600;
   display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+  flex-shrink: 0;
 }
 .badge-admin { background: rgba(255,152,0,0.2); color: #ff9800; }
 .badge-banned { background: rgba(255,80,80,0.2); color: #ff5050; }
+
+/* Card bottom: action buttons (horizontal, wrap) */
 .user-actions {
   display: flex; gap: 6px; flex-wrap: wrap;
   padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);
 }
 .action-btn {
-  padding: 6px 10px; border: none; border-radius: 8px;
-  font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  flex: 0 0 auto;
+  padding: 7px 12px; border: none; border-radius: 20px;
+  font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+  white-space: nowrap; text-align: center;
+  min-width: 0;
 }
-.action-btn:hover { transform: scale(1.05); }
+.action-btn:active { transform: scale(0.97); }
 .btn-view { background: rgba(100,200,255,0.15); color: #64c8ff; border: 1px solid rgba(100,200,255,0.2); }
 .btn-admin { background: rgba(255,152,0,0.15); color: #ff9800; border: 1px solid rgba(255,152,0,0.2); }
 .btn-ban { background: rgba(255,80,80,0.15); color: #ff5050; border: 1px solid rgba(255,80,80,0.2); }
