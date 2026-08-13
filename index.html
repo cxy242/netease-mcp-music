@@ -5547,6 +5547,157 @@ function startPianoFullscreen(songIdx) {
   pianoResizeFn = resizeCanvas;
   window.addEventListener('resize', resizeCanvas);
 
+  // Real audio beat detection using Web Audio API
+  async function detectBeats(songId, duration) {
+    try {
+      const resp = await fetch('/api/proxy_play?id=' + songId);
+      if(!resp.ok) throw new Error('fetch failed: ' + resp.status);
+      const arrayBuf = await resp.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
+      audioCtx.close();
+
+      const rawData = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const windowSize = 1024;
+      const hopSize = 512;
+      const numWindows = Math.floor((rawData.length - windowSize) / hopSize);
+
+      // Calculate RMS energy per window
+      const energies = [];
+      for(let w = 0; w < numWindows; w++) {
+        let sum = 0;
+        const offset = w * hopSize;
+        for(let i = 0; i < windowSize; i++) {
+          const s = rawData[offset + i] || 0;
+          sum += s * s;
+        }
+        energies.push(Math.sqrt(sum / windowSize));
+      }
+
+      // Smooth energies (moving average, 4 windows)
+      const smooth = [];
+      const smoothWin = 4;
+      for(let i = 0; i < energies.length; i++) {
+        let s = 0, cnt = 0;
+        for(let j = Math.max(0, i - smoothWin); j <= Math.min(energies.length - 1, i + smoothWin); j++) {
+          s += energies[j]; cnt++;
+        }
+        smooth.push(s / cnt);
+      }
+
+      // Calculate local average (adaptive threshold) over ~0.5s window
+      const localWin = Math.floor(0.5 * sampleRate / hopSize);
+      const onsets = [];
+      for(let i = 1; i < smooth.length - 1; i++) {
+        // Local average
+        let localSum = 0, localCnt = 0;
+        for(let j = Math.max(0, i - localWin); j <= Math.min(smooth.length - 1, i + localWin); j++) {
+          localSum += smooth[j]; localCnt++;
+        }
+        const localAvg = localSum / localCnt;
+        const threshold = Math.max(localAvg * 1.4, 0.02);
+
+        // Onset: energy spike above local average + rising from previous window
+        if(smooth[i] > threshold && smooth[i] > smooth[i - 1] * 1.2) {
+          const timeSec = (i * hopSize) / sampleRate;
+          // Minimum gap between onsets: 80ms
+          if(onsets.length === 0 || timeSec - onsets[onsets.length - 1] > 0.08) {
+            onsets.push(timeSec);
+          }
+        }
+      }
+
+      // Detect hold candidates: sustained high-energy regions >0.5s
+      const holdCandidates = [];
+      let holdStart = -1;
+      const holdThresh = 0.04;
+      for(let i = 0; i < smooth.length; i++) {
+        const timeSec = (i * hopSize) / sampleRate;
+        if(smooth[i] > holdThresh) {
+          if(holdStart < 0) holdStart = timeSec;
+        } else {
+          if(holdStart >= 0) {
+            const dur = timeSec - holdStart;
+            if(dur > 0.5) {
+              holdCandidates.push({ start: holdStart, duration: dur });
+            }
+            holdStart = -1;
+          }
+        }
+      }
+      // Final region
+      if(holdStart >= 0) {
+        const endT = (smooth.length * hopSize) / sampleRate;
+        if(endT - holdStart > 0.5) {
+          holdCandidates.push({ start: holdStart, duration: endT - holdStart });
+        }
+      }
+
+      // Build pattern from onsets
+      const colLastEnd = new Array(COLS).fill(0);
+      const pattern = [];
+      let holdEndTime = 0;
+      let colCycle = 0; // cycle through columns
+      const tileTravelTime = TILE_TRAVEL_TIME;
+      const minGap = 0.3;
+
+      for(let i = 0; i < onsets.length; i++) {
+        const t = onsets[i];
+        if(t < 0.5 || t > duration - 0.5) continue;
+
+        // Check if this onset falls inside a hold candidate region
+        const holdRegion = holdCandidates.find(hc => t >= hc.start && t <= hc.start + hc.duration);
+        const canHold = t >= holdEndTime && holdRegion && holdRegion.duration > 0.5;
+        const isHold = canHold && Math.random() < 0.25;
+        const holdDuration = isHold ? Math.min(holdRegion.duration, 2.0) : 0;
+
+        // Determine columns
+        let numDark = 1;
+        // If next beat is very close (<0.3s), use 2 columns
+        if(i + 1 < onsets.length && onsets[i + 1] - t < 0.3) {
+          numDark = 2;
+        }
+        if(isHold) numDark = 1;
+
+        const tileOccupied = holdDuration > 0 ? (holdDuration + tileTravelTime + minGap) : (tileTravelTime + 0.2);
+        const darkCols = [];
+
+        if(isHold) {
+          // Pick column with most room
+          let bestCol = colCycle % COLS;
+          for(let c = 0; c < COLS; c++) {
+            if(colLastEnd[c] < colLastEnd[bestCol]) bestCol = c;
+          }
+          if(t >= colLastEnd[bestCol]) {
+            darkCols.push(bestCol);
+            colLastEnd[bestCol] = t + tileOccupied;
+          }
+        } else {
+          const shuffled = [0,1,2,3].sort(() => Math.random() - 0.5);
+          for(const c of shuffled) {
+            if(darkCols.length >= numDark) break;
+            if(t >= colLastEnd[c]) {
+              darkCols.push(c);
+              colLastEnd[c] = t + tileOccupied;
+            }
+          }
+        }
+
+        if(darkCols.length === 0) continue;
+        if(isHold) holdEndTime = t + holdDuration + minGap;
+
+        pattern.push({ time: t, darkCols, isHold, holdDuration });
+        colCycle++;
+      }
+
+      return pattern;
+    } catch(e) {
+      console.warn('Beat detection failed, falling back to generated pattern:', e);
+      return null;
+    }
+  }
+
   // Generate rhythm pattern — BPM 100-130, structured with rests and hold tiles
   function generatePattern(duration) {
     // BPM based on song duration: shorter songs → faster BPM
@@ -5625,7 +5776,7 @@ function startPianoFullscreen(songIdx) {
     return pattern;
   }
 
-  const pattern = generatePattern(s.d || 120);
+  let pattern = generatePattern(s.d || 120);
   let patternIdx = 0;
 
   // Close / exit handlers
@@ -5633,9 +5784,31 @@ function startPianoFullscreen(songIdx) {
   document.getElementById('pianoFsBack').onclick = doClose;
   document.getElementById('pianoFsExit').onclick = doClose;
 
-  // Start button
-  document.getElementById('pianoFsStartBtn').onclick = () => {
+  // Start button — async with beat detection
+  document.getElementById('pianoFsStartBtn').onclick = async () => {
     SFX.gameStart();
+    const startBtn = document.getElementById('pianoFsStartBtn');
+    const origText = startBtn.textContent;
+    startBtn.textContent = '🎵 分析节奏中...';
+    startBtn.disabled = true;
+    startBtn.style.opacity = '0.7';
+
+    // Try real beat detection
+    let detectedPattern = null;
+    try {
+      detectedPattern = await detectBeats(s.i, s.d || 120);
+    } catch(e) { /* fall through */ }
+
+    // Use detected pattern or fallback
+    if(detectedPattern && detectedPattern.length > 0) {
+      pattern = detectedPattern;
+    }
+    // else: pattern was already set by generatePattern above
+
+    startBtn.textContent = origText;
+    startBtn.disabled = false;
+    startBtn.style.opacity = '1';
+
     document.getElementById('pianoFsStart').style.display = 'none';
     pianoFsState.running = true;
     pianoFsState.startTime = performance.now() / 1000;
@@ -6126,110 +6299,258 @@ function startPianoFullscreen(songIdx) {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Background — use theme colors (cached gradients)
+    // Background — theme-specific rendering
     const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.moonlight;
+    const themeKey = pianoFsState.theme;
     if(pianoFsState.cachedGradW !== W || pianoFsState.cachedGradH !== H) {
-      // Rebuild cached gradients when canvas size changes
       const g1 = ctx.createLinearGradient(0, 0, 0, H);
       g1.addColorStop(0, theme.bg[0]);
       g1.addColorStop(0.5, theme.bg[1]);
       g1.addColorStop(1, theme.bg[2]);
       pianoFsState.cachedGrad = g1;
-
-      const g2 = ctx.createRadialGradient(W*0.3, H*0.7, 0, W*0.3, H*0.7, W*0.5);
-      g2.addColorStop(0, theme.bgAccent);
-      g2.addColorStop(1, 'transparent');
-      pianoFsState.cachedBgAccent1 = g2;
-
-      const g3 = ctx.createRadialGradient(W*0.7, H*0.3, 0, W*0.7, H*0.3, W*0.4);
-      g3.addColorStop(0, theme.bgAccent);
-      g3.addColorStop(1, 'transparent');
-      pianoFsState.cachedBgAccent2 = g3;
-
       pianoFsState.cachedGradW = W;
       pianoFsState.cachedGradH = H;
     }
     ctx.fillStyle = pianoFsState.cachedGrad;
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = pianoFsState.cachedBgAccent1;
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = pianoFsState.cachedBgAccent2;
-    ctx.fillRect(0, 0, W, H);
 
-    // Decorative floating background particles
+    // Theme-specific background overlays
+    const bgT = performance.now() / 1000;
+    if(themeKey === 'moonlight') {
+      // ★ Star field with twinkling stars
+      if(!pianoFsState._stars) {
+        pianoFsState._stars = [];
+        for(let i = 0; i < 60; i++) {
+          pianoFsState._stars.push({
+            x: Math.random(), y: Math.random(),
+            r: 0.5 + Math.random() * 2, phase: Math.random() * Math.PI * 2,
+            speed: 0.3 + Math.random() * 1.5
+          });
+        }
+      }
+      // Subtle radial glow at center
+      const cGlow = ctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.4, W*0.6);
+      cGlow.addColorStop(0, 'rgba(100,130,180,0.08)');
+      cGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = cGlow;
+      ctx.fillRect(0, 0, W, H);
+      // Stars
+      pianoFsState._stars.forEach(s => {
+        const twinkle = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(bgT * s.speed + s.phase));
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,220,255,${(twinkle * 0.6).toFixed(2)})`;
+        ctx.fill();
+        // Cross sparkle on brighter stars
+        if(s.r > 1.5 && twinkle > 0.7) {
+          ctx.strokeStyle = `rgba(200,220,255,${(twinkle * 0.3).toFixed(2)})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(s.x*W - s.r*3, s.y*H); ctx.lineTo(s.x*W + s.r*3, s.y*H);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(s.x*W, s.y*H - s.r*3); ctx.lineTo(s.x*W, s.y*H + s.r*3);
+          ctx.stroke();
+        }
+      });
+    } else if(themeKey === 'firefly') {
+      // 🌿 Dark forest canopy at top, ground glow at bottom
+      const forestTop = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+      forestTop.addColorStop(0, 'rgba(10,25,10,0.5)');
+      forestTop.addColorStop(1, 'transparent');
+      ctx.fillStyle = forestTop;
+      ctx.fillRect(0, 0, W, H * 0.3);
+      // Warm ground glow
+      const groundGlow = ctx.createRadialGradient(W*0.5, H, 0, W*0.5, H, H*0.6);
+      groundGlow.addColorStop(0, 'rgba(40,80,20,0.08)');
+      groundGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = groundGlow;
+      ctx.fillRect(0, 0, W, H);
+      // Vignette-like darkness at edges
+      const vign = ctx.createRadialGradient(W*0.5, H*0.5, W*0.2, W*0.5, H*0.5, W*0.8);
+      vign.addColorStop(0, 'transparent');
+      vign.addColorStop(1, 'rgba(5,15,5,0.3)');
+      ctx.fillStyle = vign;
+      ctx.fillRect(0, 0, W, H);
+    } else if(themeKey === 'aurora') {
+      // ❄️ Aurora borealis ribbons across the top
+      for(let r = 0; r < 3; r++) {
+        const ribbonY = H * (0.05 + r * 0.08);
+        const ribbonH = H * 0.12;
+        ctx.save();
+        ctx.globalAlpha = 0.12 - r * 0.03;
+        ctx.beginPath();
+        ctx.moveTo(0, ribbonY);
+        for(let px = 0; px <= W; px += 20) {
+          const wave = Math.sin(px * 0.008 + bgT * (0.3 + r * 0.2) + r * 2) * ribbonH * 0.4;
+          ctx.lineTo(px, ribbonY + wave);
+        }
+        for(let px = W; px >= 0; px -= 20) {
+          const wave = Math.sin(px * 0.008 + bgT * (0.3 + r * 0.2) + r * 2) * ribbonH * 0.4;
+          ctx.lineTo(px, ribbonY + wave + ribbonH * 0.5);
+        }
+        ctx.closePath();
+        const aColors = ['#00ffa0', '#00c0ff', '#a080ff'];
+        const rg = ctx.createLinearGradient(0, ribbonY, W, ribbonY);
+        rg.addColorStop(0, 'transparent');
+        rg.addColorStop(0.3, aColors[r]);
+        rg.addColorStop(0.7, aColors[(r+1)%3]);
+        rg.addColorStop(1, 'transparent');
+        ctx.fillStyle = rg;
+        ctx.fill();
+        ctx.restore();
+      }
+      // Subtle vertical shimmer
+      const shimG = ctx.createRadialGradient(W*0.5, H*0.2, 0, W*0.5, H*0.2, W*0.4);
+      shimG.addColorStop(0, 'rgba(0,255,160,0.04)');
+      shimG.addColorStop(1, 'transparent');
+      ctx.fillStyle = shimG;
+      ctx.fillRect(0, 0, W, H);
+    } else if(themeKey === 'porcelain') {
+      // 🔥 Porcelain crack pattern overlay
+      if(!pianoFsState._cracks) {
+        pianoFsState._cracks = [];
+        for(let i = 0; i < 15; i++) {
+          const cx = Math.random(), cy = Math.random();
+          const segs = [];
+          let px = cx, py = cy;
+          const numSegs = 3 + Math.floor(Math.random() * 5);
+          for(let s = 0; s < numSegs; s++) {
+            const angle = Math.random() * Math.PI * 2;
+            const len = 0.02 + Math.random() * 0.06;
+            const nx = px + Math.cos(angle) * len;
+            const ny = py + Math.sin(angle) * len;
+            segs.push({ x1: px, y1: py, x2: nx, y2: ny });
+            px = nx; py = ny;
+          }
+          pianoFsState._cracks.push(segs);
+        }
+      }
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.strokeStyle = '#aaccee';
+      ctx.lineWidth = 0.8;
+      pianoFsState._cracks.forEach(segs => {
+        segs.forEach(s => {
+          ctx.beginPath();
+          ctx.moveTo(s.x1 * W, s.y1 * H);
+          ctx.lineTo(s.x2 * W, s.y2 * H);
+          ctx.stroke();
+        });
+      });
+      ctx.restore();
+      // Subtle center glow
+      const porcG = ctx.createRadialGradient(W*0.5, H*0.5, 0, W*0.5, H*0.5, W*0.5);
+      porcG.addColorStop(0, 'rgba(68,136,204,0.05)');
+      porcG.addColorStop(1, 'transparent');
+      ctx.fillStyle = porcG;
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      // Default accent glow
+      const g2 = ctx.createRadialGradient(W*0.3, H*0.7, 0, W*0.3, H*0.7, W*0.5);
+      g2.addColorStop(0, theme.bgAccent);
+      g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Decorative floating background particles — ENHANCED per theme
     if(!pianoFsState.bgParticles || pianoFsState.bgParticles.length === 0) {
       pianoFsState.bgParticles = [];
-      const pCount = 10; // limit to 10 for performance
+      const tk = pianoFsState.theme;
+      const pCount = tk === 'moonlight' ? 25 : tk === 'firefly' ? 18 : tk === 'aurora' ? 15 : 12;
       for(let i = 0; i < pCount; i++) {
+        const pc = theme.particleColors;
         pianoFsState.bgParticles.push({
           x: Math.random() * W, y: Math.random() * H,
-          r: 1 + Math.random() * 3, speed: 0.2 + Math.random() * 0.5,
+          r: tk === 'moonlight' ? (0.5 + Math.random() * 2.5) : tk === 'firefly' ? (1.5 + Math.random() * 3) : (1 + Math.random() * 3),
+          speed: 0.15 + Math.random() * 0.5,
           alpha: 0.1 + Math.random() * 0.3,
-          color: theme.particleColors[Math.floor(Math.random() * theme.particleColors.length)],
-          phase: Math.random() * Math.PI * 2, // for sine/twinkle
-          hueShift: 0, // for aurora color shifting
+          color: pc[Math.floor(Math.random() * pc.length)],
+          phase: Math.random() * Math.PI * 2,
+          hueShift: 0,
+          extra: Math.random(), // extra random factor for variety
         });
       }
     }
     pianoFsState.bgParticles.forEach(p => {
-      const t = performance.now() / 1000;
-      if(pianoFsState.theme === 'moonlight') {
-        // Slow-falling star sparkles that twinkle
-        p.y -= p.speed * 0.3;
-        p.alpha = 0.15 + 0.25 * Math.sin(t * 2 + p.phase);
+      const pt = performance.now() / 1000;
+      if(themeKey === 'moonlight') {
+        // ★ Slow-falling star dust that twinkles
+        p.y -= p.speed * 0.2;
+        p.x += Math.sin(pt * 0.4 + p.phase) * 0.15;
+        p.alpha = 0.1 + 0.35 * Math.sin(pt * (1 + p.extra) + p.phase);
         if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        // Star dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+        // Cross sparkle on brighter particles
+        if(p.r > 1.5 && p.alpha > 0.3) {
+          ctx.strokeStyle = p.color + Math.floor(p.alpha * 120).toString(16).padStart(2, '0');
+          ctx.lineWidth = 0.5;
+          ctx.beginPath(); ctx.moveTo(p.x-p.r*2, p.y); ctx.lineTo(p.x+p.r*2, p.y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(p.x, p.y-p.r*2); ctx.lineTo(p.x, p.y+p.r*2); ctx.stroke();
+        }
+      } else if(themeKey === 'firefly') {
+        // 🌿 Fireflies with sine-wave drift and warm glow pulses
+        p.x += Math.sin(pt * 0.6 + p.phase) * 0.8;
+        p.y += Math.cos(pt * 0.4 + p.phase * 1.3) * 0.3;
+        p.alpha = 0.15 + 0.4 * Math.pow(Math.sin(pt * 1.2 + p.phase), 2);
+        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+        if(p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+        // Firefly body
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r * 0.8, 0, Math.PI * 2);
-        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = '#b0ff60' + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
         ctx.fill();
-      } else if(pianoFsState.theme === 'firefly') {
-        // Sine-wave drifting with warm glow
-        p.x += Math.sin(t * 0.8 + p.phase) * 0.6;
-        p.y -= p.speed * 0.5;
-        p.alpha = 0.2 + 0.3 * Math.sin(t * 1.5 + p.phase);
-        if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 1.2, 0, Math.PI * 2);
-        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
-        ctx.fill();
-        // Warm amber glow halo
-        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
-        grd.addColorStop(0, 'rgba(255,200,80,' + (p.alpha * 0.15).toFixed(2) + ')');
+        // Warm glow halo
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
+        grd.addColorStop(0, 'rgba(180,255,80,' + (p.alpha * 0.2).toFixed(2) + ')');
+        grd.addColorStop(0.4, 'rgba(255,200,80,' + (p.alpha * 0.08).toFixed(2) + ')');
         grd.addColorStop(1, 'transparent');
         ctx.fillStyle = grd;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
-        ctx.fill();
-      } else if(pianoFsState.theme === 'aurora') {
-        // Multi-colored hue-shifting particles
-        p.y -= p.speed * 0.4;
-        p.x += Math.sin(t * 0.5 + p.phase) * 0.4;
-        p.hueShift = (p.hueShift + 0.5) % 360;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2); ctx.fill();
+      } else if(themeKey === 'aurora') {
+        // ❄️ Multi-colored hue-shifting aurora particles
+        p.y -= p.speed * 0.35;
+        p.x += Math.sin(pt * 0.4 + p.phase) * 0.6;
         if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
         const pc = theme.particleColors;
-        const ci = Math.floor((t * 0.5 + p.phase) % pc.length);
+        const ci = Math.floor((pt * 0.7 + p.phase) % pc.length);
         const col = pc[ci < 0 ? 0 : ci % pc.length];
+        // Elongated aurora particle
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(Math.sin(pt * 0.3 + p.phase) * 0.5);
+        ctx.fillStyle = col + Math.floor(p.alpha * 180).toString(16).padStart(2, '0');
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = col + Math.floor(p.alpha * 200).toString(16).padStart(2, '0');
+        ctx.ellipse(0, 0, p.r * 0.5, p.r * 2, 0, 0, Math.PI * 2);
         ctx.fill();
-      } else if(pianoFsState.theme === 'porcelain') {
-        // Delicate brush-stroke particles — elongated, drifting slowly
-        p.y -= p.speed * 0.25;
-        p.x += Math.sin(t * 0.3 + p.phase) * 0.3;
+        ctx.restore();
+      } else if(themeKey === 'porcelain') {
+        // 🔥 Blue porcelain shard particles — sharp-edged, drifting slowly
+        p.y -= p.speed * 0.2;
+        p.x += Math.sin(pt * 0.25 + p.phase) * 0.2;
         if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
         ctx.save();
         ctx.translate(p.x, p.y);
-        ctx.rotate(p.phase);
-        ctx.fillStyle = p.color + Math.floor(p.alpha * 200).toString(16).padStart(2, '0');
-        ctx.fillRect(-p.r * 2, -p.r * 0.3, p.r * 4, p.r * 0.6);
+        ctx.rotate(p.phase + pt * 0.05);
+        // Diamond/shard shape
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 180).toString(16).padStart(2, '0');
+        ctx.beginPath();
+        ctx.moveTo(0, -p.r * 1.5);
+        ctx.lineTo(p.r * 0.8, 0);
+        ctx.lineTo(0, p.r * 1.5);
+        ctx.lineTo(-p.r * 0.8, 0);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
       } else {
-        // Default behavior
         p.y -= p.speed;
         if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
         ctx.fill();
       }
@@ -6245,14 +6566,69 @@ function startPianoFullscreen(songIdx) {
       ctx.fillText('点击屏幕任意位置消除黑色方块', W/2, 20);
     }
 
-    // Lane separators — use theme columnLine
-    ctx.strokeStyle = theme.columnLine;
-    ctx.lineWidth = 1;
-    for(let c = 1; c < COLS; c++) {
-      ctx.beginPath();
-      ctx.moveTo(c * COL_W, 0);
-      ctx.lineTo(c * COL_W, H);
-      ctx.stroke();
+    // Lane separators — THEME-SPECIFIC divider styles
+    if(themeKey === 'moonlight') {
+      // Thin moonbeam lines with subtle glow
+      for(let c = 1; c < COLS; c++) {
+        const lx = c * COL_W;
+        ctx.strokeStyle = 'rgba(192,216,255,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
+        // Soft glow on each side
+        const beamG = ctx.createLinearGradient(lx-6, 0, lx+6, 0);
+        beamG.addColorStop(0, 'transparent');
+        beamG.addColorStop(0.5, 'rgba(192,216,255,0.04)');
+        beamG.addColorStop(1, 'transparent');
+        ctx.fillStyle = beamG;
+        ctx.fillRect(lx-6, 0, 12, H);
+      }
+    } else if(themeKey === 'firefly') {
+      // Thin vine-like lines with organic curves
+      for(let c = 1; c < COLS; c++) {
+        const lx = c * COL_W;
+        ctx.strokeStyle = 'rgba(125,255,125,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(lx, 0);
+        for(let py = 0; py < H; py += 40) {
+          const wave = Math.sin(py * 0.02 + bgT * 0.5) * 3;
+          ctx.lineTo(lx + wave, py);
+        }
+        ctx.stroke();
+      }
+    } else if(themeKey === 'aurora') {
+      // Aurora ribbon lines that shimmer
+      const auroraLineColors = ['#00ffa0', '#00c0ff', '#a080ff'];
+      for(let c = 1; c < COLS; c++) {
+        const lx = c * COL_W;
+        const col = auroraLineColors[(c-1) % auroraLineColors.length];
+        ctx.save();
+        ctx.globalAlpha = 0.1;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for(let py = 0; py <= H; py += 15) {
+          const wave = Math.sin(py * 0.015 + bgT * 0.8 + c) * 4;
+          if(py === 0) ctx.moveTo(lx + wave, py); else ctx.lineTo(lx + wave, py);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+    } else if(themeKey === 'porcelain') {
+      // Thin blue porcelain lines with subtle dash
+      for(let c = 1; c < COLS; c++) {
+        ctx.strokeStyle = 'rgba(68,136,204,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([8, 12]);
+        ctx.beginPath(); ctx.moveTo(c * COL_W, 0); ctx.lineTo(c * COL_W, H); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    } else {
+      ctx.strokeStyle = theme.columnLine;
+      ctx.lineWidth = 1;
+      for(let c = 1; c < COLS; c++) {
+        ctx.beginPath(); ctx.moveTo(c * COL_W, 0); ctx.lineTo(c * COL_W, H); ctx.stroke();
+      }
     }
 
     // Song time - use game time if audio not loaded (e.g. VIP songs)
@@ -6328,153 +6704,401 @@ function startPianoFullscreen(songIdx) {
       return t.y < H + tH && !t.hit;
     });
 
-    // Draw tiles (optimized: skip hit tiles entirely, visibility cull)
+    // Draw tiles — THEME-SPECIFIC SHAPES
     pianoFsState.tiles.forEach(t => {
-      // Skip hit tiles entirely — they're already gone
       if(t.hit) return;
-
       const x = t.col * COL_W;
       const pad = 3;
-      const rad = 8;
       const tileH = t.tileH || TILE_H;
-
-      // Visibility cull: skip tiles fully above or below screen
       if(t.y + tileH < -20 || t.y > H + 20) return;
 
-      if(t.missed) {
-        ctx.fillStyle = 'rgba(255,100,100,0.5)';
-      } else if(t.dark) {
-        if(t.type === 'hold') {
-          // Hold tile: gradient with tail effect — use theme colors
-          const tg = ctx.createLinearGradient(x, t.y, x, t.y + tileH);
-          const hc = theme.holdColor;
-          tg.addColorStop(0, hc);
-          tg.addColorStop(0.4, hc + 'cc');
-          tg.addColorStop(1, hc + '80');
-          ctx.fillStyle = tg;
-        } else {
-          // Tap tile — use theme tileColor
-          const tg = ctx.createLinearGradient(x, t.y, x, t.y + TILE_H);
-          tg.addColorStop(0, theme.tileColor);
-          tg.addColorStop(1, theme.tileColor + 'aa');
-          ctx.fillStyle = tg;
-        }
-      } else {
-        ctx.fillStyle = 'rgba(255,255,255,0.07)';
-      }
+      const cx = x + COL_W / 2;
+      const cy = t.y + tileH / 2;
+      const hw = (COL_W - pad * 2) / 2;
+      const hh = (tileH - pad * 2) / 2;
 
-      ctx.beginPath();
-      ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
-      ctx.fill();
-
-      if(t.dark) {
-        // Hold tile: glow when being held — use theme holdGlow
-        if(t.type === 'hold' && t.holdStarted && !t.hit && !t.missed) {
-          const glowAlpha = 0.3 + t.holdProgress * 0.5;
-          ctx.shadowColor = theme.holdGlow;
-          ctx.shadowBlur = 15 + t.holdProgress * 20;
-          ctx.strokeStyle = theme.holdGlow.replace(/[\d.]+\)$/, `${glowAlpha})`);
-          ctx.lineWidth = 2 + t.holdProgress * 2;
-          ctx.beginPath();
-          ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          // Progress fill from bottom up (clipped to tile bounds)
-          if(t.holdProgress > 0) {
-            const progH = tileH * t.holdProgress;
+      // ── MOONLIGHT: soft rounded rects with moon glow ──
+      if(themeKey === 'moonlight') {
+        const rad = 12;
+        if(t.missed) {
+          ctx.fillStyle = 'rgba(255,100,100,0.5)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [rad]); ctx.fill();
+        } else if(t.dark) {
+          // Moon glow halo behind tile
+          if(!t.missed) {
             ctx.save();
-            // Clip to tile bounds
-            ctx.beginPath();
-            ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
-            ctx.clip();
-            // Filled progress with gradient
-            const pg = ctx.createLinearGradient(x, t.y + tileH - progH, x, t.y + tileH);
-            pg.addColorStop(0, 'rgba(168,230,207,0.15)');
-            pg.addColorStop(1, 'rgba(168,230,207,0.45)');
-            ctx.fillStyle = pg;
-            ctx.fillRect(x + pad, t.y + tileH - progH, COL_W - pad * 2, progH);
-            // Progress boundary line at current fill level
-            ctx.strokeStyle = 'rgba(168,230,207,0.7)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x + pad + 4, t.y + tileH - progH);
-            ctx.lineTo(x + COL_W - pad - 4, t.y + tileH - progH);
-            ctx.stroke();
+            const glowR = Math.max(COL_W, tileH) * 0.6;
+            const moonGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+            moonGlow.addColorStop(0, theme.holdGlow.replace(/[\d.]+\)$/, '0.12)'));
+            moonGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = moonGlow;
+            ctx.fillRect(cx - glowR, cy - glowR, glowR*2, glowR*2);
             ctx.restore();
           }
-
-          // Progress text
-          ctx.fillStyle = 'rgba(255,255,255,0.8)';
-          ctx.font = `bold ${Math.min(tileH * 0.2, 16)}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('⏸', x + COL_W / 2, t.y + tileH * 0.3);
-          const pctText = Math.floor(t.holdProgress * 100) + '%';
-          ctx.font = `${Math.min(tileH * 0.15, 12)}px sans-serif`;
-          ctx.fillText(pctText, x + COL_W / 2, t.y + tileH * 0.55);
+          const tg = ctx.createLinearGradient(x, t.y, x, t.y + tileH);
+          tg.addColorStop(0, t.type==='hold' ? theme.holdColor : theme.tileColor);
+          tg.addColorStop(1, (t.type==='hold' ? theme.holdColor : theme.tileColor) + '80');
+          ctx.fillStyle = tg;
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [rad]); ctx.fill();
+          // Soft silver border
+          ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.4)');
+          ctx.lineWidth = t.type==='hold' ? 2 : 1;
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [rad]); ctx.stroke();
+          // Symbol
+          ctx.fillStyle = 'rgba(200,220,255,0.6)';
+          ctx.font = `${tileH*0.35}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(t.type==='hold' ? '🌙' : '✦', cx, cy);
         } else {
-          // Use theme tileGlow for border
-          ctx.strokeStyle = t.type === 'hold' ? theme.tileGlow.replace(/[\d.]+\)$/, '0.5)') : theme.tileGlow.replace(/[\d.]+\)$/, '0.3)');
-          ctx.lineWidth = t.type === 'hold' ? 2 : 1;
-          ctx.beginPath();
-          ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
-          ctx.stroke();
-          // Hold tile: visible boundary markers
-          if(t.type === 'hold') {
-            ctx.setLineDash([4, 3]);
-            ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.4)');
-            ctx.lineWidth = 1;
-            // Top boundary line
-            ctx.beginPath();
-            ctx.moveTo(x + pad + 4, t.y + pad + 2);
-            ctx.lineTo(x + COL_W - pad - 4, t.y + pad + 2);
-            ctx.stroke();
-            // Bottom boundary line
-            ctx.beginPath();
-            ctx.moveTo(x + pad + 4, t.y + tileH - pad - 2);
-            ctx.lineTo(x + COL_W - pad - 4, t.y + tileH - pad - 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
-          ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.font = `${tileH * 0.35}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(t.type === 'hold' ? '⇔' : '♪', x + COL_W / 2, t.y + tileH / 2);
+          ctx.fillStyle = 'rgba(192,216,255,0.05)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [rad]); ctx.fill();
         }
+      }
+      // ── FIREFLY: organic leaf-like shapes ──
+      else if(themeKey === 'firefly') {
+        if(t.missed) {
+          ctx.fillStyle = 'rgba(255,100,100,0.5)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [6]); ctx.fill();
+        } else if(t.dark) {
+          // Leaf shape: rounded on one side, pointed on the other
+          ctx.save();
+          const lx = x + pad, ly = t.y + pad;
+          const lw = COL_W - pad*2, lh = tileH - pad*2;
+          ctx.beginPath();
+          ctx.moveTo(lx + lw*0.5, ly); // top center
+          ctx.quadraticCurveTo(lx + lw, ly + lh*0.1, lx + lw, ly + lh*0.5); // right curve
+          ctx.quadraticCurveTo(lx + lw, ly + lh*0.9, lx + lw*0.5, ly + lh); // bottom right
+          ctx.quadraticCurveTo(lx, ly + lh*0.9, lx, ly + lh*0.5); // bottom left
+          ctx.quadraticCurveTo(lx, ly + lh*0.1, lx + lw*0.5, ly); // left curve
+          ctx.closePath();
+          // Fill with forest green gradient
+          const lg = ctx.createLinearGradient(x, t.y, x, t.y + tileH);
+          lg.addColorStop(0, t.type==='hold' ? theme.holdColor : theme.tileColor);
+          lg.addColorStop(1, (t.type==='hold' ? theme.holdColor : theme.tileColor) + '99');
+          ctx.fillStyle = lg;
+          ctx.fill();
+          // Glow border
+          ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.5)');
+          ctx.lineWidth = t.type==='hold' ? 2 : 1;
+          ctx.stroke();
+          ctx.restore();
+          // Symbol
+          ctx.fillStyle = 'rgba(125,255,125,0.6)';
+          ctx.font = `${tileH*0.3}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(t.type==='hold' ? '🌿' : '🍃', cx, cy);
+        } else {
+          ctx.fillStyle = 'rgba(125,255,125,0.04)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [6]); ctx.fill();
+        }
+      }
+      // ── AURORA: crystalline hexagonal shapes ──
+      else if(themeKey === 'aurora') {
+        if(t.missed) {
+          ctx.fillStyle = 'rgba(255,100,100,0.5)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [4]); ctx.fill();
+        } else if(t.dark) {
+          // Hexagonal crystal shape
+          ctx.save();
+          const hexR = Math.min(hw, hh);
+          const hexCx = cx, hexCy = cy;
+          ctx.beginPath();
+          for(let hi = 0; hi < 6; hi++) {
+            const angle = (Math.PI / 3) * hi - Math.PI / 6;
+            const hx = hexCx + hw * Math.cos(angle);
+            const hy = hexCy + hh * Math.sin(angle);
+            if(hi === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+          }
+          ctx.closePath();
+          // Aurora gradient fill
+          const ag = ctx.createLinearGradient(x, t.y, x + COL_W, t.y + tileH);
+          const auroraColors = ['#00ffa0', '#00c0ff', '#a080ff'];
+          ag.addColorStop(0, t.type==='hold' ? theme.holdColor : theme.tileColor);
+          ag.addColorStop(0.5, (t.type==='hold' ? theme.holdColor : theme.tileColor) + 'dd');
+          ag.addColorStop(1, (t.type==='hold' ? theme.holdColor : theme.tileColor) + '88');
+          ctx.fillStyle = ag;
+          ctx.fill();
+          // Crystal edge
+          ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.6)');
+          ctx.lineWidth = t.type==='hold' ? 2 : 1;
+          ctx.stroke();
+          // Inner crystal facet lines
+          if(tileH > 30) {
+            ctx.strokeStyle = 'rgba(0,255,160,0.15)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, t.y + pad + 4); ctx.lineTo(cx, t.y + tileH - pad - 4);
+            ctx.stroke();
+          }
+          ctx.restore();
+          // Symbol
+          ctx.fillStyle = 'rgba(0,255,160,0.6)';
+          ctx.font = `${tileH*0.3}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(t.type==='hold' ? '💎' : '❄', cx, cy);
+        } else {
+          ctx.strokeStyle = 'rgba(0,255,160,0.08)';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          for(let hi = 0; hi < 6; hi++) {
+            const angle = (Math.PI / 3) * hi - Math.PI / 6;
+            const hx = cx + hw * Math.cos(angle);
+            const hy = cy + hh * Math.sin(angle);
+            if(hi === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+          }
+          ctx.closePath(); ctx.stroke();
+        }
+      }
+      // ── PORCELAIN: sharp geometric shapes with blue-white gradient ──
+      else if(themeKey === 'porcelain') {
+        if(t.missed) {
+          ctx.fillStyle = 'rgba(255,100,100,0.5)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [2]); ctx.fill();
+        } else if(t.dark) {
+          // Sharp-edged rectangle with beveled corners
+          ctx.save();
+          const bx = x + pad, by = t.y + pad;
+          const bw = COL_W - pad*2, bh = tileH - pad*2;
+          const bevel = Math.min(8, bw * 0.15);
+          ctx.beginPath();
+          ctx.moveTo(bx + bevel, by);
+          ctx.lineTo(bx + bw - bevel, by);
+          ctx.lineTo(bx + bw, by + bevel);
+          ctx.lineTo(bx + bw, by + bh - bevel);
+          ctx.lineTo(bx + bw - bevel, by + bh);
+          ctx.lineTo(bx + bevel, by + bh);
+          ctx.lineTo(bx, by + bh - bevel);
+          ctx.lineTo(bx, by + bevel);
+          ctx.closePath();
+          // Blue-white porcelain gradient
+          const pg = ctx.createLinearGradient(x, t.y, x + COL_W, t.y + tileH);
+          pg.addColorStop(0, t.type==='hold' ? theme.holdColor : theme.tileColor);
+          pg.addColorStop(0.3, (t.type==='hold' ? theme.holdColor : theme.tileColor) + 'ee');
+          pg.addColorStop(0.7, '#aaccee22');
+          pg.addColorStop(1, (t.type==='hold' ? theme.holdColor : theme.tileColor) + '99');
+          ctx.fillStyle = pg;
+          ctx.fill();
+          // Sharp edge highlight
+          ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.5)');
+          ctx.lineWidth = t.type==='hold' ? 2 : 1;
+          ctx.stroke();
+          // Porcelain crack detail on larger tiles
+          if(tileH > 40) {
+            ctx.strokeStyle = 'rgba(170,204,238,0.15)';
+            ctx.lineWidth = 0.5;
+            // Diagonal crack
+            ctx.beginPath();
+            ctx.moveTo(bx + bw*0.3, by); ctx.lineTo(bx + bw*0.5, by + bh*0.4);
+            ctx.lineTo(bx + bw*0.7, by + bh);
+            ctx.stroke();
+          }
+          ctx.restore();
+          // Symbol
+          ctx.fillStyle = 'rgba(100,180,255,0.6)';
+          ctx.font = `${tileH*0.3}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(t.type==='hold' ? '◆' : '◇', cx, cy);
+        } else {
+          ctx.fillStyle = 'rgba(68,136,204,0.04)';
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [2]); ctx.fill();
+        }
+      }
+      // ── DEFAULT fallback ──
+      else {
+        const rad = 8;
+        if(t.missed) ctx.fillStyle = 'rgba(255,100,100,0.5)';
+        else if(t.dark) {
+          const tg = ctx.createLinearGradient(x, t.y, x, t.y + tileH);
+          tg.addColorStop(0, t.type==='hold' ? theme.holdColor : theme.tileColor);
+          tg.addColorStop(1, (t.type==='hold' ? theme.holdColor : theme.tileColor) + 'aa');
+          ctx.fillStyle = tg;
+        } else ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [rad]); ctx.fill();
+        if(t.dark) {
+          ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.3)');
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [rad]); ctx.stroke();
+        }
+      }
+
+      // ── Hold tile progress rendering (shared across themes) ──
+      if(t.dark && t.type === 'hold' && t.holdStarted && !t.hit && !t.missed) {
+        const glowAlpha = 0.3 + t.holdProgress * 0.5;
+        ctx.shadowColor = theme.holdGlow;
+        ctx.shadowBlur = 15 + t.holdProgress * 20;
+        ctx.strokeStyle = theme.holdGlow.replace(/[\d.]+\)$/, `${glowAlpha})`);
+        ctx.lineWidth = 2 + t.holdProgress * 2;
+        ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [6]); ctx.stroke();
+        ctx.shadowBlur = 0;
+        if(t.holdProgress > 0) {
+          const progH = tileH * t.holdProgress;
+          ctx.save();
+          ctx.beginPath(); ctx.roundRect(x+pad, t.y+pad, COL_W-pad*2, tileH-pad*2, [6]); ctx.clip();
+          const pg = ctx.createLinearGradient(x, t.y+tileH-progH, x, t.y+tileH);
+          const holdAccent = theme.accent || '#a8e6cf';
+          pg.addColorStop(0, holdAccent + '26');
+          pg.addColorStop(1, holdAccent + '73');
+          ctx.fillStyle = pg;
+          ctx.fillRect(x+pad, t.y+tileH-progH, COL_W-pad*2, progH);
+          ctx.strokeStyle = holdAccent + 'b3'; ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x+pad+4, t.y+tileH-progH); ctx.lineTo(x+COL_W-pad-4, t.y+tileH-progH);
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = `bold ${Math.min(tileH*0.2,16)}px sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⏸', cx, t.y + tileH*0.3);
+        ctx.font = `${Math.min(tileH*0.15,12)}px sans-serif`;
+        ctx.fillText(Math.floor(t.holdProgress*100)+'%', cx, t.y + tileH*0.55);
       }
     });
 
-    // Ripples — use theme accent (limit to 5 for performance)
+    // Hit effects — THEME-SPECIFIC ripple/particle effects
     const ripples = pianoFsState.ripples;
-    while(ripples.length > 5) ripples.shift();
+    while(ripples.length > 8) ripples.shift();
     for(let ri = ripples.length - 1; ri >= 0; ri--) {
       const rp = ripples[ri];
       rp.r += 4;
       rp.alpha -= 0.025;
       if(rp.alpha <= 0) { ripples.splice(ri, 1); continue; }
-      ctx.beginPath();
-      ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
-      ctx.strokeStyle = theme.accent + Math.floor(rp.alpha * 255).toString(16).padStart(2, '0');
-      ctx.lineWidth = 2;
-      ctx.stroke();
+
+      if(themeKey === 'moonlight') {
+        // ★ Silver sparkle explosion — expanding ring + sparkle dots
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(200,220,255,${(rp.alpha*0.7).toFixed(2)})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // Inner glow
+        const sg = ctx.createRadialGradient(rp.x, rp.y, 0, rp.x, rp.y, rp.r * 0.5);
+        sg.addColorStop(0, `rgba(200,220,255,${(rp.alpha*0.15).toFixed(2)})`);
+        sg.addColorStop(1, 'transparent');
+        ctx.fillStyle = sg;
+        ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r*0.5, 0, Math.PI*2); ctx.fill();
+        // Sparkle rays
+        for(let si = 0; si < 6; si++) {
+          const angle = (Math.PI*2/6)*si + rp.r*0.05;
+          const sr = rp.r * (0.5 + 0.5 * rp.alpha);
+          ctx.beginPath();
+          ctx.moveTo(rp.x + Math.cos(angle)*sr*0.3, rp.y + Math.sin(angle)*sr*0.3);
+          ctx.lineTo(rp.x + Math.cos(angle)*sr, rp.y + Math.sin(angle)*sr);
+          ctx.strokeStyle = `rgba(255,255,255,${(rp.alpha*0.4).toFixed(2)})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      } else if(themeKey === 'firefly') {
+        // 🌿 Green firefly burst — scattered glowing dots
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(125,255,125,${(rp.alpha*0.3).toFixed(2)})`;
+        ctx.fill();
+        // Scattered firefly dots
+        for(let fi = 0; fi < 8; fi++) {
+          const angle = (Math.PI*2/8)*fi;
+          const dist = rp.r * (0.5 + 0.3 * Math.sin(fi * 1.7));
+          const fx = rp.x + Math.cos(angle) * dist;
+          const fy = rp.y + Math.sin(angle) * dist;
+          const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, 5);
+          fg.addColorStop(0, `rgba(125,255,125,${(rp.alpha*0.6).toFixed(2)})`);
+          fg.addColorStop(1, 'transparent');
+          ctx.fillStyle = fg;
+          ctx.beginPath(); ctx.arc(fx, fy, 5, 0, Math.PI*2); ctx.fill();
+        }
+      } else if(themeKey === 'aurora') {
+        // ❄️ Aurora color explosion — green→cyan→purple→pink expanding arcs
+        const auroraHitColors = ['#00ffa0', '#00c0ff', '#a080ff', '#ff60a0'];
+        for(let ai = 0; ai < 4; ai++) {
+          const arcR = rp.r * (0.3 + ai * 0.2);
+          ctx.beginPath();
+          const startAngle = -Math.PI/2 + ai * 0.3 + rp.r * 0.02;
+          const endAngle = startAngle + Math.PI * 0.6;
+          ctx.arc(rp.x, rp.y, arcR, startAngle, endAngle);
+          ctx.strokeStyle = auroraHitColors[ai] + Math.floor(rp.alpha * 180).toString(16).padStart(2, '0');
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      } else if(themeKey === 'porcelain') {
+        // 🔥 Porcelain crack pattern spreading from hit point
+        ctx.save();
+        ctx.globalAlpha = rp.alpha * 0.6;
+        ctx.strokeStyle = '#aaccee';
+        ctx.lineWidth = 1;
+        const numCracks = 5;
+        for(let ci = 0; ci < numCracks; ci++) {
+          const angle = (Math.PI*2/numCracks)*ci + ci*0.3;
+          ctx.beginPath();
+          ctx.moveTo(rp.x, rp.y);
+          let px = rp.x, py = rp.y;
+          for(let seg = 0; seg < 3; seg++) {
+            const segLen = rp.r * 0.25;
+            const segAngle = angle + (Math.random()-0.5)*0.8;
+            px += Math.cos(segAngle) * segLen;
+            py += Math.sin(segAngle) * segLen;
+            ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+        // Central glow
+        const pg = ctx.createRadialGradient(rp.x, rp.y, 0, rp.x, rp.y, rp.r*0.3);
+        pg.addColorStop(0, `rgba(100,180,255,${(rp.alpha*0.2).toFixed(2)})`);
+        pg.addColorStop(1, 'transparent');
+        ctx.fillStyle = pg;
+        ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r*0.3, 0, Math.PI*2); ctx.fill();
+      } else {
+        // Default: expanding ring
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+        ctx.strokeStyle = theme.accent + Math.floor(rp.alpha*255).toString(16).padStart(2, '0');
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     }
 
-    // Slide trails (glow effect for long-press slide) — use theme particle colors
+    // Slide trails — THEME-SPECIFIC glow effects
     for(let si = slideTrails.length - 1; si >= 0; si--) {
       const st = slideTrails[si];
       st.alpha -= 0.04;
       if(st.alpha <= 0) { slideTrails.splice(si, 1); continue; }
       const pc = theme.particleColors;
-      const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r);
-      grad.addColorStop(0, pc[0] + Math.floor(st.alpha * 153).toString(16).padStart(2, '0'));
-      grad.addColorStop(0.5, pc[1] + Math.floor(st.alpha * 76).toString(16).padStart(2, '0'));
-      grad.addColorStop(1, pc[2] + '00');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
-      ctx.fill();
+      if(themeKey === 'moonlight') {
+        // Silver sparkle trail
+        const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r);
+        grad.addColorStop(0, `rgba(200,220,255,${(st.alpha*0.5).toFixed(2)})`);
+        grad.addColorStop(0.5, `rgba(160,190,240,${(st.alpha*0.25).toFixed(2)})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI*2); ctx.fill();
+      } else if(themeKey === 'firefly') {
+        // Green firefly glow with warm halo
+        const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r * 1.2);
+        grad.addColorStop(0, `rgba(125,255,125,${(st.alpha*0.4).toFixed(2)})`);
+        grad.addColorStop(0.5, `rgba(255,200,80,${(st.alpha*0.1).toFixed(2)})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.r*1.2, 0, Math.PI*2); ctx.fill();
+      } else if(themeKey === 'aurora') {
+        // Multi-hue aurora trail
+        const hueIdx = Math.floor((performance.now()/200 + si) % 4);
+        const auroraTrail = ['#00ffa0', '#00c0ff', '#a080ff', '#ff60a0'];
+        const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r);
+        grad.addColorStop(0, auroraTrail[hueIdx] + Math.floor(st.alpha*100).toString(16).padStart(2,'0'));
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI*2); ctx.fill();
+      } else if(themeKey === 'porcelain') {
+        // Blue porcelain shard trail
+        const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r);
+        grad.addColorStop(0, `rgba(100,180,255,${(st.alpha*0.4).toFixed(2)})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(st.x - st.r, st.y - st.r*0.3, st.r*2, st.r*0.6);
+      } else {
+        const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r);
+        grad.addColorStop(0, pc[0] + Math.floor(st.alpha*153).toString(16).padStart(2,'0'));
+        grad.addColorStop(0.5, pc[1] + Math.floor(st.alpha*76).toString(16).padStart(2,'0'));
+        grad.addColorStop(1, pc[2] + '00');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI*2); ctx.fill();
+      }
     }
 
     // Lane labels at bottom
