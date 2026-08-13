@@ -385,18 +385,6 @@ fastify.get('/', async (request, reply) => {
     initAuth();
   }
   
-  // Version check - force reload if server updated
-  const currentVersion = localStorage.getItem('app_version');
-  fetch('/health').then(r=>r.json()).then(d=>{
-    const serverVersion = String(d.uptime || '').substring(0,4);
-    if(currentVersion && currentVersion !== serverVersion) {
-      localStorage.setItem('app_version', serverVersion);
-      window.location.reload(true);
-    } else {
-      localStorage.setItem('app_version', serverVersion);
-    }
-  }).catch(()=>{});
-  
   // Add auth header to fetch
   const origFetch = window.fetch;
   window.fetch = function(url, opts) {
