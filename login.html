@@ -299,9 +299,15 @@ function skipLogin() {
 document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('regPassword2').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
 
-// 已登录则跳转
+// 已登录则验证 token 后跳转
 if (localStorage.getItem('auth_token')) {
-  window.location.href = '/';
+  fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') } })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) { window.location.href = '/'; }
+      else { localStorage.removeItem('auth_token'); localStorage.removeItem('user_info'); }
+    })
+    .catch(() => {});
 }
 </script>
 </body>
