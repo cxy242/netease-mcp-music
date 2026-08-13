@@ -256,7 +256,7 @@ fastify.post('/api/login', async (request, reply) => {
   saveUsers();
   const token = generateToken(user.userId);
   reply.header('Set-Cookie', `auth_token=${token}; Path=/; HttpOnly; Max-Age=${TOKEN_EXPIRY / 1000}`);
-  return { ok: true, token, user: { userId: user.userId, username: user.username } };
+  return { ok: true, token, user: { userId: user.userId, username: user.username, isAdmin: !!user.isAdmin } };
 });
 
 fastify.get('/api/me', async (request) => {
