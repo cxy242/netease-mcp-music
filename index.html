@@ -5648,22 +5648,29 @@ function startPianoFullscreen(songIdx) {
       audio.preload = 'auto';
       pianoFsState.songAudio = audio;
 
-      // Choose audio source
-      if(typeof localAudioIds !== 'undefined' && localAudioIds.has(String(s.i))) {
-        audio.src = '/api/local_audio/' + s.i;
-      } else {
-        audio.src = '/api/proxy_play?id=' + s.i;
+      // Choose audio source — same as main player
+      function setAudioSrc(url) {
+        audio.src = url;
+        audio.load();
       }
-
-      // Fallback on error
-      audio.onerror = function() {
+      if(typeof localAudioIds !== 'undefined' && localAudioIds.has(String(s.i))) {
+        // 本地音频直连
+        setAudioSrc('/api/local_audio/' + s.i);
+      } else {
+        // 先 HEAD 检查 proxy_play 是否可用
+        fetch('/api/proxy_play?id=' + s.i, { method: 'HEAD', redirect: 'follow' })
+          .then(function(r) {
+            if(r.ok) { setAudioSrc('/api/proxy_play?id=' + s.i); }
+            else { tryDirectUrl(); }
+          })
+          .catch(function() { tryDirectUrl(); });
+      }
+      function tryDirectUrl() {
         fetch('/api/song/play_url?id=' + s.i).then(function(r){ return r.json(); }).then(function(d) {
-          if(d.ok && d.url) {
-            audio.src = d.url;
-            audio.load();
-          }
+          if(d.ok && d.url) { setAudioSrc(d.url); }
+          else { startGame(); } // no audio, just start game
         }).catch(function(){ startGame(); });
-      };
+      }
 
       function startGame() {
         try { SFX.gameStart(); } catch(e) {}
