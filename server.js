@@ -300,15 +300,24 @@ fastify.get('/listen-cat.js', async (request, reply) => {
 // Login page
 fastify.get('/login', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
+  reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  reply.header('Pragma', 'no-cache');
+  reply.header('Expires', '0');
   return readFileSync(join(__dirname, 'login.html'), 'utf-8');
 });
 
 fastify.get('/profile', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
+  reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  reply.header('Pragma', 'no-cache');
+  reply.header('Expires', '0');
   return readFileSync(join(__dirname, 'profile.html'), 'utf-8');
 });
 
 fastify.get('/admin', async (request, reply) => {
+  reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  reply.header('Pragma', 'no-cache');
+  reply.header('Expires', '0');
   const user = getCurrentUser(request);
   if (!user || !user.isAdmin) {
     reply.code(403).type('text/html');
@@ -320,6 +329,9 @@ fastify.get('/admin', async (request, reply) => {
 
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
+  reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  reply.header('Pragma', 'no-cache');
+  reply.header('Expires', '0');
   const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
   const nav = `
 <div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:99999;display:flex;gap:6px;flex-wrap:wrap;max-width:280px;justify-content:flex-end">
@@ -372,6 +384,18 @@ fastify.get('/', async (request, reply) => {
   } else {
     initAuth();
   }
+  
+  // Version check - force reload if server updated
+  const currentVersion = localStorage.getItem('app_version');
+  fetch('/health').then(r=>r.json()).then(d=>{
+    const serverVersion = String(d.uptime || '').substring(0,4);
+    if(currentVersion && currentVersion !== serverVersion) {
+      localStorage.setItem('app_version', serverVersion);
+      window.location.reload(true);
+    } else {
+      localStorage.setItem('app_version', serverVersion);
+    }
+  }).catch(()=>{});
   
   // Add auth header to fetch
   const origFetch = window.fetch;
