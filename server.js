@@ -335,7 +335,7 @@ fastify.get('/', async (request, reply) => {
   reply.header('Expires', '0');
   const raw = readFileSync(join(__dirname, 'index.html'), 'utf-8');
   const nav = `
-<div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:99999;display:flex;gap:6px;flex-wrap:wrap;max-width:280px;justify-content:flex-end">
+<div id="nav-float" style="position:fixed;top:0;left:0;right:0;z-index:99999;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:8px 12px;background:rgba(10,14,26,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06)">
   <a href="/netease" style="padding:8px 14px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(233,30,99,0.3)">🎵 网易云</a>
   <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
   <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
@@ -386,6 +386,22 @@ fastify.get('/', async (request, reply) => {
     initAuth();
   }
   
+  // Fetch and display announcements
+  fetch('/api/announcements').then(r=>r.json()).then(d=>{
+    if(d.ok && d.announcements && d.announcements.length > 0) {
+      const ann = d.announcements[0]; // latest
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:48px;left:0;right:0;z-index:99998;padding:10px 16px;background:linear-gradient(135deg,rgba(248,164,200,0.15),rgba(195,166,232,0.15));border-bottom:1px solid rgba(255,255,255,0.08);font-size:13px;color:rgba(255,255,255,0.85);text-align:center;backdrop-filter:blur(8px);cursor:pointer;transition:opacity 0.3s';
+      banner.innerHTML = '<b>📢 ' + (ann.author || '管理员') + '：</b>' + ann.message;
+      banner.onclick = function(){ banner.style.opacity='0'; setTimeout(()=>banner.remove(),300); };
+      document.body.appendChild(banner);
+      // 给 body 加额外 padding
+      document.body.style.paddingTop = '78px';
+      // 30秒后自动消失
+      setTimeout(()=>{ if(banner.parentNode){banner.style.opacity='0'; setTimeout(()=>banner.remove(),300);} }, 30000);
+    }
+  }).catch(()=>{});
+
   // Add auth header to fetch
   const origFetch = window.fetch;
   window.fetch = function(url, opts) {
