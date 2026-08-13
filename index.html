@@ -657,6 +657,52 @@ body { transition: background 0.5s ease, color 0.3s ease;
   transition: transform 0.2s;
 }
 .piano-fs-restart:active { transform: scale(0.95); }
+/* Piano Theme Selector */
+.piano-theme-selector {
+  display: flex; gap: 10px; margin-top: 20px; z-index: 21;
+}
+.piano-theme-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;
+}
+.piano-theme-btn::before {
+  content: ''; position: absolute; inset: 2px; border-radius: 50%;
+}
+.piano-theme-btn.active {
+  border-color: white; transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+.piano-theme-btn[data-theme="sakura"] { background: radial-gradient(circle, #ffb6c1, #2a1a3a); }
+.piano-theme-btn[data-theme="ocean"] { background: radial-gradient(circle, #64c8ff, #0d2847); }
+.piano-theme-btn[data-theme="galaxy"] { background: radial-gradient(circle, #c896ff, #1a0a3a); }
+.piano-theme-btn[data-theme="flame"] { background: radial-gradient(circle, #ff6432, #3a1a0a); }
+/* Floating decorative shapes */
+.piano-deco-shape {
+  position: absolute; pointer-events: none; z-index: 1;
+  animation: pianoDecoFloat linear infinite;
+}
+@keyframes pianoDecoFloat {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+}
+.piano-deco-grid {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.piano-glow-ring {
+  position: absolute; width: 160px; height: 160px; border-radius: 50%;
+  pointer-events: none; z-index: 0;
+  animation: pianoGlowPulse 2s ease-in-out infinite;
+}
+@keyframes pianoGlowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
 /* Piano Song Selection */
 .piano-sel-wrap { padding: 12px; max-height: 100%; overflow-y: auto; }
 .piano-sel-title { font-size: 18px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 4px; }
@@ -5279,6 +5325,70 @@ let pianoFsState = null;
 let pianoRafId = null;        // track requestAnimationFrame for cancellation
 let pianoResizeFn = null;     // track resize listener for cleanup
 
+// Piano themes
+const PIANO_THEMES = {
+  sakura: {
+    name: '🌸 樱花',
+    bg: ['#1a0a1e', '#2d1b3d', '#1a0a1e'],
+    bgAccent: 'rgba(255,182,193,0.08)',
+    tileColor: '#2a1a3a',
+    tileGlow: 'rgba(255,182,193,0.6)',
+    holdColor: '#3d2a5c',
+    holdGlow: 'rgba(255,150,200,0.8)',
+    hitColor: 'rgba(255,182,193,0.7)',
+    columnLine: 'rgba(255,182,193,0.12)',
+    particleColors: ['#ffb6c1', '#ff69b4', '#fff0f5', '#ffc0cb'],
+    hudBg: 'rgba(26,10,30,0.85)',
+    accent: '#ffb6c1',
+    decoBg: 'radial-gradient(circle at 20% 80%, rgba(255,182,193,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,105,180,0.1) 0%, transparent 50%)',
+  },
+  ocean: {
+    name: '🌊 海洋',
+    bg: ['#0a0e1a', '#0d1b2a', '#0a0e1a'],
+    bgAccent: 'rgba(100,200,255,0.06)',
+    tileColor: '#0d2847',
+    tileGlow: 'rgba(100,200,255,0.6)',
+    holdColor: '#1a3a5c',
+    holdGlow: 'rgba(80,180,255,0.8)',
+    hitColor: 'rgba(100,200,255,0.7)',
+    columnLine: 'rgba(100,200,255,0.1)',
+    particleColors: ['#64c8ff', '#00bfff', '#e0f0ff', '#40a0d0'],
+    hudBg: 'rgba(10,14,26,0.85)',
+    accent: '#64c8ff',
+    decoBg: 'radial-gradient(circle at 30% 70%, rgba(100,200,255,0.12) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(0,150,255,0.08) 0%, transparent 50%)',
+  },
+  galaxy: {
+    name: '🌌 星空',
+    bg: ['#0a0015', '#15002a', '#0a0015'],
+    bgAccent: 'rgba(200,150,255,0.06)',
+    tileColor: '#1a0a3a',
+    tileGlow: 'rgba(200,150,255,0.6)',
+    holdColor: '#2a1a4a',
+    holdGlow: 'rgba(180,130,255,0.8)',
+    hitColor: 'rgba(200,150,255,0.7)',
+    columnLine: 'rgba(200,150,255,0.1)',
+    particleColors: ['#c896ff', '#9b59b6', '#e8d0ff', '#7b42b0'],
+    hudBg: 'rgba(10,0,21,0.85)',
+    accent: '#c896ff',
+    decoBg: 'radial-gradient(circle at 25% 75%, rgba(200,150,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 25%, rgba(155,89,182,0.08) 0%, transparent 50%)',
+  },
+  flame: {
+    name: '🔥 烈焰',
+    bg: ['#1a0a0a', '#2a0a0a', '#1a0a0a'],
+    bgAccent: 'rgba(255,100,50,0.06)',
+    tileColor: '#3a1a0a',
+    tileGlow: 'rgba(255,100,50,0.6)',
+    holdColor: '#4a2a1a',
+    holdGlow: 'rgba(255,80,30,0.8)',
+    hitColor: 'rgba(255,100,50,0.7)',
+    columnLine: 'rgba(255,100,50,0.1)',
+    particleColors: ['#ff6432', '#ff9800', '#ffe0b2', '#e65100'],
+    hudBg: 'rgba(26,10,10,0.85)',
+    accent: '#ff6432',
+    decoBg: 'radial-gradient(circle at 50% 80%, rgba(255,100,50,0.12) 0%, transparent 50%), radial-gradient(circle at 30% 30%, rgba(255,152,0,0.08) 0%, transparent 50%)',
+  }
+};
+
 function initPianoGame(area) {
   const playable = SONGS.filter(s => s.i);
   if(!playable.length) {
@@ -5367,10 +5477,15 @@ function startPianoFullscreen(songIdx) {
     </div>
     <canvas class="piano-fs-canvas" id="pianoFsCanvas"></canvas>
     <div class="piano-fs-start" id="pianoFsStart">
-      <div style="font-size:28px;margin-bottom:12px">🎹</div>
-      <div style="font-size:18px;font-weight:600;color:white;margin-bottom:4px">${esc(s.n)}</div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px">${esc(s.a)} · ${durM}:${durS}</div>
-      <button class="piano-fs-start-btn" id="pianoFsStartBtn">开始游戏</button>
+      <div class="piano-deco-grid"></div>
+      <div class="piano-glow-ring" style="left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,${PIANO_THEMES[activeTheme].accent}33 0%,transparent 70%)"></div>
+      <div style="font-size:28px;margin-bottom:12px;z-index:2">🎹</div>
+      <div style="font-size:18px;font-weight:600;color:white;margin-bottom:4px;z-index:2">${esc(s.n)}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px;z-index:2">${esc(s.a)} · ${durM}:${durS}</div>
+      <button class="piano-fs-start-btn" id="pianoFsStartBtn" style="position:relative;z-index:2">开始游戏</button>
+      <div class="piano-theme-selector" id="pianoThemeSelector">
+        ${Object.keys(PIANO_THEMES).map(k => `<button class="piano-theme-btn${k===activeTheme?' active':''}" data-theme="${k}" title="${PIANO_THEMES[k].name}"></button>`).join('')}
+      </div>
     </div>
   `;
 
@@ -5379,7 +5494,9 @@ function startPianoFullscreen(songIdx) {
   const TILE_H_RATIO = 0.22;
   const TILE_TRAVEL_TIME = 3.0;
 
-  // State
+  // State — load saved theme or default to sakura
+  const savedTheme = localStorage.getItem('pianoTheme') || 'sakura';
+  const activeTheme = PIANO_THEMES[savedTheme] ? savedTheme : 'sakura';
   pianoFsState = {
     song: s,
     songIdx: songIdx,
@@ -5399,7 +5516,9 @@ function startPianoFullscreen(songIdx) {
     rafId: null,
     startTime: 0,
     holdTile: null,
-    holdStartTime: 0
+    holdStartTime: 0,
+    theme: activeTheme,
+    bgParticles: [] // decorative floating particles
   };
 
   // Canvas setup with DPR
@@ -5511,6 +5630,81 @@ function startPianoFullscreen(songIdx) {
     pianoRafId = requestAnimationFrame(pianoGameLoop);
     pianoFsState.rafId = pianoRafId;
   };
+
+  // Theme selector click handler
+  const themeSelector = document.getElementById('pianoThemeSelector');
+  if(themeSelector) {
+    themeSelector.addEventListener('click', (e) => {
+      const btn = e.target.closest('.piano-theme-btn');
+      if(!btn) return;
+      const t = btn.dataset.theme;
+      if(!PIANO_THEMES[t]) return;
+      pianoFsState.theme = t;
+      localStorage.setItem('pianoTheme', t);
+      // Update active button
+      themeSelector.querySelectorAll('.piano-theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Update start screen background
+      applyPianoTheme(t);
+    });
+  }
+
+  // Create floating decorative shapes on start screen
+  function createDecoShapes() {
+    const startEl = document.getElementById('pianoFsStart');
+    if(!startEl) return;
+    const theme = PIANO_THEMES[pianoFsState.theme];
+    const colors = theme.particleColors;
+    for(let i = 0; i < 12; i++) {
+      const shape = document.createElement('div');
+      shape.className = 'piano-deco-shape';
+      const isCircle = Math.random() > 0.5;
+      const size = 8 + Math.random() * 16;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      shape.style.cssText = `
+        left: ${Math.random() * 100}%;
+        bottom: -20px;
+        width: ${size}px; height: ${size}px;
+        background: ${color}40;
+        border: 1px solid ${color}60;
+        border-radius: ${isCircle ? '50%' : '0'};
+        transform: ${isCircle ? '' : 'rotate(45deg)'};
+        animation-duration: ${6 + Math.random() * 8}s;
+        animation-delay: ${Math.random() * 6}s;
+      `;
+      startEl.appendChild(shape);
+    }
+  }
+  createDecoShapes();
+
+  // Apply theme to HTML overlay elements
+  function applyPianoTheme(themeKey) {
+    const theme = PIANO_THEMES[themeKey];
+    if(!theme) return;
+    const overlay = document.getElementById('pianoFullscreen');
+    if(!overlay) return;
+    // Update fullscreen background
+    overlay.style.background = `linear-gradient(180deg, ${theme.bg[0]} 0%, ${theme.bg[1]} 50%, ${theme.bg[2]} 100%)`;
+    // Update header accent
+    const header = overlay.querySelector('.piano-fs-header');
+    if(header) header.style.borderBottomColor = theme.accent + '30';
+    // Update HUD
+    const hud = overlay.querySelector('.piano-fs-hud');
+    if(hud) hud.style.background = theme.hudBg;
+    // Update start screen background
+    const startEl = document.getElementById('pianoFsStart');
+    if(startEl) {
+      startEl.style.background = `rgba(0,0,0,0.8)`;
+      startEl.style.backdropFilter = 'blur(16px)';
+    }
+    // Update glow ring color
+    const glowRing = overlay.querySelector('.piano-glow-ring');
+    if(glowRing) glowRing.style.background = `radial-gradient(circle, ${theme.accent}33 0%, transparent 70%)`;
+    // Update start button gradient
+    const startBtn = document.getElementById('pianoFsStartBtn');
+    if(startBtn) startBtn.style.background = `linear-gradient(135deg, ${theme.accent}, ${theme.accent}88)`;
+  }
+  applyPianoTheme(pianoFsState.theme);
 
   // Touch handler with long-press + slide support (passive: false, preventDefault)
   let touchStartTime = 0;
@@ -5885,12 +6079,47 @@ function startPianoFullscreen(songIdx) {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Background
+    // Background — use theme colors
+    const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.sakura;
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a1033');
-    grad.addColorStop(1, '#0d1b2a');
+    grad.addColorStop(0, theme.bg[0]);
+    grad.addColorStop(0.5, theme.bg[1]);
+    grad.addColorStop(1, theme.bg[2]);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
+
+    // Background accent glow
+    const bgGrad = ctx.createRadialGradient(W*0.3, H*0.7, 0, W*0.3, H*0.7, W*0.5);
+    bgGrad.addColorStop(0, theme.bgAccent);
+    bgGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+    const bgGrad2 = ctx.createRadialGradient(W*0.7, H*0.3, 0, W*0.7, H*0.3, W*0.4);
+    bgGrad2.addColorStop(0, theme.bgAccent);
+    bgGrad2.addColorStop(1, 'transparent');
+    ctx.fillStyle = bgGrad2;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative floating background particles
+    if(!pianoFsState.bgParticles || pianoFsState.bgParticles.length === 0) {
+      pianoFsState.bgParticles = [];
+      for(let i = 0; i < 20; i++) {
+        pianoFsState.bgParticles.push({
+          x: Math.random() * W, y: Math.random() * H,
+          r: 1 + Math.random() * 3, speed: 0.2 + Math.random() * 0.5,
+          alpha: 0.1 + Math.random() * 0.3,
+          color: theme.particleColors[Math.floor(Math.random() * theme.particleColors.length)]
+        });
+      }
+    }
+    pianoFsState.bgParticles.forEach(p => {
+      p.y -= p.speed;
+      if(p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+    });
 
     // Tap anywhere hint (subtle, fades out over time)
     const gameTime = pianoFsState.startTime ? (performance.now()/1000 - pianoFsState.startTime) : 0;
@@ -5902,8 +6131,8 @@ function startPianoFullscreen(songIdx) {
       ctx.fillText('点击屏幕任意位置消除黑色方块', W/2, 20);
     }
 
-    // Lane separators
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    // Lane separators — use theme columnLine
+    ctx.strokeStyle = theme.columnLine;
     ctx.lineWidth = 1;
     for(let c = 1; c < COLS; c++) {
       ctx.beginPath();
@@ -5990,7 +6219,7 @@ function startPianoFullscreen(songIdx) {
       const tileH = t.tileH || TILE_H;
 
       if(t.hit) {
-        ctx.fillStyle = 'rgba(168,230,207,0.6)';
+        ctx.fillStyle = theme.hitColor;
         ctx.beginPath();
         ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
         ctx.fill();
@@ -6001,16 +6230,18 @@ function startPianoFullscreen(songIdx) {
         ctx.fillStyle = 'rgba(255,100,100,0.5)';
       } else if(t.dark) {
         if(t.type === 'hold') {
-          // Hold tile: gradient with tail effect
+          // Hold tile: gradient with tail effect — use theme colors
           const tg = ctx.createLinearGradient(x, t.y, x, t.y + tileH);
-          tg.addColorStop(0, '#6a4090');
-          tg.addColorStop(0.4, '#4a3060');
-          tg.addColorStop(1, '#2a1540');
+          const hc = theme.holdColor;
+          tg.addColorStop(0, hc);
+          tg.addColorStop(0.4, hc + 'cc');
+          tg.addColorStop(1, hc + '80');
           ctx.fillStyle = tg;
         } else {
+          // Tap tile — use theme tileColor
           const tg = ctx.createLinearGradient(x, t.y, x, t.y + TILE_H);
-          tg.addColorStop(0, '#4a3060');
-          tg.addColorStop(1, '#2a1540');
+          tg.addColorStop(0, theme.tileColor);
+          tg.addColorStop(1, theme.tileColor + 'aa');
           ctx.fillStyle = tg;
         }
       } else {
@@ -6022,12 +6253,12 @@ function startPianoFullscreen(songIdx) {
       ctx.fill();
 
       if(t.dark) {
-        // Hold tile: glow when being held
+        // Hold tile: glow when being held — use theme holdGlow
         if(t.type === 'hold' && t.holdStarted && !t.hit && !t.missed) {
           const glowAlpha = 0.3 + t.holdProgress * 0.5;
-          ctx.shadowColor = 'rgba(200,150,255,0.8)';
+          ctx.shadowColor = theme.holdGlow;
           ctx.shadowBlur = 15 + t.holdProgress * 20;
-          ctx.strokeStyle = `rgba(200,150,255,${glowAlpha})`;
+          ctx.strokeStyle = theme.holdGlow.replace(/[\d.]+\)$/, `${glowAlpha})`);
           ctx.lineWidth = 2 + t.holdProgress * 2;
           ctx.beginPath();
           ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
@@ -6068,15 +6299,16 @@ function startPianoFullscreen(songIdx) {
           ctx.font = `${Math.min(tileH * 0.15, 12)}px sans-serif`;
           ctx.fillText(pctText, x + COL_W / 2, t.y + tileH * 0.55);
         } else {
-          ctx.strokeStyle = t.type === 'hold' ? 'rgba(200,150,255,0.5)' : 'rgba(200,150,255,0.3)';
+          // Use theme tileGlow for border
+          ctx.strokeStyle = t.type === 'hold' ? theme.tileGlow.replace(/[\d.]+\)$/, '0.5)') : theme.tileGlow.replace(/[\d.]+\)$/, '0.3)');
           ctx.lineWidth = t.type === 'hold' ? 2 : 1;
           ctx.beginPath();
           ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
           ctx.stroke();
-          // Hold tile: visible boundary markers (top cap, bottom cap, side lines)
+          // Hold tile: visible boundary markers
           if(t.type === 'hold') {
             ctx.setLineDash([4, 3]);
-            ctx.strokeStyle = 'rgba(200,150,255,0.4)';
+            ctx.strokeStyle = theme.tileGlow.replace(/[\d.]+\)$/, '0.4)');
             ctx.lineWidth = 1;
             // Top boundary line
             ctx.beginPath();
@@ -6099,7 +6331,7 @@ function startPianoFullscreen(songIdx) {
       }
     });
 
-    // Ripples
+    // Ripples — use theme accent
     const ripples = pianoFsState.ripples;
     for(let ri = ripples.length - 1; ri >= 0; ri--) {
       const rp = ripples[ri];
@@ -6108,20 +6340,21 @@ function startPianoFullscreen(songIdx) {
       if(rp.alpha <= 0) { ripples.splice(ri, 1); continue; }
       ctx.beginPath();
       ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(248,164,200,${rp.alpha})`;
+      ctx.strokeStyle = theme.accent + Math.floor(rp.alpha * 255).toString(16).padStart(2, '0');
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    // Slide trails (glow effect for long-press slide)
+    // Slide trails (glow effect for long-press slide) — use theme particle colors
     for(let si = slideTrails.length - 1; si >= 0; si--) {
       const st = slideTrails[si];
       st.alpha -= 0.04;
       if(st.alpha <= 0) { slideTrails.splice(si, 1); continue; }
+      const pc = theme.particleColors;
       const grad = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.r);
-      grad.addColorStop(0, `rgba(248,164,200,${st.alpha * 0.6})`);
-      grad.addColorStop(0.5, `rgba(195,166,232,${st.alpha * 0.3})`);
-      grad.addColorStop(1, `rgba(168,230,207,0)`);
+      grad.addColorStop(0, pc[0] + Math.floor(st.alpha * 153).toString(16).padStart(2, '0'));
+      grad.addColorStop(0.5, pc[1] + Math.floor(st.alpha * 76).toString(16).padStart(2, '0'));
+      grad.addColorStop(1, pc[2] + '00');
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
@@ -6180,17 +6413,18 @@ function showPianoGameOver() {
   const accuracy = total > 0 ? Math.round((pianoFsState.hit / total) * 100) : 0;
   const grade = accuracy >= 95 ? 'S' : accuracy >= 85 ? 'A' : accuracy >= 70 ? 'B' : accuracy >= 50 ? 'C' : 'D';
 
+  const goTheme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.sakura;
   const goDiv = document.createElement('div');
   goDiv.className = 'piano-fs-gameover';
   goDiv.innerHTML = `
     <div style="font-size:48px;margin-bottom:8px">🎹</div>
     <div style="font-size:20px;color:rgba(255,255,255,0.7)">游戏结束</div>
-    <div class="piano-fs-final-score">${Math.floor(pianoFsState.score)}</div>
-    <div style="font-size:36px;margin-bottom:12px">${grade === 'S' ? '👑' : grade === 'A' ? '⭐' : grade === 'B' ? '👍' : '💪'} ${grade}</div>
+    <div class="piano-fs-final-score" style="color:${goTheme.accent}">${Math.floor(pianoFsState.score)}</div>
+    <div style="font-size:36px;margin-bottom:12px;color:${goTheme.accent}">${grade === 'S' ? '👑' : grade === 'A' ? '⭐' : grade === 'B' ? '👍' : '💪'} ${grade}</div>
     <div class="piano-fs-final-detail">命中: ${pianoFsState.hit} · 失误: ${pianoFsState.miss}</div>
     <div class="piano-fs-final-detail">完美: ${pianoFsState.perfect} · 最大连击: ${pianoFsState.maxCombo}</div>
     <div class="piano-fs-final-detail">准确率: ${accuracy}%</div>
-    <button class="piano-fs-restart" onclick="closePianoFullscreen()">返回</button>
+    <button class="piano-fs-restart" style="background:linear-gradient(135deg,${goTheme.accent},${goTheme.accent}88)" onclick="closePianoFullscreen()">返回</button>
     <button class="piano-fs-restart" style="margin-top:10px;background:linear-gradient(135deg,var(--mint),var(--sky))" onclick="closePianoFullscreen();setTimeout(()=>startPianoFullscreen(${pianoFsState.songIdx}),300)">再来一次</button>
   `;
   overlay.appendChild(goDiv);
@@ -6703,7 +6937,7 @@ window.addEventListener('resize', debounce(() => {
 init();
 </script>
 
-<div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:99999;display:flex;gap:10px;flex-wrap:wrap;max-width:360px;justify-content:flex-end">
+<div id="nav-float" style="position:fixed;top:12px;right:12px;z-index:50;display:flex;gap:10px;flex-wrap:wrap;max-width:360px;justify-content:flex-end">
   <a href="/netease" style="padding:8px 14px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(233,30,99,0.3)">🎵 网易云</a>
   <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
   <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
