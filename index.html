@@ -103,7 +103,6 @@ body { transition: background 0.5s ease, color 0.3s ease;
   min-height: 100vh;
   color: var(--text);
   overflow-x: hidden;
-  padding-top: 48px;
   padding-bottom: 120px;
 }
 @keyframes gradientShift {
@@ -1154,59 +1153,34 @@ body.dark-mode .lyric-line.active {
 .sleep-option:hover { background:rgba(200,150,200,0.15); }
 
 /* FAB */
-/* ── Floating Action Ball ── */
-#fab {
-  position: fixed; right: 16px; bottom: 80px; z-index: 99998;
-  display: flex; flex-direction: column; align-items: center;
+.fab-container {
+  position:fixed; bottom:175px; right:16px; z-index:90;
+  display:flex; flex-direction:column; gap:8px; align-items:flex-end;
 }
-#fab-main {
-  width: 52px; height: 52px; border-radius: 50%; border: none;
-  background: linear-gradient(135deg, #f8a4c8, #c3a6e8, #7ec8e3);
-  color: white; font-size: 22px; cursor: pointer;
-  box-shadow: 0 4px 20px rgba(200,150,200,0.4);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform 0.3s, box-shadow 0.3s;
-  touch-action: none; user-select: none;
+.fab-btn {
+  width:48px; height:48px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--pink),var(--lavender));
+  color:white; font-size:18px; cursor:pointer;
+  box-shadow:0 4px 15px rgba(200,150,200,0.3);
+  transition:all 0.3s; display:flex; align-items:center; justify-content:center;
 }
-#fab-main:hover { transform: scale(1.1); box-shadow: 0 6px 25px rgba(200,150,200,0.6); }
-#fab-main:active { transform: scale(0.95); }
-
-#fab-menu {
-  position: absolute; bottom: 60px; right: 0;
-  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
-  opacity: 0; pointer-events: none;
-  transform: translateY(10px) scale(0.95);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+.fab-btn:hover { transform:scale(1.1); box-shadow:0 6px 20px rgba(200,150,200,0.5); }
+.fab-menu {
+  display:flex; flex-direction:column; gap:6px; align-items:flex-end;
+  opacity:0; pointer-events:none; transform:translateY(10px);
+  transition:all 0.3s;
 }
-#fab-menu.show {
-  opacity: 1; pointer-events: auto;
-  transform: translateY(0) scale(1);
+.fab-menu.show { opacity:1; pointer-events:auto; transform:translateY(0); }
+.fab-mini {
+  width:36px; height:36px; border-radius:50%; border:none;
+  background:var(--glass); backdrop-filter:blur(10px);
+  border:1px solid var(--glass-border);
+  font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s;
 }
-
-.fab-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 16px; border-radius: 24px;
-  color: white; font-size: 13px; font-weight: 600;
-  text-decoration: none; white-space: nowrap;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
-  transition: transform 0.2s, box-shadow 0.2s;
-  backdrop-filter: blur(8px);
-}
-.fab-item:hover {
-  transform: translateX(-4px) scale(1.03);
-  box-shadow: 0 5px 18px rgba(0,0,0,0.3);
-}
-.fab-item:active { transform: scale(0.97); }
-
-#fab-backdrop {
-  position: fixed; inset: 0; z-index: 99997;
-  background: rgba(0,0,0,0.15);
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.3s;
-}
-#fab-backdrop.show {
-  opacity: 1; pointer-events: auto;
-}
+.fab-mini { will-change: transform; }
+.fab-mini:hover { transform:scale(1.1); background:rgba(255,255,255,0.6); }
 
 /* Popup panel (generic) */
 .popup-overlay {
@@ -1230,7 +1204,7 @@ body.dark-mode .lyric-line.active {
   .mac-btn { padding:8px 12px; font-size:12px; }
   .game2048-cell { font-size:18px; }
   .game2048-ctrl { width:44px; height:44px; }
-  
+  .fab-container { bottom:110px; }
   .rhythm-lane { width:54px; }
   .rhythm-note { width:42px; height:42px; left:6px; font-size:14px; }
 }
@@ -1238,7 +1212,7 @@ body.dark-mode .lyric-line.active {
 /* ===== PHASE 2 UPGRADES ===== */
 
 /* Micro-interactions: every button bounces on tap */
-button:active, .act-btn:active, .mac-btn:active, .np-btn:active, .quiz-opt:active, .sleep-option:active, .theme-option:active, .memory-diff-btn:active, .game-tab:active, .mode-tab:active, .piano-sel-item:active {
+button:active, .act-btn:active, .mac-btn:active, .fab-btn:active, .fab-mini:active, .np-btn:active, .quiz-opt:active, .sleep-option:active, .theme-option:active, .memory-diff-btn:active, .game-tab:active, .mode-tab:active, .piano-sel-item:active {
   transform: scale(0.95) !important;
   transition: transform 0.08s ease;
 }
@@ -1533,7 +1507,7 @@ body.dark-mode .converter-panel { background:rgba(25,20,50,0.97); }
 
 /* ====== 全局丝滑优化 ====== */
 * { -webkit-tap-highlight-color: transparent; }
-button, a, .song-card, .mac-btn, .np-btn, .act-btn {
+button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -1541,7 +1515,7 @@ button, a, .song-card, .mac-btn, .np-btn, .act-btn {
 .song-card:active { transform: scale(0.98) !important; transition-duration: 0.1s; }
 .mac-btn:active { transform: scale(0.95) !important; transition-duration: 0.1s; }
 .np-btn:active { transform: scale(0.9) !important; }
-
+.fab-btn:active, .fab-mini:active { transform: scale(0.9) !important; }
 .toast { transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(0); }
 .toast.show { animation: toastIn 0.3s ease; }
 @keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -1557,9 +1531,151 @@ button, a, .song-card, .mac-btn, .np-btn, .act-btn {
 .mode-tab:active { transform: scale(0.95); }
 .song-list { contain: layout style; }
 .song-card { content-visibility: auto; contain-intrinsic-size: 0 60px; }
+
+
+/* ===== FLOATING ACTION BALL (FAB) ===== */
+#fab {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+  z-index: 99999;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e91e63, #9c27b0, #2196f3);
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.4), 0 0 30px rgba(156, 39, 176, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s;
+  position: relative;
+  z-index: 2;
+  animation: fab-glow 2s ease-in-out infinite alternate;
+}
+#fab-main:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(233, 30, 99, 0.6), 0 0 40px rgba(156, 39, 176, 0.3);
+}
+#fab-main:active {
+  transform: scale(0.95);
+}
+#fab.open #fab-main {
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #ff5722, #e91e63);
+}
+@keyframes fab-glow {
+  0% { box-shadow: 0 4px 20px rgba(233, 30, 99, 0.4), 0 0 20px rgba(156, 39, 176, 0.15); }
+  100% { box-shadow: 0 4px 25px rgba(233, 30, 99, 0.5), 0 0 35px rgba(156, 39, 176, 0.25); }
+}
+#fab-menu {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+#fab-menu .fab-item {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  text-decoration: none;
+  opacity: 0;
+  transform: translate(0, 0) scale(0);
+  transition: all 0.35s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+  border: 2px solid rgba(255,255,255,0.15);
+}
+#fab-menu .fab-item:hover {
+  transform: scale(1.15) !important;
+  filter: brightness(1.2);
+}
+#fab.open #fab-menu {
+  pointer-events: auto;
+}
+#fab.open #fab-menu .fab-item {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Each item position - radial arc */
+#fab.open #fab-menu .fab-item:nth-child(1) { transform: translate(-70px, -10px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(2) { transform: translate(-60px, -60px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(3) { transform: translate(-10px, -80px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(4) { transform: translate(30px, -70px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(5) { transform: translate(50px, -40px) scale(1); }
+/* Staggered delays */
+#fab.open #fab-menu .fab-item:nth-child(1) { transition-delay: 0.03s; }
+#fab.open #fab-menu .fab-item:nth-child(2) { transition-delay: 0.06s; }
+#fab.open #fab-menu .fab-item:nth-child(3) { transition-delay: 0.09s; }
+#fab.open #fab-menu .fab-item:nth-child(4) { transition-delay: 0.12s; }
+#fab.open #fab-menu .fab-item:nth-child(5) { transition-delay: 0.15s; }
+/* FAB label tooltips */
+#fab-menu .fab-item .fab-label {
+  position: absolute;
+  right: 56px;
+  white-space: nowrap;
+  background: rgba(10,14,26,0.9);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#fab-menu .fab-item:hover .fab-label {
+  opacity: 1;
+}
+/* FAB user badge - small indicator on the ball */
+#fab-user-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid rgba(10,14,26,0.8);
+  cursor: pointer;
+  z-index: 3;
+  line-height: 1;
+}
+/* Backdrop overlay when menu is open */
+#fab-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: transparent;
+}
+#fab.open ~ #fab-backdrop {
+  display: block;
+}
+
 </style>
-
-
 <script>
 // ===== 安全防护：防止浏览器劫持和注入 =====
 (function(){
@@ -1575,7 +1691,7 @@ button, a, .song-card, .mac-btn, .np-btn, .act-btn {
     });
     document.querySelectorAll('div[style*="position: fixed"],div[style*="position: absolute"]').forEach(function(el){
       var z=parseInt(el.style.zIndex)||0;
-      if(z>9000&&!el.classList.length&&!el.id&&!el.closest('.now-playing,.mascot-container,.cat-mascot,.header,.overlay,.popup-panel'))el.remove();
+      if(z>9000&&!el.classList.length&&!el.id&&!el.closest('.now-playing,.fab-container,.mascot-container,.cat-mascot,.header,.overlay,.popup-panel'))el.remove();
     });
   }
   var obs=new MutationObserver(function(m){m.forEach(function(x){x.addedNodes.forEach(function(n){
@@ -1809,7 +1925,44 @@ button, a, .song-card, .mac-btn, .np-btn, .act-btn {
   <div class="hidden-msg-text">小艾永远陪着你 💜</div>
 </div>
 
-<!-- Old FAB removed -->
+<!-- FAB -->
+<div class="fab-container" id="fabContainer">
+  <div class="fab-menu" id="fabMenu">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">个人中心</span>
+      <button class="fab-mini" onclick="window.location.href='/profile'">👤</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">网易云</span>
+      <button class="fab-mini" onclick="window.location.href='/netease'">🎵</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">评论</span>
+      <button class="fab-mini" onclick="window.location.href='/comments'">💬</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">Cookie</span>
+      <button class="fab-mini" onclick="window.location.href='/cookie'">🍪</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">一起听</span>
+      <button class="fab-mini" onclick="window.location.href='/listen'">🎧</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">随机</span>
+      <button class="fab-mini" onclick="playRandom();toggleFab()">🎲</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">歌词</span>
+      <button class="fab-mini" onclick="showLyrics();toggleFab()">📝</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--text-light)">收藏</span>
+      <button class="fab-mini" onclick="setMode('fav',document.querySelector('.mode-tab:nth-child(4)'));toggleFab()">💖</button>
+    </div>
+  </div>
+  <button class="fab-btn" onclick="toggleFab()">🎵</button>
+</div>
 
 <div class="shortcut-hint" id="shortcutHint"></div>
 <div class="toast" id="toast"></div>
@@ -7564,163 +7717,6 @@ window.addEventListener('resize', debounce(() => {
 init();
 </script>
 
-
-<div id="fab">
-  <button id="fab-main" title="菜单">🎵</button>
-  <div id="fab-menu">
-    <a href="/profile" class="fab-item" id="fabProfileItem" style="background:linear-gradient(135deg,#ff9800,#f57c00);">
-      <span id="userNavBtn" style="font-size:inherit;">👤</span>
-      <span class="fab-label">个人中心</span>
-    </a>
-    <a href="/listen" class="fab-item" style="background:linear-gradient(135deg,#9c27b0,#6a1b9a);">
-      🎧
-      <span class="fab-label">一起听</span>
-    </a>
-    <a href="/comments" class="fab-item" style="background:linear-gradient(135deg,#2196f3,#1565c0);">
-      💬
-      <span class="fab-label">评论</span>
-    </a>
-    <a href="/cookie" class="fab-item" style="background:linear-gradient(135deg,#4caf50,#2e7d32);">
-      🍪
-      <span class="fab-label">Cookie</span>
-    </a>
-    <a href="/netease" class="fab-item" style="background:linear-gradient(135deg,#e91e63,#ff5722);">
-      🎵
-      <span class="fab-label">网易云</span>
-    </a>
-  </div>
-</div>
-<div id="fab-backdrop"></div>
-<script>
-(function() {
-  var fab = document.getElementById('fab');
-  var mainBtn = document.getElementById('fab-main');
-  var backdrop = document.getElementById('fab-backdrop');
-  var isOpen = false;
-  var isDragging = false;
-  var hasMoved = false;
-  var startX, startY, origX, origY;
-
-  // Restore saved position
-  try {
-    var saved = JSON.parse(localStorage.getItem('fab_pos'));
-    if(saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-      fab.style.left = saved.x + 'px';
-      fab.style.top = saved.y + 'px';
-    }
-  } catch(e) {}
-
-  function toggleMenu() {
-    if(hasMoved) return;
-    isOpen = !isOpen;
-    var menu = document.getElementById('fab-menu');
-    var bd = document.getElementById('fab-backdrop');
-    if(menu) menu.classList.toggle('show', isOpen);
-    if(bd) bd.classList.toggle('show', isOpen);
-  }
-
-  function closeMenu() {
-    isOpen = false;
-    var menu = document.getElementById('fab-menu');
-    var bd = document.getElementById('fab-backdrop');
-    if(menu) menu.classList.remove('show');
-    if(bd) bd.classList.remove('show');
-  }
-
-  // Pointer events for drag (works for both mouse & touch)
-  function onPointerDown(e) {
-    if(e.target.closest('#fab-menu')) return;
-    isDragging = false;
-    hasMoved = false;
-    var pos = getPos(e);
-    startX = pos.x;
-    startY = pos.y;
-    var rect = fab.getBoundingClientRect();
-    origX = rect.left;
-    origY = rect.top;
-    document.addEventListener('pointermove', onPointerMove);
-    document.addEventListener('pointerup', onPointerUp);
-  }
-
-  function onPointerMove(e) {
-    var pos = getPos(e);
-    var dx = pos.x - startX;
-    var dy = pos.y - startY;
-    if(!isDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-      isDragging = true;
-      hasMoved = true;
-      closeMenu();
-    }
-    if(isDragging) {
-      e.preventDefault();
-      var nx = Math.max(0, Math.min(window.innerWidth - 56, origX + dx));
-      var ny = Math.max(0, Math.min(window.innerHeight - 56, origY + dy));
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-      fab.style.left = nx + 'px';
-      fab.style.top = ny + 'px';
-    }
-  }
-
-  function onPointerUp(e) {
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-    if(isDragging) {
-      // Snap to nearest edge
-      var rect = fab.getBoundingClientRect();
-      var mid = rect.left + 28;
-      var halfW = window.innerWidth / 2;
-      var targetX = mid < halfW ? 12 : window.innerWidth - 68;
-      fab.style.left = targetX + 'px';
-      fab.style.transition = 'left 0.2s cubic-bezier(.4,0,.2,1)';
-      setTimeout(function(){ fab.style.transition = ''; }, 250);
-      try { localStorage.setItem('fab_pos', JSON.stringify({x: targetX, y: rect.top})); } catch(e) {}
-      isDragging = false;
-      // Delay to prevent click
-      setTimeout(function(){ hasMoved = false; }, 100);
-    } else {
-      toggleMenu();
-    }
-  }
-
-  function getPos(e) {
-    if(e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    return { x: e.clientX, y: e.clientY };
-  }
-
-  mainBtn.addEventListener('pointerdown', onPointerDown);
-  backdrop.addEventListener('click', closeMenu);
-
-  // Profile link — check auth directly
-  var profileItem = document.getElementById('fabProfileItem');
-  if(profileItem) {
-    profileItem.addEventListener('click', function(e) {
-      e.preventDefault();
-      var t = localStorage.getItem('auth_token');
-      var g = localStorage.getItem('guest_mode');
-      if(t) {
-        window.location.href = '/profile';
-      } else if(g) {
-        localStorage.removeItem('guest_mode');
-        window.location.href = '/login';
-      } else {
-        window.location.href = '/login';
-      }
-    });
-  }
-
-  // Remove server-injected duplicate nav-float
-  var observer = new MutationObserver(function(mutations) {
-    var all = document.querySelectorAll('#nav-float');
-    all.forEach(function(el) { el.remove(); });
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  // Also remove any existing ones
-  document.querySelectorAll('#nav-float').forEach(function(el) { el.remove(); });
-})();
-</script>
 
 </body>
 </html>
