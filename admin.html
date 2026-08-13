@@ -7,129 +7,189 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0a0e1a 0%, #1a1040 50%, #0a0e1a 100%);
+  min-height: 100vh; background: #0a0e1a;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #fff; padding: 20px;
+  color: #fff; overflow-x: hidden;
 }
-.container { max-width: 600px; margin: 0 auto; }
-.header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 24px;
+.bg-aurora {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 30%, rgba(255,100,100,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 70% 70%, rgba(100,100,255,0.06) 0%, transparent 50%);
 }
+.container { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 .back-btn {
-  padding: 8px 16px; background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
-  color: #fff; font-size: 14px; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+  color: rgba(255,255,255,0.7); font-size: 14px; text-decoration: none; transition: all 0.3s;
 }
+.back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .page-title { font-size: 20px; font-weight: 700; }
-/* 统计卡片 */
-.stats {
-  display: flex; gap: 12px; margin-bottom: 24px;
-}
+
+/* Stats Grid */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
 .stat-card {
-  flex: 1;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px; padding: 18px; text-align: center;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+  padding: 16px 8px; text-align: center; transition: all 0.3s;
 }
-.stat-num { font-size: 28px; font-weight: 700; }
-.stat-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
-/* 用户列表 */
+.stat-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+.stat-num {
+  font-size: 24px; font-weight: 800;
+  background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+/* Section */
+.section { margin-bottom: 24px; }
 .section-title {
-  font-size: 16px; font-weight: 600; margin-bottom: 12px;
-  color: rgba(255,255,255,0.7);
+  font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5);
+  margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase;
 }
+
+/* Announcement */
+.announce-box {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 16px; margin-bottom: 24px;
+}
+.announce-input {
+  width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+  color: #fff; font-size: 14px; outline: none; resize: none;
+  transition: border-color 0.3s;
+}
+.announce-input:focus { border-color: rgba(248,164,200,0.5); }
+.announce-input::placeholder { color: rgba(255,255,255,0.3); }
+.announce-btn {
+  margin-top: 10px; padding: 10px 20px;
+  background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
+  border: none; border-radius: 10px; color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+}
+.announce-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(248,164,200,0.3); }
+
+/* User List */
 .user-list { margin-bottom: 24px; }
 .user-item {
   display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  margin-bottom: 8px;
+  padding: 14px 16px; margin-bottom: 8px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; transition: all 0.3s;
 }
+.user-item:hover { background: rgba(255,255,255,0.06); }
+.user-item.banned { border-color: rgba(255,100,100,0.3); opacity: 0.7; }
 .user-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 42px; height: 42px; border-radius: 50%;
   background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 700; flex-shrink: 0;
+  font-size: 18px; font-weight: 700; flex-shrink: 0;
 }
 .user-info { flex: 1; min-width: 0; }
-.user-name { font-size: 15px; font-weight: 600; }
-.user-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
-.user-badge {
+.user-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-meta { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 3px; }
+.badge {
   padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600;
-  background: linear-gradient(135deg, #ff9800, #f57c00);
+  display: inline-flex; align-items: center; gap: 3px;
 }
-.user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.badge-admin { background: rgba(255,152,0,0.2); color: #ff9800; }
+.badge-banned { background: rgba(255,80,80,0.2); color: #ff5050; }
+.user-actions { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .action-btn {
-  padding: 6px 12px; border: none; border-radius: 8px;
-  font-size: 12px; cursor: pointer; transition: all 0.2s;
+  padding: 6px 10px; border: none; border-radius: 8px;
+  font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .action-btn:hover { transform: scale(1.05); }
-.btn-admin { background: rgba(255,152,0,0.2); color: #ff9800; border: 1px solid rgba(255,152,0,0.3); }
-.btn-delete { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
-.btn-view { background: rgba(100,200,255,0.2); color: #64c8ff; border: 1px solid rgba(100,200,255,0.3); }
-/* 用户详情弹窗 */
+.btn-view { background: rgba(100,200,255,0.15); color: #64c8ff; border: 1px solid rgba(100,200,255,0.2); }
+.btn-admin { background: rgba(255,152,0,0.15); color: #ff9800; border: 1px solid rgba(255,152,0,0.2); }
+.btn-ban { background: rgba(255,80,80,0.15); color: #ff5050; border: 1px solid rgba(255,80,80,0.2); }
+.btn-reset { background: rgba(200,200,200,0.15); color: #ccc; border: 1px solid rgba(200,200,200,0.2); }
+.btn-clear { background: rgba(255,200,50,0.15); color: #ffc832; border: 1px solid rgba(255,200,50,0.2); }
+.btn-delete { background: rgba(255,50,50,0.2); color: #ff5050; border: 1px solid rgba(255,50,50,0.3); }
+
+/* Modal */
 .modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7); z-index: 1000;
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
   align-items: center; justify-content: center;
 }
 .modal-overlay.show { display: flex; }
 .modal {
-  background: #1a1a2e; border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 20px; padding: 24px; max-width: 500px; width: 90%;
-  max-height: 80vh; overflow-y: auto;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 20px;
+  padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;
 }
-.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-.modal-close {
-  float: right; background: none; border: none;
-  color: rgba(255,255,255,0.5); font-size: 20px; cursor: pointer;
-}
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 22px; cursor: pointer; }
+.modal-close:hover { color: #fff; }
 .modal-section { margin-bottom: 16px; }
-.modal-section h4 { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+.modal-section h4 { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
 .modal-data {
-  background: rgba(255,255,255,0.05); border-radius: 10px;
-  padding: 12px; font-size: 13px; font-family: monospace;
-  white-space: pre-wrap; word-break: break-all;
+  background: rgba(255,255,255,0.04); border-radius: 10px;
+  padding: 12px; font-size: 13px; font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto;
 }
-.empty { color: rgba(255,255,255,0.3); font-style: italic; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  padding: 12px 24px; background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 14px; font-size: 14px; z-index: 2000;
+  animation: toastIn 0.3s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+.fade-in { animation: fadeIn 0.5s ease forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+.delay-1 { animation-delay: 0.1s; opacity: 0; }
+.delay-2 { animation-delay: 0.2s; opacity: 0; }
+.delay-3 { animation-delay: 0.3s; opacity: 0; }
 </style>
 </head>
 <body>
+<div class="bg-aurora"></div>
 <div class="container">
-  <div class="header">
+  <div class="header fade-in">
     <a href="/profile" class="back-btn">← 返回</a>
     <div class="page-title">👑 管理后台</div>
     <div style="width:60px"></div>
   </div>
 
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-num" id="totalUsers">-</div>
-      <div class="stat-label">注册用户</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="adminCount">-</div>
-      <div class="stat-label">管理员</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="songCount">-</div>
-      <div class="stat-label">歌曲总数</div>
+  <!-- 系统统计 -->
+  <div class="stats fade-in delay-1" id="sysStats">
+    <div class="stat-card"><div class="stat-num" id="sUsers">-</div><div class="stat-label">用户</div></div>
+    <div class="stat-card"><div class="stat-num" id="sSongs">-</div><div class="stat-label">歌曲</div></div>
+    <div class="stat-card"><div class="stat-num" id="sPlays">-</div><div class="stat-label">播放</div></div>
+    <div class="stat-card"><div class="stat-num" id="sMemory">-</div><div class="stat-label">内存MB</div></div>
+  </div>
+
+  <!-- 发布公告 -->
+  <div class="section fade-in delay-2">
+    <div class="section-title">📢 发布公告</div>
+    <div class="announce-box">
+      <textarea class="announce-input" id="announceInput" placeholder="输入公告内容..." rows="2"></textarea>
+      <button class="announce-btn" onclick="sendAnnounce()">发布</button>
     </div>
   </div>
 
-  <div class="section-title">用户列表</div>
-  <div class="user-list" id="userList">加载中...</div>
+  <!-- 用户管理 -->
+  <div class="section fade-in delay-3">
+    <div class="section-title">👥 用户管理</div>
+    <div class="user-list" id="userList">加载中...</div>
+  </div>
 </div>
 
 <!-- 用户详情弹窗 -->
 <div class="modal-overlay" id="userModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">&times;</button>
-    <div class="modal-title" id="modalTitle">用户详情</div>
+    <div class="modal-title">
+      <span id="modalTitle">用户详情</span>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
     <div class="modal-section">
       <h4>收藏歌曲</h4>
       <div class="modal-data" id="modalFavs">-</div>
@@ -139,7 +199,7 @@ body {
       <div class="modal-data" id="modalHistory">-</div>
     </div>
     <div class="modal-section">
-      <h4>设置</h4>
+      <h4>设置/打卡</h4>
       <div class="modal-data" id="modalSettings">-</div>
     </div>
   </div>
@@ -147,70 +207,67 @@ body {
 
 <script>
 const token = localStorage.getItem('auth_token');
-const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-if (!token) { window.location.href = '/login'; }
-// 前端先检查是否管理员（API会再次验证）
-(async () => {
+if (!token) window.location.href = '/login';
+const H = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2000);
+}
+
+async function loadStats() {
   try {
-    const resp = await fetch('/api/user/profile', { headers: { 'Authorization': 'Bearer ' + token } });
-    const data = await resp.json();
-    if (!data.ok || !data.user.isAdmin) {
-      alert('需要管理员权限才能访问此页面');
-      window.location.href = '/profile';
-    }
-  } catch(e) {
-    window.location.href = '/profile';
-  }
-})();
+    const r = await fetch('/api/admin/stats', { headers: H });
+    const d = await r.json();
+    if (!d.ok) return;
+    document.getElementById('sUsers').textContent = d.stats.totalUsers;
+    document.getElementById('sSongs').textContent = d.stats.totalSongs;
+    document.getElementById('sPlays').textContent = d.stats.totalPlays;
+    document.getElementById('sMemory').textContent = d.stats.memoryMB;
+  } catch(e) {}
+}
 
-const headers = { 'Authorization': 'Bearer ' + token };
-
-async function loadAdmin() {
+async function loadUsers() {
   try {
-    const resp = await fetch('/api/admin/users', { headers });
-    const data = await resp.json();
-    if (!data.ok) {
-      alert(data.message || '无权限');
-      window.location.href = '/profile';
-      return;
-    }
-    document.getElementById('totalUsers').textContent = data.total;
-    document.getElementById('adminCount').textContent = data.users.filter(u => u.isAdmin).length;
-
-    // 歌曲数
-    try {
-      const sResp = await fetch('/health');
-      const sData = await sResp.json();
-      document.getElementById('songCount').textContent = sData.local_audio || '-';
-    } catch(e) {}
+    const r = await fetch('/api/admin/users', { headers: H });
+    const d = await r.json();
+    if (!d.ok) { alert(d.message); window.location.href = '/profile'; return; }
 
     const list = document.getElementById('userList');
     list.innerHTML = '';
-    data.users.forEach(u => {
+    d.users.sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0));
+
+    d.users.forEach(u => {
       const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('zh-CN') : '-';
       const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('zh-CN') : '-';
       const div = document.createElement('div');
-      div.className = 'user-item';
+      div.className = 'user-item' + (u.banned ? ' banned' : '');
       div.innerHTML = `
-        <div class="user-avatar">${u.username.charAt(0).toUpperCase()}</div>
+        <div class="user-avatar">${esc(u.username.charAt(0).toUpperCase())}</div>
         <div class="user-info">
-          <div class="user-name">${esc(u.username)} ${u.isAdmin ? '<span class="user-badge">管理员</span>' : ''}</div>
+          <div class="user-name">
+            ${esc(u.username)}
+            ${u.isAdmin ? '<span class="badge badge-admin">👑 管理员</span>' : ''}
+            ${u.banned ? '<span class="badge badge-banned">🚫 已封禁</span>' : ''}
+          </div>
           <div class="user-meta">ID: ${u.userId} · 注册: ${created} · 最近: ${lastLogin}</div>
         </div>
         <div class="user-actions">
           <button class="action-btn btn-view" onclick="viewUser('${u.userId}','${esc(u.username)}')">查看</button>
-          <button class="action-btn btn-admin" onclick="toggleAdmin('${u.userId}','${esc(u.username)}',${u.isAdmin})">${u.isAdmin ? '取消管理' : '设为管理'}</button>
-          <button class="action-btn btn-delete" onclick="deleteUser('${u.userId}','${esc(u.username)}')">删除</button>
+          <button class="action-btn btn-admin" onclick="toggleAdmin('${u.userId}','${esc(u.username)}',${u.isAdmin})">${u.isAdmin ? '取消管理' : '设管理'}</button>
+          <button class="action-btn btn-ban" onclick="toggleBan('${u.userId}','${esc(u.username)}',${u.banned||false})">${u.banned ? '解封' : '封禁'}</button>
+          <button class="action-btn btn-reset" onclick="resetPassword('${u.userId}','${esc(u.username)}')">重置密码</button>
+          <button class="action-btn btn-clear" onclick="clearData('${u.userId}','${esc(u.username)}')">清数据</button>
+          ${!u.isAdmin ? `<button class="action-btn btn-delete" onclick="deleteUser('${u.userId}','${esc(u.username)}')">删除</button>` : ''}
         </div>
       `;
       list.appendChild(div);
     });
-  } catch(e) {
-    console.error('Load admin failed:', e);
-  }
+  } catch(e) { console.error(e); }
 }
-
-function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 async function viewUser(userId, username) {
   document.getElementById('modalTitle').textContent = username + ' 的数据';
@@ -218,74 +275,83 @@ async function viewUser(userId, username) {
   document.getElementById('modalFavs').textContent = '加载中...';
   document.getElementById('modalHistory').textContent = '加载中...';
   document.getElementById('modalSettings').textContent = '加载中...';
-
   try {
-    const resp = await fetch('/api/admin/user_data?userId=' + userId, { headers });
-    const data = await resp.json();
-    if (!data.ok) { alert(data.message); return; }
-
-    const favs = data.data.favorites.songs || [];
+    const r = await fetch('/api/admin/user_data?userId=' + userId, { headers: H });
+    const d = await r.json();
+    if (!d.ok) { toast(d.message); return; }
+    const favs = d.data.favorites.songs || [];
     document.getElementById('modalFavs').textContent = favs.length ? favs.join(', ') : '暂无收藏';
-
-    const plays = data.data.history.plays || [];
+    const plays = d.data.history.plays || [];
     if (plays.length) {
-      const recent = plays.slice(0, 10).map(p => {
-        const t = new Date(p.time).toLocaleString('zh-CN');
-        return `  ${p.songId} (${t})`;
-      }).join('\n');
-      document.getElementById('modalHistory').textContent = `共 ${plays.length} 条记录，最近10条：\n${recent}`;
-    } else {
-      document.getElementById('modalHistory').textContent = '暂无播放记录';
-    }
-
-    const settings = data.data.settings;
-    document.getElementById('modalSettings').textContent = Object.keys(settings).length ? JSON.stringify(settings, null, 2) : '默认设置';
-  } catch(e) {
-    document.getElementById('modalFavs').textContent = '加载失败';
-  }
+      const recent = plays.slice(0, 10).map(p => `  ${p.songId} (${new Date(p.time).toLocaleString('zh-CN')})`).join('\n');
+      document.getElementById('modalHistory').textContent = `共 ${plays.length} 条，最近10条：\n${recent}`;
+    } else { document.getElementById('modalHistory').textContent = '暂无播放记录'; }
+    const settings = d.data.settings;
+    const checkins = settings.checkins || {};
+    const checkinCount = Object.keys(checkins).length;
+    let settingsText = `打卡: ${checkinCount} 天\n`;
+    if (settings.avatar) settingsText += `头像: ${settings.avatar}\n`;
+    document.getElementById('modalSettings').textContent = settingsText || '默认设置';
+  } catch(e) { document.getElementById('modalFavs').textContent = '加载失败'; }
 }
 
-function closeModal() {
-  document.getElementById('userModal').classList.remove('show');
+function closeModal() { document.getElementById('userModal').classList.remove('show'); }
+
+async function toggleAdmin(userId, username, isAdmin) {
+  const action = isAdmin ? '取消管理员' : '设为管理员';
+  if (!confirm(`确定要${action} ${username}？`)) return;
+  const r = await fetch('/api/admin/toggle_admin', { method: 'POST', headers: H, body: JSON.stringify({ userId }) });
+  const d = await r.json();
+  toast(d.ok ? '操作成功' : d.message);
+  if (d.ok) loadUsers();
 }
 
-async function toggleAdmin(userId, username, isCurrentlyAdmin) {
-  const action = isCurrentlyAdmin ? '取消管理员权限' : '设为管理员';
-  if (!confirm(`确定要${action} ${username} 吗？`)) return;
-  try {
-    const resp = await fetch('/api/admin/toggle_admin', {
-      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId })
-    });
-    const data = await resp.json();
-    if (data.ok) {
-      alert('操作成功');
-      loadAdmin();
-    } else {
-      alert(data.message || '操作失败');
-    }
-  } catch(e) { alert('网络错误'); }
+async function toggleBan(userId, username, isBanned) {
+  const action = isBanned ? '解封' : '封禁';
+  if (!confirm(`确定要${action} ${username}？`)) return;
+  const r = await fetch('/api/admin/toggle_ban', { method: 'POST', headers: H, body: JSON.stringify({ userId }) });
+  const d = await r.json();
+  toast(d.ok ? `${action}成功` : d.message);
+  if (d.ok) loadUsers();
+}
+
+async function resetPassword(userId, username) {
+  const newPwd = prompt(`重置 ${username} 的密码（至少4个字符）：`);
+  if (!newPwd || newPwd.length < 4) { toast('密码至少4个字符'); return; }
+  const r = await fetch('/api/admin/reset_password', { method: 'POST', headers: H, body: JSON.stringify({ userId, newPassword: newPwd }) });
+  const d = await r.json();
+  toast(d.ok ? `密码已重置为: ${newPwd}` : d.message);
+}
+
+async function clearData(userId, username) {
+  if (!confirm(`确定要清空 ${username} 的所有数据？（收藏、播放记录、打卡）`)) return;
+  const r = await fetch('/api/admin/clear_data', { method: 'POST', headers: H, body: JSON.stringify({ userId }) });
+  const d = await r.json();
+  toast(d.ok ? '数据已清空' : d.message);
 }
 
 async function deleteUser(userId, username) {
-  if (!confirm(`确定要删除用户 ${username} 吗？此操作不可撤销！`)) return;
+  if (!confirm(`确定要删除用户 ${username}？此操作不可撤销！`)) return;
   if (!confirm(`再次确认：删除 ${username}？`)) return;
-  try {
-    const resp = await fetch('/api/admin/delete_user', {
-      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId })
-    });
-    const data = await resp.json();
-    if (data.ok) {
-      alert('已删除');
-      loadAdmin();
-    } else {
-      alert(data.message || '删除失败');
-    }
-  } catch(e) { alert('网络错误'); }
+  const r = await fetch('/api/admin/delete_user', { method: 'POST', headers: H, body: JSON.stringify({ userId }) });
+  const d = await r.json();
+  toast(d.ok ? '已删除' : d.message);
+  if (d.ok) { loadUsers(); loadStats(); }
 }
 
-loadAdmin();
+async function sendAnnounce() {
+  const input = document.getElementById('announceInput');
+  const msg = input.value.trim();
+  if (!msg) { toast('请输入公告内容'); return; }
+  const r = await fetch('/api/admin/announce', { method: 'POST', headers: H, body: JSON.stringify({ message: msg }) });
+  const d = await r.json();
+  if (d.ok) { input.value = ''; toast('公告已发布'); }
+  else toast(d.message);
+}
+
+// Init
+loadStats();
+loadUsers();
 </script>
 </body>
 </html>
