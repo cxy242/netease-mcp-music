@@ -1693,7 +1693,7 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
   display:flex;align-items:center;justify-content:center;
   transition:transform .25s,box-shadow .25s;
   animation:nb-spin 8s linear infinite;
-  position:relative;overflow:hidden;
+  position:relative;
 }
 .nb-ball::before{
   content:'';position:absolute;inset:3px;border-radius:50%;
@@ -1733,7 +1733,7 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
 .nb-bd.open{opacity:1;pointer-events:auto}
 .nb-dot{
   position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.8);
-  animation:nb-orbit 4s linear infinite;
+  animation:nb-orbit 4s linear infinite;pointer-events:none;
 }
 @keyframes nb-orbit{0%{transform:rotate(0deg) translateX(30px) rotate(0deg)}100%{transform:rotate(360deg) translateX(30px) rotate(-360deg)}}
 
