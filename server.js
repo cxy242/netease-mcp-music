@@ -2344,6 +2344,19 @@ fastify.post('/api/user/settings', async (request) => {
   return { ok: true };
 });
 
+// ─── Avatar Upload ─────────────────────────────────────────────────
+fastify.post('/api/user/avatar', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user) return { ok: false, needLogin: true };
+  const { avatar } = request.body || {};
+  if (!avatar || !avatar.startsWith('data:image/')) return { ok: false, message: '无效的图片数据' };
+  // 限制大小 (约 500KB base64)
+  if (avatar.length > 700000) return { ok: false, message: '图片太大，请压缩后重试' };
+  user.avatar = avatar;
+  saveUsers();
+  return { ok: true };
+});
+
 // ─── Profile & Admin Endpoints ──────────────────────────────────────
 fastify.get('/api/user/profile', async (request) => {
   const user = getCurrentUser(request);
