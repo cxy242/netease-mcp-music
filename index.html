@@ -5795,53 +5795,47 @@ function startPianoFullscreen(songIdx) {
   document.getElementById('pianoFsBack').onclick = doClose;
   document.getElementById('pianoFsExit').onclick = doClose;
 
-  // Start button — async with beat detection
+  // Start button — game starts immediately, beat detection runs in background
   document.getElementById('pianoFsStartBtn').onclick = async () => {
     SFX.gameStart();
-    const startBtn = document.getElementById('pianoFsStartBtn');
-    const origText = startBtn.textContent;
-    startBtn.textContent = '🎵 分析节奏中...';
-    startBtn.disabled = true;
-    startBtn.style.opacity = '0.7';
 
-    // Try real beat detection
-    let detectedPattern = null;
-    try {
-      detectedPattern = await detectBeats(s.i, s.d || 120);
-    } catch(e) { /* fall through */ }
-
-    // Use detected pattern or fallback
-    if(detectedPattern && detectedPattern.length > 0) {
-      pattern = detectedPattern;
-    }
-    // else: pattern was already set by generatePattern above
-
-    startBtn.textContent = origText;
-    startBtn.disabled = false;
-    startBtn.style.opacity = '1';
-
+    // Hide start screen and start game IMMEDIATELY with generated pattern
     document.getElementById('pianoFsStart').style.display = 'none';
     pianoFsState.running = true;
     pianoFsState.startTime = performance.now() / 1000;
 
-    // 获取可播放的音频URL（优先网易云MP3，回退本地FLAC）
-    let audioUrl = '/api/local_audio/' + s.i;
-    try {
-      const urlResp = await fetch('/api/song/play_url?id=' + s.i);
-      const urlData = await urlResp.json();
-      if(urlData.ok && urlData.url) audioUrl = urlData.url;
-    } catch(e) {}
-
-    pianoFsState.songAudio = new Audio(audioUrl);
+    // Start audio — same fallback chain as main player (proxy_play)
+    pianoFsState.songAudio = new Audio();
     pianoFsState.songAudio.volume = 0.7;
-    pianoFsState.songAudio.play().then(() => {
-      pianoFsState.audioPlayed = true;
-    }).catch(() => {
-      pianoFsState.audioPlayed = true;
-    });
+    const pAudio = pianoFsState.songAudio;
+    const startPlay = (url) => {
+      pAudio.src = url;
+      pAudio.play().then(() => { pianoFsState.audioPlayed = true; })
+        .catch(() => { pianoFsState.audioPlayed = true; });
+    };
+    if(localAudioIds.has(String(s.i))) {
+      startPlay('/api/local_audio/' + s.i);
+    } else {
+      fetch('/api/proxy_play?id=' + s.i, { method: 'HEAD', redirect: 'follow' })
+        .then(r => { startPlay(r.ok ? '/api/proxy_play?id=' + s.i : '/api/local_audio/' + s.i); })
+        .catch(() => { startPlay('/api/local_audio/' + s.i); });
+    }
 
     pianoRafId = requestAnimationFrame(pianoGameLoop);
     pianoFsState.rafId = pianoRafId;
+
+    // Beat detection runs in background — hot-swap pattern if it succeeds
+    detectBeats(s.i, s.d || 120).then(detected => {
+      if(detected && detected.length > 2) {
+        pattern = detected;
+        patternIdx = 0;
+        // Skip tiles that have already passed
+        const elapsed = pianoFsState.songAudio.currentTime || 0;
+        while(patternIdx < pattern.length && pattern[patternIdx].time < elapsed) {
+          patternIdx++;
+        }
+      }
+    }).catch(() => {});
   };
 
   // Theme selector click handler
