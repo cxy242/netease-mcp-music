@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>打卡星轨 - 月汐音乐花园</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --accent:#c084fc;
+  --accent2:#f472b6;
+  --accent3:#818cf8;
+  --text:rgba(255,255,255,0.92);
+  --text-dim:rgba(255,255,255,0.45);
+  --text-faint:rgba(255,255,255,0.25);
+}
+html{-webkit-tap-highlight-color:transparent}
+body{
+  min-height:100vh;
+  background:#05070f;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI','PingFang SC','Helvetica Neue',sans-serif;
+  color:var(--text);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* ── Starfield canvas ── */
+#starfield{position:fixed;inset:0;z-index:0}
+
+/* ── Nebula ambient ── */
+.nebula{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%, rgba(168,85,247,.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 70% 75%, rgba(236,72,153,.05) 0%, transparent 45%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(99,102,241,.04) 0%, transparent 40%);
+  animation:nebulaDrift 30s ease-in-out infinite alternate;
+}
+@keyframes nebulaDrift{
+  0%{opacity:.6;transform:scale(1) rotate(0deg)}
+  50%{opacity:1;transform:scale(1.08) rotate(2deg)}
+  100%{opacity:.6;transform:scale(1) rotate(-2deg)}
+}
+
+/* ── Header ── */
+.header{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;
+  background:linear-gradient(180deg,rgba(5,7,15,.9) 0%,transparent 100%);
+}
+.back-link{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  color:var(--text-dim);font-size:13px;font-weight:500;
+  text-decoration:none;
+  backdrop-filter:blur(12px);
+  transition:all .3s;
+}
+.back-link:hover{background:rgba(255,255,255,.1);color:var(--text);transform:translateX(-2px)}
+.back-link svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.page-title{
+  font-size:16px;font-weight:700;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.stats-pill{
+  padding:6px 14px;
+  background:rgba(168,85,247,.1);
+  border:1px solid rgba(168,85,247,.15);
+  border-radius:20px;font-size:12px;font-weight:600;color:var(--accent);
+}
+
+/* ── Sphere viewport ── */
+.sphere-viewport{
+  position:fixed;inset:0;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+  perspective:1200px;
+  perspective-origin:50% 50%;
+}
+.sphere-container{
+  position:relative;
+  width:320px;height:320px;
+  transform-style:preserve-3d;
+  animation:autoRotate 60s linear infinite;
+}
+@keyframes autoRotate{
+  0%{transform:rotateY(0deg) rotateX(5deg)}
+  100%{transform:rotateY(360deg) rotateX(5deg)}
+}
+.sphere-container.dragging{animation:none;transition:none}
+
+/* ── Central orb ── */
+.center-orb{
+  position:absolute;
+  width:80px;height:80px;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,
+    rgba(192,132,252,.5),
+    rgba(168,85,247,.3) 40%,
+    rgba(236,72,153,.2) 70%,
+    rgba(99,102,241,.1) 100%);
+  box-shadow:
+    0 0 60px rgba(168,85,247,.3),
+    0 0 120px rgba(236,72,153,.15),
+    inset 0 0 30px rgba(255,255,255,.1);
+  animation:orbPulse 4s ease-in-out infinite;
+  z-index:20;
+}
+.center-orb::after{
+  content:'';
+  position:absolute;inset:-8px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.15),transparent 70%);
+  animation:orbGlow 4s ease-in-out infinite alternate;
+}
+@keyframes orbPulse{
+  0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 60px rgba(168,85,247,.3),0 0 120px rgba(236,72,153,.15)}
+  50%{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 80px rgba(168,85,247,.4),0 0 160px rgba(236,72,153,.2)}
+}
+@keyframes orbGlow{
+  0%{opacity:.5;transform:scale(1)}
+  100%{opacity:1;transform:scale(1.3)}
+}
+
+/* ── Orbit rings ── */
+.orbit-ring{
+  position:absolute;
+  top:50%;left:50%;
+  border-radius:50%;
+  border:1px solid rgba(168,85,247,.06);
+  transform:translate(-50%,-50%) rotateX(65deg);
+  pointer-events:none;
+}
+.orbit-ring.r1{width:260px;height:260px}
+.orbit-ring.r2{width:320px;height:320px}
+.orbit-ring.r3{width:200px;height:200px;border-color:rgba(236,72,153,.04)}
+
+/* ── Checkin cards on sphere ── */
+.sphere-card{
+  position:absolute;
+  width:100px;
+  padding:10px 8px;
+  background:linear-gradient(165deg,rgba(20,22,40,.92),rgba(12,14,28,.92));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  text-align:center;
+  transform-style:preserve-3d;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  cursor:pointer;
+  backface-visibility:hidden;
+}
+.sphere-card:hover{
+  border-color:rgba(168,85,247,.3);
+  box-shadow:0 4px 30px rgba(168,85,247,.2);
+  transform:scale(1.1) !important;
+  z-index:100 !important;
+}
+.sphere-card .card-emoji{font-size:24px;margin-bottom:4px;line-height:1}
+.sphere-card .card-date{font-size:10px;color:var(--text-faint);font-weight:500;margin-bottom:3px}
+.sphere-card .card-comment{
+  font-size:10px;color:var(--text-dim);
+  max-height:28px;overflow:hidden;
+  line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+
+/* ── Connection lines (SVG) ── */
+#connections{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:5;
+}
+
+/* ── Empty state ── */
+.empty-state{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:30;text-align:center;
+  display:none;
+}
+.empty-state.show{display:block}
+.empty-state .empty-icon{font-size:64px;margin-bottom:16px;opacity:.5}
+.empty-state .empty-text{font-size:15px;color:var(--text-dim);margin-bottom:8px}
+.empty-state .empty-sub{font-size:12px;color:var(--text-faint)}
+
+/* ── Card detail modal ── */
+.detail-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .4s cubic-bezier(.4,0,.2,1);
+}
+.detail-overlay.active{opacity:1;pointer-events:auto}
+.detail-card{
+  background:linear-gradient(165deg,rgba(20,22,40,.98),rgba(12,14,28,.98));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;
+  padding:36px 28px 28px;
+  width:min(340px,85vw);
+  text-align:center;
+  transform:translateY(20px) scale(.95);
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
+.detail-overlay.active .detail-card{transform:translateY(0) scale(1)}
+.detail-emoji{font-size:56px;margin-bottom:12px;line-height:1}
+.detail-date{font-size:14px;color:var(--text-faint);margin-bottom:8px;font-weight:500}
+.detail-comment{font-size:16px;color:var(--text);margin-bottom:16px;line-height:1.6;word-break:break-all}
+.detail-time{font-size:11px;color:var(--text-faint);margin-bottom:20px}
+.detail-close{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:12px;
+  color:#fff;font-size:14px;font-weight:600;
+  cursor:pointer;
+  box-shadow:0 4px 16px rgba(168,85,247,.25);
+  transition:all .3s;
+}
+.detail-close:hover{box-shadow:0 6px 24px rgba(168,85,247,.4);transform:translateY(-1px)}
+
+/* ── Bottom info ── */
+.bottom-info{
+  position:fixed;bottom:0;left:0;right:0;z-index:20;
+  padding:20px;text-align:center;
+  background:linear-gradient(0deg,rgba(5,7,15,.9) 0%,transparent 100%);
+}
+.hint-text{font-size:11px;color:var(--text-faint);letter-spacing:.5px}
+.swipe-hint{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:20px;
+  margin-top:8px;
+  animation:hintFade 3s ease-in-out infinite;
+}
+@keyframes hintFade{
+  0%,100%{opacity:.4}
+  50%{opacity:.8}
+}
+.swipe-hint svg{width:14px;height:14px;stroke:var(--text-faint);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="nebula"></div>
+
+<!-- Header -->
+<div class="header">
+  <a href="/profile" class="back-link">
+    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    返回
+  </a>
+  <div class="page-title">✨ 打卡星轨</div>
+  <div class="stats-pill" id="totalPill">0 颗星</div>
+</div>
+
+<!-- Sphere -->
+<div class="sphere-viewport">
+  <div class="sphere-container" id="sphere">
+    <div class="center-orb"></div>
+    <div class="orbit-ring r1"></div>
+    <div class="orbit-ring r2"></div>
+    <div class="orbit-ring r3"></div>
+    <svg id="connections" width="400" height="400" viewBox="-200 -200 400 400"></svg>
+    <!-- Cards injected by JS -->
+  </div>
+</div>
+
+<!-- Empty state -->
+<div class="empty-state" id="emptyState">
+  <div class="empty-icon">🌌</div>
+  <div class="empty-text">星空中还没有星星</div>
+  <div class="empty-sub">每天打卡，点亮一颗属于你的星</div>
+</div>
+
+<!-- Detail modal -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-card">
+    <div class="detail-emoji" id="detailEmoji"></div>
+    <div class="detail-date" id="detailDate"></div>
+    <div class="detail-comment" id="detailComment"></div>
+    <div class="detail-time" id="detailTime"></div>
+    <button class="detail-close" onclick="closeDetail()">关闭</button>
+  </div>
+</div>
+
+<!-- Bottom hint -->
+<div class="bottom-info">
+  <div class="hint-text">每一颗星，都是一天的记忆</div>
+  <div class="swipe-hint">
+    <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    <span style="font-size:11px;color:var(--text-faint)">滑动旋转星轨</span>
+  </div>
+</div>
+
+<script>
+// ── Auth ──
+const token = localStorage.getItem('auth_token');
+if (!token) window.location.href = '/login';
+const headers = { 'Authorization': 'Bearer ' + token };
+
+// ── Starfield ──
+(function() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  const STAR_COUNT = 200;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < STAR_COUNT; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.3,
+      alpha: Math.random() * 0.8 + 0.2,
+      speed: Math.random() * 0.005 + 0.002,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  function drawStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const t = Date.now() * 0.001;
+    for (const s of stars) {
+      const a = s.alpha * (0.5 + 0.5 * Math.sin(t * s.speed * 100 + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fill();
+      // Glow
+      if (s.r > 1) {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(192,132,252,${a * 0.1})`;
+        ctx.fill();
+      }
+    }
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+})();
+
+// ── Sphere drag rotation ──
+const sphere = document.getElementById('sphere');
+let isDragging = false;
+let startX, startY, rotX = 5, rotY = 0;
+let autoAngle = 0;
+let lastTime = Date.now();
+
+sphere.addEventListener('touchstart', onStart, { passive: false });
+sphere.addEventListener('mousedown', onStart);
+window.addEventListener('touchmove', onMove, { passive: false });
+window.addEventListener('mousemove', onMove);
+window.addEventListener('touchend', onEnd);
+window.addEventListener('mouseup', onEnd);
+
+function onStart(e) {
+  isDragging = true;
+  sphere.classList.add('dragging');
+  const p = e.touches ? e.touches[0] : e;
+  startX = p.clientX;
+  startY = p.clientY;
+  // Get current rotation from animation
+  const elapsed = (Date.now() - lastTime) / 1000;
+  autoAngle += elapsed * 6; // 360/60 = 6 deg/s
+  e.preventDefault && e.preventDefault();
+}
+
+function onMove(e) {
+  if (!isDragging) return;
+  const p = e.touches ? e.touches[0] : e;
+  const dx = p.clientX - startX;
+  const dy = p.clientY - startY;
+  rotY = autoAngle + dx * 0.5;
+  rotX = Math.max(-60, Math.min(60, 5 - dy * 0.3));
+  sphere.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+}
+
+function onEnd() {
+  if (!isDragging) return;
+  isDragging = false;
+  autoAngle = rotY;
+  lastTime = Date.now();
+  // Resume auto-rotation from current angle
+  sphere.style.transform = '';
+  sphere.classList.remove('dragging');
+  sphere.style.animation = 'none';
+  sphere.offsetHeight; // reflow
+  sphere.style.animation = '';
+  // Update keyframe to start from current angle
+  const keyframes = `
+    @keyframes autoRotate {
+      0% { transform: rotateY(${autoAngle}deg) rotateX(${rotX}deg) }
+      100% { transform: rotateY(${autoAngle + 360}deg) rotateX(${rotX}deg) }
+    }
+  `;
+  let styleEl = document.getElementById('dynamic-rotate');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-rotate';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = keyframes;
+}
+
+// ── Load checkin data & build sphere ──
+async function loadHistory() {
+  try {
+    const resp = await fetch('/api/user/settings', { headers });
+    const data = await resp.json();
+    if (!data.ok) return;
+
+    const checkins = data.settings.checkins || {};
+    const entries = Object.entries(checkins).sort((a, b) => a[0].localeCompare(b[0]));
+
+    document.getElementById('totalPill').textContent = entries.length + ' 颗星';
+
+    if (entries.length === 0) {
+      document.getElementById('emptyState').classList.add('show');
+      return;
+    }
+
+    const container = document.getElementById('sphere');
+    const svgEl = document.getElementById('connections');
+    const radius = 140;
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~137.5 degrees
+
+    entries.forEach(([key, entry], i) => {
+      // Fibonacci sphere distribution
+      const y = 1 - (i / (entries.length - 1 || 1)) * 2; // -1 to 1
+      const radiusAtY = Math.sqrt(1 - y * y);
+      const theta = goldenAngle * i;
+
+      const x = Math.cos(theta) * radiusAtY * radius;
+      const z = Math.sin(theta) * radiusAtY * radius;
+      const yPos = y * radius;
+
+      // Create card
+      const card = document.createElement('div');
+      card.className = 'sphere-card';
+
+      const emoji = (typeof entry === 'object' && entry.mood) ? entry.mood : '✅';
+      const comment = (typeof entry === 'object' && entry.comment) ? entry.comment : '';
+      const parts = key.split('-');
+      const dateLabel = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+
+      card.innerHTML = `
+        <div class="card-emoji">${emoji}</div>
+        <div class="card-date">${dateLabel}</div>
+        ${comment ? `<div class="card-comment">${comment}</div>` : ''}
+      `;
+
+      card.style.transform = `translate3d(${x}px, ${yPos}px, ${z}px)`;
+      card.style.zIndex = Math.round(z + radius);
+
+      card.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showDetail(key, entry);
+      });
+
+      container.appendChild(card);
+
+      // Connection line
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '0');
+      line.setAttribute('y1', '0');
+      // Project 3D to 2D (simple orthographic for SVG)
+      line.setAttribute('x2', String(x));
+      line.setAttribute('y2', String(yPos));
+      const hue = (i / entries.length) * 60 + 260; // purple to pink gradient
+      line.setAttribute('stroke', `hsla(${hue}, 70%, 70%, 0.12)`);
+      line.setAttribute('stroke-width', '0.5');
+      line.setAttribute('stroke-dasharray', '3,3');
+      svgEl.appendChild(line);
+
+      // Sparkle effect on some cards
+      if (i % 3 === 0) {
+        const sparkle = document.createElement('div');
+        sparkle.style.cssText = `
+          position:absolute;width:4px;height:4px;border-radius:50%;
+          background:rgba(192,132,252,.6);
+          box-shadow:0 0 8px rgba(192,132,252,.4);
+          top:${50 + yPos * 0.3}%;left:${50 + x * 0.3}%;
+          transform:translate(-50%,-50%);
+          animation:sparkle 2s ease-in-out ${i * 0.3}s infinite;
+          pointer-events:none;z-index:1;
+        `;
+        container.appendChild(sparkle);
+      }
+    });
+
+    // Add sparkle keyframes
+    if (!document.getElementById('sparkle-style')) {
+      const s = document.createElement('style');
+      s.id = 'sparkle-style';
+      s.textContent = `
+        @keyframes sparkle{
+          0%,100%{opacity:.2;transform:translate(-50%,-50%) scale(1)}
+          50%{opacity:1;transform:translate(-50%,-50%) scale(2)}
+        }
+      `;
+      document.head.appendChild(s);
+    }
+
+  } catch(e) {
+    console.error('Failed to load history:', e);
+  }
+}
+
+// ── Detail modal ──
+function showDetail(key, entry) {
+  const parts = key.split('-');
+  const dateStr = parts[0] + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日';
+  document.getElementById('detailEmoji').textContent = (typeof entry === 'object' && entry.mood) ? entry.mood : '✅';
+  document.getElementById('detailDate').textContent = dateStr;
+  document.getElementById('detailComment').textContent = (typeof entry === 'object' && entry.comment) ? entry.comment : '（没有留言）';
+  if (typeof entry === 'object' && entry.time) {
+    document.getElementById('detailTime').textContent = '打卡时间：' + new Date(entry.time).toLocaleString('zh-CN');
+    document.getElementById('detailTime').style.display = 'block';
+  } else {
+    document.getElementById('detailTime').style.display = 'none';
+  }
+  document.getElementById('detailOverlay').classList.add('active');
+}
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('active');
+}
+document.getElementById('detailOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+
+// ── Init ──
+loadHistory();
+</script>
+</body>
+</html>
