@@ -5331,6 +5331,9 @@ function startPianoFullscreen(songIdx) {
   overlay.className = 'piano-fullscreen';
   overlay.id = 'pianoFullscreen';
   document.body.appendChild(overlay);
+  // 隐藏导航按钮
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = 'none';
 
   const durM = Math.floor((s.d || 0) / 60);
   const durS = Math.floor((s.d || 0) % 60).toString().padStart(2, '0');
@@ -5381,7 +5384,9 @@ function startPianoFullscreen(songIdx) {
     audioPlayed: false,
     ripples: [],
     rafId: null,
-    startTime: 0
+    startTime: 0,
+    holdTile: null,
+    holdStartTime: 0
   };
 
   // Canvas setup with DPR
@@ -5399,21 +5404,42 @@ function startPianoFullscreen(songIdx) {
   pianoResizeFn = resizeCanvas;
   window.addEventListener('resize', resizeCanvas);
 
-  // Generate rhythm pattern — BPM 80-120, slower & more forgiving
+  // Generate rhythm pattern — BPM 100-130, structured with rests and hold tiles
   function generatePattern(duration) {
-    const bpm = 80 + Math.random() * 40; // 80-120
-    const beatInterval = 60 / bpm;
+    // BPM based on song duration: shorter songs → faster BPM
+    const baseBPM = 100 + Math.min(30, Math.max(0, (180 - duration) * 0.5));
+    const beatInterval = 60 / baseBPM;
     const pattern = [];
-    let t = 0;
-    while(t < duration) {
-      const numDark = Math.random() < 0.25 ? 2 : 1;
+    let t = beatInterval * 2; // start with a short delay
+    let beatCount = 0;
+    let nextRestAt = 8 + Math.floor(Math.random() * 9); // rest every 8-16 beats
+
+    while(t < duration - beatInterval) {
+      // Occasional rest (gap with no tiles)
+      if(beatCount >= nextRestAt) {
+        t += beatInterval * (1 + Math.floor(Math.random() * 2)); // 1-2 beat rest
+        beatCount = 0;
+        nextRestAt = 8 + Math.floor(Math.random() * 9);
+        continue;
+      }
+
+      // Number of dark columns: mostly 1, sometimes 2
+      const numDark = Math.random() < 0.2 ? 2 : 1;
       const darkCols = [];
       while(darkCols.length < numDark) {
         const c = Math.floor(Math.random() * COLS);
         if(!darkCols.includes(c)) darkCols.push(c);
       }
-      pattern.push({ time: t, darkCols });
-      const interval = beatInterval * (0.85 + Math.random() * 0.3);
+
+      // ~18% chance of hold tile
+      const isHold = Math.random() < 0.18;
+      const holdDuration = isHold ? (0.3 + Math.random() * 0.5) : 0; // 0.3-0.8s
+
+      pattern.push({ time: t, darkCols, isHold, holdDuration });
+      beatCount++;
+
+      // ±10% variation in beat interval for musical feel
+      const interval = beatInterval * (0.9 + Math.random() * 0.2);
       t += interval;
     }
     return pattern;
@@ -5489,6 +5515,8 @@ function startPianoFullscreen(songIdx) {
     }
     isLongPress = false;
     slideLastCol = -1;
+    // Complete hold tile if active
+    handleHoldRelease();
   }
 
   function handleTouchMove(e) {
@@ -5514,7 +5542,19 @@ function startPianoFullscreen(songIdx) {
         let hitCount = 0;
         for(const tile of pianoFsState.tiles) {
           if(tile.hit || tile.missed || tile.col !== curCol || !tile.dark) continue;
-          if(tile.y + TILE_H > 0 && tile.y < rect.height) {
+          const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+          if(tile.y + tileH > 0 && tile.y < rect.height) {
+            if(tile.type === 'hold') {
+              // Start holding instead of instant hit
+              if(!pianoFsState.holdTile) {
+                pianoFsState.holdTile = tile;
+                pianoFsState.holdStartTime = performance.now();
+                tile.holdStarted = true;
+                tile.holdProgress = 0;
+                SFX.tileHit();
+              }
+              continue;
+            }
             tile.hit = true;
             hitCount++;
             const dist = Math.abs(tile.y + TILE_H/2 - rect.height * 0.5);
@@ -5549,16 +5589,21 @@ function startPianoFullscreen(songIdx) {
   canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
   canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
-  // Click handler
-  function handleClick(e) {
+  // Mouse handler — mousedown for tap/hold start, mouseup for hold release
+  function handleMouseDown(e) {
     handleHit(e.clientX, e.clientY, false);
   }
-  canvas.addEventListener('click', handleClick);
+  function handleMouseUp(e) {
+    handleHoldRelease();
+  }
+  canvas.addEventListener('mousedown', handleMouseDown);
+  canvas.addEventListener('mouseup', handleMouseUp);
 
   // Keyboard
   const laneKeys = { 'KeyD': 0, 'KeyF': 1, 'KeyJ': 2, 'KeyK': 3 };
   function handleKeyDown(e) {
     if(!pianoFsState || !pianoFsState.running || pianoFsState.gameOver) return;
+    if(e.repeat) return; // ignore key repeat for hold tiles
     const col = laneKeys[e.code];
     if(col === undefined) return;
     const rect = canvas.getBoundingClientRect();
@@ -5569,9 +5614,9 @@ function startPianoFullscreen(songIdx) {
     let closest = null, closestDist = Infinity;
     for(const tile of pianoFsState.tiles) {
       if(tile.hit || tile.missed || tile.col !== col) continue;
-      // Find closest dark tile anywhere on screen
       if(tile.dark) {
-        const dist = Math.abs(tile.y + TILE_H/2 - H/2);
+        const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+        const dist = Math.abs(tile.y + tileH/2 - H/2);
         if(dist < closestDist) {
           closestDist = dist;
           closest = tile;
@@ -5582,16 +5627,24 @@ function startPianoFullscreen(songIdx) {
       handleHit(col * COL_W + COL_W / 2, closest.y + TILE_H / 2, true);
     }
   }
+  function handleKeyUp(e) {
+    const col = laneKeys[e.code];
+    if(col === undefined) return;
+    handleHoldRelease();
+  }
   document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('keyup', handleKeyUp);
 
   // Store listeners for cleanup
   overlay._cleanupFns = [
     () => window.removeEventListener('resize', resizeCanvas),
     () => document.removeEventListener('keydown', handleKeyDown),
+    () => document.removeEventListener('keyup', handleKeyUp),
     () => canvas.removeEventListener('touchstart', handleTouchStart),
     () => canvas.removeEventListener('touchmove', handleTouchMove),
     () => canvas.removeEventListener('touchend', handleTouchEnd),
-    () => canvas.removeEventListener('click', handleClick),
+    () => canvas.removeEventListener('mousedown', handleMouseDown),
+    () => canvas.removeEventListener('mouseup', handleMouseUp),
     () => { if(longPressTimer) clearTimeout(longPressTimer); }
   ];
 
@@ -5608,12 +5661,23 @@ function startPianoFullscreen(songIdx) {
     const col = Math.floor(mx / COL_W);
     if(col < 0 || col >= COLS) return;
 
-    // Hit all visible dark tiles in this column
+    // Hit all visible dark tap tiles in this column (hold tiles need individual handling)
     let hitCount = 0;
     for(const tile of pianoFsState.tiles) {
       if(tile.hit || tile.missed || tile.col !== col || !tile.dark) continue;
-      // Check if tile is visible on screen
-      if(tile.y + TILE_H > 0 && tile.y < rect.height) {
+      const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+      if(tile.y + tileH > 0 && tile.y < rect.height) {
+        if(tile.type === 'hold') {
+          // Start holding the hold tile instead of instant hit
+          if(!pianoFsState.holdTile) {
+            pianoFsState.holdTile = tile;
+            pianoFsState.holdStartTime = performance.now();
+            tile.holdStarted = true;
+            tile.holdProgress = 0;
+            SFX.tileHit();
+          }
+          continue;
+        }
         tile.hit = true;
         hitCount++;
         const dist = Math.abs(tile.y + TILE_H/2 - rect.height * 0.5);
@@ -5630,7 +5694,6 @@ function startPianoFullscreen(songIdx) {
 
     if(hitCount > 0) {
       SFX.combo(hitCount * 5);
-      // Create multiple ripples for visual feedback
       for(let i = 0; i < hitCount; i++) {
         pianoFsState.ripples.push({
           x: col * COL_W + COL_W/2,
@@ -5672,7 +5735,8 @@ function startPianoFullscreen(songIdx) {
       if(mx >= tileLeft - margin && mx <= tileRight + margin) {
         // For dark tiles: find closest one to touch point
         if(tile.dark) {
-          const tileCenterY = tile.y + TILE_H / 2;
+          const tileH = tile.type === 'hold' ? TILE_H * (1 + tile.holdDuration * 2) : TILE_H;
+          const tileCenterY = tile.y + tileH / 2;
           const dist = Math.abs(my - tileCenterY);
           if(dist < closestDist) {
             closestDist = dist;
@@ -5683,12 +5747,23 @@ function startPianoFullscreen(songIdx) {
     }
 
     if(closest) {
+      // Hold tile: start tracking instead of instant score
+      if(closest.type === 'hold' && !closest.hit) {
+        pianoFsState.holdTile = closest;
+        pianoFsState.holdStartTime = performance.now();
+        closest.holdStarted = true;
+        closest.holdProgress = 0;
+        SFX.tileHit();
+        return;
+      }
+      // Tap tile: instant score
       closest.hit = true;
-      const dist = Math.abs((closest.y + TILE_H / 2) - my);
+      const tileH = closest.type === 'hold' ? TILE_H * (1 + closest.holdDuration * 2) : TILE_H;
+      const dist = Math.abs((closest.y + tileH / 2) - my);
       let points = 10;
-      if(dist < TILE_H * 0.15) {
+      if(dist < tileH * 0.15) {
         points = 30; pianoFsState.perfect++; SFX.perfect();
-      } else if(dist < TILE_H * 0.4) {
+      } else if(dist < tileH * 0.4) {
         points = 20; SFX.tileHit();
       } else {
         SFX.tileHit();
@@ -5700,9 +5775,45 @@ function startPianoFullscreen(songIdx) {
       if(pianoFsState.combo > 1 && pianoFsState.combo % 5 === 0) SFX.combo(pianoFsState.combo);
       updatePianoFsUI();
     } else {
-      // Tapped empty area - small penalty but don't break combo
-      SFX.miss();
+      // Tapped empty area — do nothing (no sound, no penalty)
     }
+  }
+
+  // Hold tile release handler — called on touchend/mouseup/keyup
+  function handleHoldRelease() {
+    if(!pianoFsState || !pianoFsState.holdTile) return;
+    const tile = pianoFsState.holdTile;
+    const elapsed = (performance.now() - pianoFsState.holdStartTime) / 1000;
+
+    if(elapsed >= tile.holdDuration * 0.8) {
+      // Held long enough — success! Score bonus (2x tap points)
+      tile.hit = true;
+      const bonus = 20 + Math.floor(tile.holdDuration * 20);
+      pianoFsState.score += bonus * (1 + pianoFsState.combo * 0.1);
+      pianoFsState.hit++;
+      pianoFsState.perfect++;
+      pianoFsState.combo++;
+      if(pianoFsState.combo > pianoFsState.maxCombo) pianoFsState.maxCombo = pianoFsState.combo;
+      SFX.perfect();
+      // Ripple at hold tile position
+      const rect = canvas.getBoundingClientRect();
+      const COL_W_ = rect.width / COLS;
+      pianoFsState.ripples.push({
+        x: tile.col * COL_W_ + COL_W_ / 2,
+        y: tile.y + TILE_H * (1 + tile.holdDuration * 2) / 2,
+        r: 0, maxR: COL_W_ * 1.2, alpha: 0.8
+      });
+      updatePianoFsUI();
+    } else {
+      // Released too early — miss
+      tile.missed = true;
+      pianoFsState.miss++;
+      pianoFsState.combo = 0;
+      SFX.miss();
+      updatePianoFsUI();
+    }
+    pianoFsState.holdTile = null;
+    pianoFsState.holdStartTime = 0;
   }
 
   // Game loop
@@ -5764,7 +5875,14 @@ function startPianoFullscreen(songIdx) {
       if(songTime >= spawnTime) {
         for(let c = 0; c < COLS; c++) {
           const isDark = note.darkCols.includes(c);
-          pianoFsState.tiles.push({ col: c, y: -TILE_H, dark: isDark, hit: false, missed: false });
+          const tileType = isDark && note.isHold ? 'hold' : 'tap';
+          const tileH = tileType === 'hold' ? TILE_H * (1 + note.holdDuration * 2) : TILE_H;
+          pianoFsState.tiles.push({
+            col: c, y: -tileH, dark: isDark, hit: false, missed: false,
+            type: tileType,
+            holdDuration: tileType === 'hold' ? note.holdDuration : 0,
+            holdProgress: 0, holdStarted: false
+          });
           if(isDark) pianoFsState.totalNotes++;
         }
         patternIdx++;
@@ -5776,12 +5894,25 @@ function startPianoFullscreen(songIdx) {
     const speedMult = 1.0 + progressRatio * 0.3; // up to 1.3x at end
     const pixelsPerSecond = ((H + TILE_H) / TILE_TRAVEL_TIME) * speedMult * gameSpeedMultiplier;
 
+    // Update hold tile progress
+    if(pianoFsState.holdTile && pianoFsState.holdTile.holdStarted) {
+      const ht = pianoFsState.holdTile;
+      const elapsed = (performance.now() - pianoFsState.holdStartTime) / 1000;
+      ht.holdProgress = Math.min(1, elapsed / ht.holdDuration);
+    }
+
     // Move tiles
     pianoFsState.tiles.forEach(t => {
       t.y += pixelsPerSecond * clampDt;
+      const tileH = t.type === 'hold' ? TILE_H * (1 + t.holdDuration * 2) : TILE_H;
       // Mark as missed when tile goes off the bottom of screen
-      if(t.dark && !t.hit && t.y > H + TILE_H * 0.5) {
+      if(t.dark && !t.hit && t.y > H + tileH * 0.5) {
         t.missed = true;
+        // If this was the active hold tile, cancel the hold
+        if(pianoFsState.holdTile === t) {
+          pianoFsState.holdTile = null;
+          pianoFsState.holdStartTime = 0;
+        }
         pianoFsState.miss++;
         pianoFsState.combo = 0;
         SFX.miss();
@@ -5789,19 +5920,23 @@ function startPianoFullscreen(songIdx) {
       }
     });
 
-    // Remove off-screen tiles
-    pianoFsState.tiles = pianoFsState.tiles.filter(t => t.y < H + TILE_H && !t.hit);
+    // Remove off-screen tiles (account for variable hold tile heights)
+    pianoFsState.tiles = pianoFsState.tiles.filter(t => {
+      const tH = t.type === 'hold' ? TILE_H * (1 + t.holdDuration * 2) : TILE_H;
+      return t.y < H + tH && !t.hit;
+    });
 
     // Draw tiles
     pianoFsState.tiles.forEach(t => {
       const x = t.col * COL_W;
       const pad = 3;
       const rad = 8;
+      const tileH = t.type === 'hold' ? TILE_H * (1 + t.holdDuration * 2) : TILE_H;
 
       if(t.hit) {
         ctx.fillStyle = 'rgba(168,230,207,0.6)';
         ctx.beginPath();
-        ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, TILE_H - pad * 2, [rad]);
+        ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
         ctx.fill();
         return;
       }
@@ -5809,29 +5944,70 @@ function startPianoFullscreen(songIdx) {
       if(t.missed) {
         ctx.fillStyle = 'rgba(255,100,100,0.5)';
       } else if(t.dark) {
-        const tg = ctx.createLinearGradient(x, t.y, x, t.y + TILE_H);
-        tg.addColorStop(0, '#4a3060');
-        tg.addColorStop(1, '#2a1540');
-        ctx.fillStyle = tg;
+        if(t.type === 'hold') {
+          // Hold tile: gradient with tail effect
+          const tg = ctx.createLinearGradient(x, t.y, x, t.y + tileH);
+          tg.addColorStop(0, '#6a4090');
+          tg.addColorStop(0.4, '#4a3060');
+          tg.addColorStop(1, '#2a1540');
+          ctx.fillStyle = tg;
+        } else {
+          const tg = ctx.createLinearGradient(x, t.y, x, t.y + TILE_H);
+          tg.addColorStop(0, '#4a3060');
+          tg.addColorStop(1, '#2a1540');
+          ctx.fillStyle = tg;
+        }
       } else {
         ctx.fillStyle = 'rgba(255,255,255,0.07)';
       }
 
       ctx.beginPath();
-      ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, TILE_H - pad * 2, [rad]);
+      ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
       ctx.fill();
 
       if(t.dark) {
-        ctx.strokeStyle = 'rgba(200,150,255,0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, TILE_H - pad * 2, [rad]);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = `${TILE_H * 0.35}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('♪', x + COL_W / 2, t.y + TILE_H / 2);
+        // Hold tile: glow when being held
+        if(t.type === 'hold' && t.holdStarted && !t.hit && !t.missed) {
+          const glowAlpha = 0.3 + t.holdProgress * 0.5;
+          ctx.shadowColor = 'rgba(200,150,255,0.8)';
+          ctx.shadowBlur = 15 + t.holdProgress * 20;
+          ctx.strokeStyle = `rgba(200,150,255,${glowAlpha})`;
+          ctx.lineWidth = 2 + t.holdProgress * 2;
+          ctx.beginPath();
+          ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Progress fill from bottom up
+          if(t.holdProgress > 0) {
+            const progH = tileH * t.holdProgress;
+            ctx.fillStyle = 'rgba(168,230,207,0.25)';
+            ctx.beginPath();
+            ctx.roundRect(x + pad, t.y + tileH - pad - progH, COL_W - pad * 2, progH, [rad]);
+            ctx.fill();
+          }
+
+          // Progress text
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.font = `bold ${Math.min(tileH * 0.2, 16)}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⏸', x + COL_W / 2, t.y + tileH * 0.3);
+          const pctText = Math.floor(t.holdProgress * 100) + '%';
+          ctx.font = `${Math.min(tileH * 0.15, 12)}px sans-serif`;
+          ctx.fillText(pctText, x + COL_W / 2, t.y + tileH * 0.55);
+        } else {
+          ctx.strokeStyle = t.type === 'hold' ? 'rgba(200,150,255,0.5)' : 'rgba(200,150,255,0.3)';
+          ctx.lineWidth = t.type === 'hold' ? 2 : 1;
+          ctx.beginPath();
+          ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = `${tileH * 0.35}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(t.type === 'hold' ? '⇔' : '♪', x + COL_W / 2, t.y + tileH / 2);
+        }
       }
     });
 
@@ -5964,6 +6140,9 @@ function closePianoFullscreen() {
   pianoFsState = null;
   pianoResizeFn = null;
   overlay.remove();
+  // 恢复导航按钮
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = '';
 }
 
 function updatePianoUI() {
