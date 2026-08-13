@@ -5553,10 +5553,19 @@ function startPianoFullscreen(songIdx) {
       // Try local audio first, then proxy_play
       let resp = await fetch('/api/local_audio/' + songId);
       if(!resp.ok) resp = await fetch('/api/proxy_play?id=' + songId);
-      if(!resp.ok) throw new Error('fetch failed: ' + resp.status);
+      if(!resp.ok) return null;
       const arrayBuf = await resp.arrayBuffer();
+      // 超时保护：5秒内必须完成解码
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
+      const decodePromise = audioCtx.decodeAudioData(arrayBuf);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('decode timeout')), 5000));
+      let audioBuffer;
+      try {
+        audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
+      } catch(e) {
+        audioCtx.close();
+        return null; // 解码失败（FLAC不支持等），回退到随机
+      }
       audioCtx.close();
 
       const rawData = audioBuffer.getChannelData(0);
