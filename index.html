@@ -5635,37 +5635,60 @@ function startPianoFullscreen(songIdx) {
   document.getElementById('pianoFsBack').onclick = doClose;
   document.getElementById('pianoFsExit').onclick = doClose;
 
-  // Start button — game starts immediately
+  // Start button — wait for audio, then start game
   const _startBtn = document.getElementById('pianoFsStartBtn');
   if(_startBtn) {
     _startBtn.addEventListener('click', function() {
-      try {
-        SFX.gameStart();
-      } catch(e) {}
-      document.getElementById('pianoFsStart').style.display = 'none';
-      pianoFsState.running = true;
-      pianoFsState.startTime = performance.now() / 1000;
+      _startBtn.textContent = '⏳ 加载音频中...';
+      _startBtn.disabled = true;
+      _startBtn.style.opacity = '0.7';
 
-      // Audio — safe init
-      try {
-        const audio = new Audio();
-        audio.volume = 0.7;
-        pianoFsState.songAudio = audio;
-        audio.onerror = function() {
-          fetch('/api/song/play_url?id=' + s.i).then(function(r){ return r.json(); }).then(function(d) {
-            if(d.ok && d.url) { audio.src = d.url; audio.play().catch(function(){}); }
-          }).catch(function(){});
-        };
-        if(typeof localAudioIds !== 'undefined' && localAudioIds.has(String(s.i))) {
-          audio.src = '/api/local_audio/' + s.i;
-        } else {
-          audio.src = '/api/proxy_play?id=' + s.i;
-        }
+      const audio = new Audio();
+      audio.volume = 0.7;
+      audio.preload = 'auto';
+      pianoFsState.songAudio = audio;
+
+      // Choose audio source
+      if(typeof localAudioIds !== 'undefined' && localAudioIds.has(String(s.i))) {
+        audio.src = '/api/local_audio/' + s.i;
+      } else {
+        audio.src = '/api/proxy_play?id=' + s.i;
+      }
+
+      // Fallback on error
+      audio.onerror = function() {
+        fetch('/api/song/play_url?id=' + s.i).then(function(r){ return r.json(); }).then(function(d) {
+          if(d.ok && d.url) {
+            audio.src = d.url;
+            audio.load();
+          }
+        }).catch(function(){ startGame(); });
+      };
+
+      function startGame() {
+        try { SFX.gameStart(); } catch(e) {}
+        document.getElementById('pianoFsStart').style.display = 'none';
+        pianoFsState.running = true;
+        pianoFsState.startTime = performance.now() / 1000;
         audio.play().catch(function(){});
-      } catch(e) { console.error('[Piano] Audio error:', e); }
+        pianoRafId = requestAnimationFrame(pianoGameLoop);
+        pianoFsState.rafId = pianoRafId;
+      }
 
-      pianoRafId = requestAnimationFrame(pianoGameLoop);
-      pianoFsState.rafId = pianoRafId;
+      // Wait for audio to be ready, then start
+      var started = false;
+      audio.addEventListener('canplay', function() {
+        if(started) return;
+        started = true;
+        startGame();
+      });
+      // Timeout: start anyway after 6 seconds
+      setTimeout(function() {
+        if(started) return;
+        started = true;
+        startGame();
+      }, 6000);
+      audio.load();
     });
   } else {
     console.error('[Piano] Start button not found!');
