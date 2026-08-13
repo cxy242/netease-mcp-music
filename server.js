@@ -450,7 +450,17 @@ fastify.get('/', async (request, reply) => {
   };
 })();
 </script>`;
-  return raw.replace('</body>', nav + authScript + '</body>');
+  // Add global error handler
+  const errorHandler = `<script>
+window.onerror = function(msg, url, line, col, error) {
+  document.title = 'ERROR: ' + msg + ' line:' + line;
+  var el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#ff0000;color:#fff;padding:10px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-all';
+  el.textContent = 'JS Error: ' + msg + ' at line ' + line + ':' + col;
+  document.body.appendChild(el);
+};
+</script>`;
+  return raw.replace('</body>', errorHandler + authScript + '</body>');
 });
 
 fastify.get('/songs_data.js', async (request, reply) => {
