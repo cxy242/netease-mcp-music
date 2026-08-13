@@ -409,7 +409,6 @@ body { transition: background 0.5s ease, color 0.3s ease;
   opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
 .games-overlay.show { opacity: 1; pointer-events: auto; }
-.games-overlay.show ~ #nav-float { display: none !important; }
 .games-panel h2 { text-align:center; font-size:20px; margin-bottom:4px;
   background: linear-gradient(135deg, var(--pink), var(--lavender));
   -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -4452,7 +4451,9 @@ function updateNav() {
 function showGames() {
   SFX.pop();
   SFX.slide();
-  hideNav();
+  // Direct nav hide — no CSS rules, no updateNav
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = 'none';
   document.getElementById('gamesPanel').classList.add('show');
   document.getElementById('gamesOverlay').classList.add('show');
   switchGame(gameType, document.querySelector('.game-tab.active'));
@@ -4464,11 +4465,9 @@ function hideGames() {
   stopGameSong();
   document.getElementById('gamesPanel').classList.remove('show');
   document.getElementById('gamesOverlay').classList.remove('show');
-  // 恢复导航按钮 — 直接操作，不用updateNav避免重复
+  // 恢复导航按钮 — 直接操作，不用updateNav
   const nav = document.getElementById('nav-float');
-  if(nav && !document.getElementById('pianoFullscreen') && !lyricsVisible) {
-    nav.style.display = '';
-  }
+  if(nav) nav.style.display = '';
   // Re-render song list to fix any stale DOM after game switching
   setTimeout(() => renderList(), 100);
 }
@@ -5525,7 +5524,12 @@ function startPianoFullscreen(songIdx) {
     holdTile: null,
     holdStartTime: 0,
     theme: activeTheme,
-    bgParticles: [] // decorative floating particles
+    bgParticles: [], // decorative floating particles
+    smoothSpeedMult: 1.0, // for smooth speed acceleration
+    cachedGrad: null, // cached linear gradient for background
+    cachedBgAccent1: null, // cached radial gradient 1
+    cachedBgAccent2: null, // cached radial gradient 2
+    cachedGradW: 0, cachedGradH: 0 // dimensions when gradients were cached
   };
 
   // Canvas setup with DPR
@@ -5649,6 +5653,12 @@ function startPianoFullscreen(songIdx) {
       const t = btn.dataset.theme;
       if(!PIANO_THEMES[t]) return;
       pianoFsState.theme = t;
+      // Invalidate cached gradients for new theme
+      pianoFsState.cachedGrad = null;
+      pianoFsState.cachedBgAccent1 = null;
+      pianoFsState.cachedBgAccent2 = null;
+      pianoFsState.cachedGradW = 0;
+      pianoFsState.bgParticles = []; // regenerate particles for new theme
       localStorage.setItem('pianoTheme', t);
       // Update active button
       themeSelector.querySelectorAll('.piano-theme-btn').forEach(b => b.classList.remove('active'));
@@ -6108,31 +6118,40 @@ function startPianoFullscreen(songIdx) {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Background — use theme colors
+    // Background — use theme colors (cached gradients)
     const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.moonlight;
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, theme.bg[0]);
-    grad.addColorStop(0.5, theme.bg[1]);
-    grad.addColorStop(1, theme.bg[2]);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    if(pianoFsState.cachedGradW !== W || pianoFsState.cachedGradH !== H) {
+      // Rebuild cached gradients when canvas size changes
+      const g1 = ctx.createLinearGradient(0, 0, 0, H);
+      g1.addColorStop(0, theme.bg[0]);
+      g1.addColorStop(0.5, theme.bg[1]);
+      g1.addColorStop(1, theme.bg[2]);
+      pianoFsState.cachedGrad = g1;
 
-    // Background accent glow
-    const bgGrad = ctx.createRadialGradient(W*0.3, H*0.7, 0, W*0.3, H*0.7, W*0.5);
-    bgGrad.addColorStop(0, theme.bgAccent);
-    bgGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = bgGrad;
+      const g2 = ctx.createRadialGradient(W*0.3, H*0.7, 0, W*0.3, H*0.7, W*0.5);
+      g2.addColorStop(0, theme.bgAccent);
+      g2.addColorStop(1, 'transparent');
+      pianoFsState.cachedBgAccent1 = g2;
+
+      const g3 = ctx.createRadialGradient(W*0.7, H*0.3, 0, W*0.7, H*0.3, W*0.4);
+      g3.addColorStop(0, theme.bgAccent);
+      g3.addColorStop(1, 'transparent');
+      pianoFsState.cachedBgAccent2 = g3;
+
+      pianoFsState.cachedGradW = W;
+      pianoFsState.cachedGradH = H;
+    }
+    ctx.fillStyle = pianoFsState.cachedGrad;
     ctx.fillRect(0, 0, W, H);
-    const bgGrad2 = ctx.createRadialGradient(W*0.7, H*0.3, 0, W*0.7, H*0.3, W*0.4);
-    bgGrad2.addColorStop(0, theme.bgAccent);
-    bgGrad2.addColorStop(1, 'transparent');
-    ctx.fillStyle = bgGrad2;
+    ctx.fillStyle = pianoFsState.cachedBgAccent1;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = pianoFsState.cachedBgAccent2;
     ctx.fillRect(0, 0, W, H);
 
     // Decorative floating background particles
     if(!pianoFsState.bgParticles || pianoFsState.bgParticles.length === 0) {
       pianoFsState.bgParticles = [];
-      const pCount = pianoFsState.theme === 'firefly' ? 30 : 20;
+      const pCount = 10; // limit to 10 for performance
       for(let i = 0; i < pCount; i++) {
         pianoFsState.bgParticles.push({
           x: Math.random() * W, y: Math.random() * H,
@@ -6261,9 +6280,12 @@ function startPianoFullscreen(songIdx) {
       } else break;
     }
 
-    // Progressive difficulty: speed multiplier increases over time
+    // Progressive difficulty: smooth exponential speed increase
     const progressRatio = songTime / songDuration;
-    const speedMult = 1.0 + progressRatio * 0.8; // up to 1.8x at end
+    const targetSpeed = 1.0 + progressRatio * 0.8; // up to 1.8x at end
+    // Smooth interpolation — exponential moving average
+    pianoFsState.smoothSpeedMult = pianoFsState.smoothSpeedMult * 0.995 + targetSpeed * 0.005;
+    const speedMult = pianoFsState.smoothSpeedMult;
     const pixelsPerSecond = ((H + TILE_H) / TILE_TRAVEL_TIME) * speedMult * gameSpeedMultiplier;
 
     // Update hold tile progress
@@ -6298,20 +6320,18 @@ function startPianoFullscreen(songIdx) {
       return t.y < H + tH && !t.hit;
     });
 
-    // Draw tiles
+    // Draw tiles (optimized: skip hit tiles entirely, visibility cull)
     pianoFsState.tiles.forEach(t => {
+      // Skip hit tiles entirely — they're already gone
+      if(t.hit) return;
+
       const x = t.col * COL_W;
       const pad = 3;
       const rad = 8;
       const tileH = t.tileH || TILE_H;
 
-      if(t.hit) {
-        ctx.fillStyle = theme.hitColor;
-        ctx.beginPath();
-        ctx.roundRect(x + pad, t.y + pad, COL_W - pad * 2, tileH - pad * 2, [rad]);
-        ctx.fill();
-        return;
-      }
+      // Visibility cull: skip tiles fully above or below screen
+      if(t.y + tileH < -20 || t.y > H + 20) return;
 
       if(t.missed) {
         ctx.fillStyle = 'rgba(255,100,100,0.5)';
@@ -6418,8 +6438,9 @@ function startPianoFullscreen(songIdx) {
       }
     });
 
-    // Ripples — use theme accent
+    // Ripples — use theme accent (limit to 5 for performance)
     const ripples = pianoFsState.ripples;
+    while(ripples.length > 5) ripples.shift();
     for(let ri = ripples.length - 1; ri >= 0; ri--) {
       const rp = ripples[ri];
       rp.r += 4;
@@ -6550,8 +6571,9 @@ function closePianoFullscreen() {
   pianoFsState = null;
   pianoResizeFn = null;
   overlay.remove();
-  // 恢复导航按钮（统一管理）
-  updateNav();
+  // 恢复导航按钮 — 直接操作
+  const nav = document.getElementById('nav-float');
+  if(nav) nav.style.display = '';
 }
 
 function updatePianoUI() {
@@ -7031,5 +7053,12 @@ init();
   <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
   <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
 </div>
+<script>
+// Guard: remove duplicate nav-float divs (keep only the first)
+(function(){
+  const navs = document.querySelectorAll('#nav-float');
+  for(let i = 1; i < navs.length; i++) navs[i].remove();
+})();
+</script>
 </body>
 </html>
