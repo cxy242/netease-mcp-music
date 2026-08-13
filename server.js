@@ -48,7 +48,7 @@ try {
 
 // 如果还是空，用默认值
 if (!REMOTE_AUDIO_BASE) {
-  REMOTE_AUDIO_BASE = 'https://wisconsin-closure-seriously-restored.trycloudflare.com';
+  REMOTE_AUDIO_BASE = 'https://parish-solved-departure-finance.trycloudflare.com';
 }
 
 let localAudioMap = {};
