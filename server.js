@@ -217,6 +217,7 @@ fastify.post('/api/login', async (request, reply) => {
   const user = Object.values(usersDB).find(u => u.username === username);
   if (!user) return reply.code(401).send({ ok: false, message: '用户名或密码错误' });
   if (!verifyPassword(password, user.salt, user.hash)) return reply.code(401).send({ ok: false, message: '用户名或密码错误' });
+  if (user.banned) return reply.code(403).send({ ok: false, message: '账号已被封禁，请联系管理员' });
   user.lastLogin = Date.now();
   saveUsers();
   const token = generateToken(user.userId);
@@ -2407,6 +2408,115 @@ fastify.get('/api/admin/user_data', async (request) => {
     data: { favorites: favs, history: history, settings: settings }
   };
 });
+
+// Admin: reset user password
+fastify.post('/api/admin/reset_password', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { userId, newPassword } = request.body || {};
+  if (!userId || !newPassword) return { ok: false, message: '缺少参数' };
+  if (newPassword.length < 4) return { ok: false, message: '密码至少4个字符' };
+  if (!usersDB[userId]) return { ok: false, message: '用户不存在' };
+  const { salt, hash } = hashPassword(newPassword);
+  usersDB[userId].salt = salt;
+  usersDB[userId].hash = hash;
+  saveUsers();
+  return { ok: true, message: `已重置 ${usersDB[userId].username} 的密码` };
+});
+
+// Admin: ban/unban user
+fastify.post('/api/admin/toggle_ban', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { userId } = request.body || {};
+  if (!userId) return { ok: false, message: '缺少userId' };
+  if (userId === user.userId) return { ok: false, message: '不能封禁自己' };
+  if (!usersDB[userId]) return { ok: false, message: '用户不存在' };
+  usersDB[userId].banned = !usersDB[userId].banned;
+  saveUsers();
+  return { ok: true, banned: usersDB[userId].banned };
+});
+
+// Admin: clear user data
+fastify.post('/api/admin/clear_data', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { userId } = request.body || {};
+  if (!userId || !usersDB[userId]) return { ok: false, message: '用户不存在' };
+  const userDir = join(USER_DATA_DIR, userId);
+  try {
+    if (existsSync(userDir)) {
+      const files = readdirSync(userDir);
+      for (const f of files) writeFileSync(join(userDir, f), '{}');
+    }
+  } catch(e) {}
+  return { ok: true, message: `已清空 ${usersDB[userId].username} 的数据` };
+});
+
+// Admin: system stats
+fastify.get('/api/admin/stats', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const totalUsers = Object.keys(usersDB).length;
+  const totalAdmins = Object.values(usersDB).filter(u => u.isAdmin).length;
+  const bannedUsers = Object.values(usersDB).filter(u => u.banned).length;
+  let totalFavs = 0, totalPlays = 0, totalCheckins = 0;
+  for (const uid of Object.keys(usersDB)) {
+    const favs = loadUserData(uid, 'favorites.json', { songs: [] });
+    const hist = loadUserData(uid, 'history.json', { plays: [] });
+    const settings = loadUserData(uid, 'settings.json', {});
+    totalFavs += (favs.songs || []).length;
+    totalPlays += (hist.plays || []).length;
+    totalCheckins += Object.keys(settings.checkins || {}).length;
+  }
+  return {
+    ok: true,
+    stats: {
+      totalUsers, totalAdmins, bannedUsers,
+      totalSongs: Object.keys(localAudioMap).length,
+      totalFavs, totalPlays, totalCheckins,
+      uptime: Math.floor(process.uptime()),
+      memoryMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024)
+    }
+  };
+});
+
+// Admin: send announcement
+fastify.post('/api/admin/announce', async (request) => {
+  const user = getCurrentUser(request);
+  if (!user || !user.isAdmin) return { ok: false, message: '需要管理员权限' };
+  const { message } = request.body || {};
+  if (!message) return { ok: false, message: '缺少公告内容' };
+  // Save announcement to file
+  const announcements = loadGlobalData('announcements.json', { list: [] });
+  announcements.list.unshift({
+    id: 'ann_' + Date.now(),
+    message,
+    author: user.username,
+    time: Date.now()
+  });
+  if (announcements.list.length > 50) announcements.list = announcements.list.slice(0, 50);
+  saveGlobalData('announcements.json', announcements);
+  return { ok: true, message: '公告已发布' };
+});
+
+// Public: get announcements
+fastify.get('/api/announcements', async () => {
+  const data = loadGlobalData('announcements.json', { list: [] });
+  return { ok: true, announcements: data.list.slice(0, 10) };
+});
+
+// Global data helpers
+function loadGlobalData(filename, defaultVal = {}) {
+  try {
+    const path = join(__dirname, filename);
+    if (existsSync(path)) return JSON.parse(readFileSync(path, 'utf-8'));
+  } catch(e) {}
+  return defaultVal;
+}
+function saveGlobalData(filename, data) {
+  writeFileSync(join(__dirname, filename), JSON.stringify(data, null, 2));
+}
 
 fastify.get('/health', async () => ({
   status: 'ok',
