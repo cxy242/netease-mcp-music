@@ -5824,7 +5824,7 @@ function startPianoFullscreen(songIdx) {
     pianoFsState.running = true;
     pianoFsState.startTime = performance.now() / 1000;
 
-    pianoFsState.songAudio = new Audio('/api/proxy_play?id=' + s.i);
+    pianoFsState.songAudio = new Audio('/api/local_audio/' + s.i);
     pianoFsState.songAudio.volume = 0.7;
     pianoFsState.songAudio.play().then(() => {
       pianoFsState.audioPlayed = true;
