@@ -104,6 +104,38 @@ const TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Load users
 let usersDB = {};
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
+const GITHUB_REPO = 'cxy242/netease-mcp-music';
+async function syncUsersFromGitHub() {
+  if (!GITHUB_TOKEN) return;
+  try {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/users_data.json?ref=master`;
+    const resp = await fetch(url, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+    if (resp.ok) {
+      const data = await resp.json();
+      const content = Buffer.from(data.content, 'base64').toString('utf-8');
+      usersDB = JSON.parse(content);
+      writeFileSync(USERS_FILE, JSON.stringify(usersDB, null, 2));
+      console.log(`[Auth] Synced ${Object.keys(usersDB).length} users from GitHub`);
+    }
+  } catch(e) { console.warn('[Auth] GitHub sync failed:', e.message); }
+}
+async function syncUsersToGitHub() {
+  if (!GITHUB_TOKEN) return;
+  try {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/users_data.json?ref=master`;
+    const getResp = await fetch(url, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+    let sha = '';
+    if (getResp.ok) { const d = await getResp.json(); sha = d.sha; }
+    const content = Buffer.from(JSON.stringify(usersDB, null, 2)).toString('base64');
+    const putResp = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Sync users data', content, sha, branch: 'master' })
+    });
+    if (putResp.ok) console.log('[Auth] Users synced to GitHub');
+  } catch(e) { console.warn('[Auth] GitHub push failed:', e.message); }
+}
 try {
   if (existsSync(USERS_FILE)) {
     usersDB = JSON.parse(readFileSync(USERS_FILE, 'utf-8'));
@@ -115,6 +147,8 @@ try {
 
 function saveUsers() {
   writeFileSync(USERS_FILE, JSON.stringify(usersDB, null, 2));
+  // 异步同步到 GitHub（不阻塞）
+  syncUsersToGitHub().catch(() => {});
 }
 
 // Password hashing with PBKDF2
@@ -2582,6 +2616,11 @@ fastify.post('/api/update_tunnel', async (request) => {
 // ═════════════════════════════════════════════════════════════════════
 // START
 // ═════════════════════════════════════════════════════════════════════
+
+// Sync users from GitHub on startup
+syncUsersFromGitHub().then(() => {
+  console.log(`[Auth] Total users after sync: ${Object.keys(usersDB).length}`);
+}).catch(() => {});
 
 fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
   if (err) {
