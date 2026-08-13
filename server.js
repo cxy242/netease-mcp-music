@@ -198,10 +198,13 @@ fastify.post('/api/register', async (request, reply) => {
   if (existing) return reply.code(400).send({ ok: false, message: '用户名已存在' });
   const userId = 'u_' + crypto.randomBytes(8).toString('hex');
   const { salt, hash } = hashPassword(password);
+  const isFirstUser = Object.keys(usersDB).length === 0;
   usersDB[userId] = {
     userId, username, salt, hash,
-    avatar: '', createdAt: Date.now(), lastLogin: Date.now()
+    avatar: '', createdAt: Date.now(), lastLogin: Date.now(),
+    isAdmin: isFirstUser  // 第一个注册的用户自动成为管理员
   };
+  if (isFirstUser) console.log(`[Auth] First user ${username} is now admin`);
   saveUsers();
   const token = generateToken(userId);
   reply.header('Set-Cookie', `auth_token=${token}; Path=/; HttpOnly; Max-Age=${TOKEN_EXPIRY / 1000}`);
@@ -224,7 +227,7 @@ fastify.post('/api/login', async (request, reply) => {
 fastify.get('/api/me', async (request) => {
   const user = getCurrentUser(request);
   if (!user) return { ok: false };
-  return { ok: true, user: { userId: user.userId, username: user.username, avatar: user.avatar, createdAt: user.createdAt } };
+  return { ok: true, user: { userId: user.userId, username: user.username, avatar: user.avatar, isAdmin: !!user.isAdmin, createdAt: user.createdAt } };
 });
 
 fastify.post('/api/logout', async (request, reply) => {
@@ -324,7 +327,7 @@ fastify.get('/', async (request, reply) => {
   <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
   <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
   <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
-  <span id="userNavBtn" style="padding:8px 14px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(255,152,0,0.3)" onclick="handleUserNav()">👤 登录</span>
+  <span id="userNavBtn" style="padding:8px 14px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(255,152,0,0.3)">👤 登录</span>
 </div>`;
     // Inject auth script
   const authScript = `
