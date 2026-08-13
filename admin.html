@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>管理后台 - 月汐音乐花园</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a1040 50%, #0a0e1a 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #fff; padding: 20px;
+}
+.container { max-width: 600px; margin: 0 auto; }
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.back-btn {
+  padding: 8px 16px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+  color: #fff; font-size: 14px; cursor: pointer; text-decoration: none;
+}
+.page-title { font-size: 20px; font-weight: 700; }
+/* 统计卡片 */
+.stats {
+  display: flex; gap: 12px; margin-bottom: 24px;
+}
+.stat-card {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 18px; text-align: center;
+}
+.stat-num { font-size: 28px; font-weight: 700; }
+.stat-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+/* 用户列表 */
+.section-title {
+  font-size: 16px; font-weight: 600; margin-bottom: 12px;
+  color: rgba(255,255,255,0.7);
+}
+.user-list { margin-bottom: 24px; }
+.user-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  margin-bottom: 8px;
+}
+.user-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #f8a4c8, #c3a6e8);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 15px; font-weight: 600; }
+.user-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.user-badge {
+  padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+.user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.action-btn {
+  padding: 6px 12px; border: none; border-radius: 8px;
+  font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+.action-btn:hover { transform: scale(1.05); }
+.btn-admin { background: rgba(255,152,0,0.2); color: #ff9800; border: 1px solid rgba(255,152,0,0.3); }
+.btn-delete { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+.btn-view { background: rgba(100,200,255,0.2); color: #64c8ff; border: 1px solid rgba(100,200,255,0.3); }
+/* 用户详情弹窗 */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #1a1a2e; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 24px; max-width: 500px; width: 90%;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.modal-close {
+  float: right; background: none; border: none;
+  color: rgba(255,255,255,0.5); font-size: 20px; cursor: pointer;
+}
+.modal-section { margin-bottom: 16px; }
+.modal-section h4 { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+.modal-data {
+  background: rgba(255,255,255,0.05); border-radius: 10px;
+  padding: 12px; font-size: 13px; font-family: monospace;
+  white-space: pre-wrap; word-break: break-all;
+}
+.empty { color: rgba(255,255,255,0.3); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <a href="/profile" class="back-btn">← 返回</a>
+    <div class="page-title">👑 管理后台</div>
+    <div style="width:60px"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="totalUsers">-</div>
+      <div class="stat-label">注册用户</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="adminCount">-</div>
+      <div class="stat-label">管理员</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="songCount">-</div>
+      <div class="stat-label">歌曲总数</div>
+    </div>
+  </div>
+
+  <div class="section-title">用户列表</div>
+  <div class="user-list" id="userList">加载中...</div>
+</div>
+
+<!-- 用户详情弹窗 -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div class="modal-title" id="modalTitle">用户详情</div>
+    <div class="modal-section">
+      <h4>收藏歌曲</h4>
+      <div class="modal-data" id="modalFavs">-</div>
+    </div>
+    <div class="modal-section">
+      <h4>播放记录</h4>
+      <div class="modal-data" id="modalHistory">-</div>
+    </div>
+    <div class="modal-section">
+      <h4>设置</h4>
+      <div class="modal-data" id="modalSettings">-</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('auth_token');
+const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+if (!token) { window.location.href = '/login'; }
+// 前端先检查是否管理员（API会再次验证）
+(async () => {
+  try {
+    const resp = await fetch('/api/user/profile', { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await resp.json();
+    if (!data.ok || !data.user.isAdmin) {
+      alert('需要管理员权限才能访问此页面');
+      window.location.href = '/profile';
+    }
+  } catch(e) {
+    window.location.href = '/profile';
+  }
+})();
+
+const headers = { 'Authorization': 'Bearer ' + token };
+
+async function loadAdmin() {
+  try {
+    const resp = await fetch('/api/admin/users', { headers });
+    const data = await resp.json();
+    if (!data.ok) {
+      alert(data.message || '无权限');
+      window.location.href = '/profile';
+      return;
+    }
+    document.getElementById('totalUsers').textContent = data.total;
+    document.getElementById('adminCount').textContent = data.users.filter(u => u.isAdmin).length;
+
+    // 歌曲数
+    try {
+      const sResp = await fetch('/health');
+      const sData = await sResp.json();
+      document.getElementById('songCount').textContent = sData.local_audio || '-';
+    } catch(e) {}
+
+    const list = document.getElementById('userList');
+    list.innerHTML = '';
+    data.users.forEach(u => {
+      const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('zh-CN') : '-';
+      const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('zh-CN') : '-';
+      const div = document.createElement('div');
+      div.className = 'user-item';
+      div.innerHTML = `
+        <div class="user-avatar">${u.username.charAt(0).toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${esc(u.username)} ${u.isAdmin ? '<span class="user-badge">管理员</span>' : ''}</div>
+          <div class="user-meta">ID: ${u.userId} · 注册: ${created} · 最近: ${lastLogin}</div>
+        </div>
+        <div class="user-actions">
+          <button class="action-btn btn-view" onclick="viewUser('${u.userId}','${esc(u.username)}')">查看</button>
+          <button class="action-btn btn-admin" onclick="toggleAdmin('${u.userId}','${esc(u.username)}',${u.isAdmin})">${u.isAdmin ? '取消管理' : '设为管理'}</button>
+          <button class="action-btn btn-delete" onclick="deleteUser('${u.userId}','${esc(u.username)}')">删除</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  } catch(e) {
+    console.error('Load admin failed:', e);
+  }
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function viewUser(userId, username) {
+  document.getElementById('modalTitle').textContent = username + ' 的数据';
+  document.getElementById('userModal').classList.add('show');
+  document.getElementById('modalFavs').textContent = '加载中...';
+  document.getElementById('modalHistory').textContent = '加载中...';
+  document.getElementById('modalSettings').textContent = '加载中...';
+
+  try {
+    const resp = await fetch('/api/admin/user_data?userId=' + userId, { headers });
+    const data = await resp.json();
+    if (!data.ok) { alert(data.message); return; }
+
+    const favs = data.data.favorites.songs || [];
+    document.getElementById('modalFavs').textContent = favs.length ? favs.join(', ') : '暂无收藏';
+
+    const plays = data.data.history.plays || [];
+    if (plays.length) {
+      const recent = plays.slice(0, 10).map(p => {
+        const t = new Date(p.time).toLocaleString('zh-CN');
+        return `  ${p.songId} (${t})`;
+      }).join('\n');
+      document.getElementById('modalHistory').textContent = `共 ${plays.length} 条记录，最近10条：\n${recent}`;
+    } else {
+      document.getElementById('modalHistory').textContent = '暂无播放记录';
+    }
+
+    const settings = data.data.settings;
+    document.getElementById('modalSettings').textContent = Object.keys(settings).length ? JSON.stringify(settings, null, 2) : '默认设置';
+  } catch(e) {
+    document.getElementById('modalFavs').textContent = '加载失败';
+  }
+}
+
+function closeModal() {
+  document.getElementById('userModal').classList.remove('show');
+}
+
+async function toggleAdmin(userId, username, isCurrentlyAdmin) {
+  const action = isCurrentlyAdmin ? '取消管理员权限' : '设为管理员';
+  if (!confirm(`确定要${action} ${username} 吗？`)) return;
+  try {
+    const resp = await fetch('/api/admin/toggle_admin', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      alert('操作成功');
+      loadAdmin();
+    } else {
+      alert(data.message || '操作失败');
+    }
+  } catch(e) { alert('网络错误'); }
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm(`确定要删除用户 ${username} 吗？此操作不可撤销！`)) return;
+  if (!confirm(`再次确认：删除 ${username}？`)) return;
+  try {
+    const resp = await fetch('/api/admin/delete_user', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      alert('已删除');
+      loadAdmin();
+    } else {
+      alert(data.message || '删除失败');
+    }
+  } catch(e) { alert('网络错误'); }
+}
+
+loadAdmin();
+</script>
+</body>
+</html>
