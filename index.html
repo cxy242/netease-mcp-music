@@ -1533,6 +1533,149 @@ button, a, .song-card, .mac-btn, .fab-btn, .fab-mini, .np-btn, .act-btn {
 .song-list { contain: layout style; }
 .song-card { content-visibility: auto; contain-intrinsic-size: 0 60px; }
 
+
+/* ===== FLOATING ACTION BALL (FAB) ===== */
+#fab {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+  z-index: 99999;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e91e63, #9c27b0, #2196f3);
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.4), 0 0 30px rgba(156, 39, 176, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s;
+  position: relative;
+  z-index: 2;
+  animation: fab-glow 2s ease-in-out infinite alternate;
+}
+#fab-main:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(233, 30, 99, 0.6), 0 0 40px rgba(156, 39, 176, 0.3);
+}
+#fab-main:active {
+  transform: scale(0.95);
+}
+#fab.open #fab-main {
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #ff5722, #e91e63);
+}
+@keyframes fab-glow {
+  0% { box-shadow: 0 4px 20px rgba(233, 30, 99, 0.4), 0 0 20px rgba(156, 39, 176, 0.15); }
+  100% { box-shadow: 0 4px 25px rgba(233, 30, 99, 0.5), 0 0 35px rgba(156, 39, 176, 0.25); }
+}
+#fab-menu {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+#fab-menu .fab-item {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  text-decoration: none;
+  opacity: 0;
+  transform: translate(0, 0) scale(0);
+  transition: all 0.35s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+  border: 2px solid rgba(255,255,255,0.15);
+}
+#fab-menu .fab-item:hover {
+  transform: scale(1.15) !important;
+  filter: brightness(1.2);
+}
+#fab.open #fab-menu {
+  pointer-events: auto;
+}
+#fab.open #fab-menu .fab-item {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Each item position - radial arc */
+#fab.open #fab-menu .fab-item:nth-child(1) { transform: translate(-70px, -10px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(2) { transform: translate(-60px, -60px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(3) { transform: translate(-10px, -80px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(4) { transform: translate(30px, -70px) scale(1); }
+#fab.open #fab-menu .fab-item:nth-child(5) { transform: translate(50px, -40px) scale(1); }
+/* Staggered delays */
+#fab.open #fab-menu .fab-item:nth-child(1) { transition-delay: 0.03s; }
+#fab.open #fab-menu .fab-item:nth-child(2) { transition-delay: 0.06s; }
+#fab.open #fab-menu .fab-item:nth-child(3) { transition-delay: 0.09s; }
+#fab.open #fab-menu .fab-item:nth-child(4) { transition-delay: 0.12s; }
+#fab.open #fab-menu .fab-item:nth-child(5) { transition-delay: 0.15s; }
+/* FAB label tooltips */
+#fab-menu .fab-item .fab-label {
+  position: absolute;
+  right: 56px;
+  white-space: nowrap;
+  background: rgba(10,14,26,0.9);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#fab-menu .fab-item:hover .fab-label {
+  opacity: 1;
+}
+/* FAB user badge - small indicator on the ball */
+#fab-user-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid rgba(10,14,26,0.8);
+  cursor: pointer;
+  z-index: 3;
+  line-height: 1;
+}
+/* Backdrop overlay when menu is open */
+#fab-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: transparent;
+}
+#fab.open ~ #fab-backdrop {
+  display: block;
+}
+
 </style>
 <script>
 // ===== 安全防护：防止浏览器劫持和注入 =====
@@ -4431,17 +4574,17 @@ function updateLyricsProgressBar() {
 // ===== NAV BUTTONS MANAGEMENT =====
 // ============================================================
 function hideNav() {
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = 'none';
+  const fab = document.getElementById('fab');
+  if(fab) fab.style.display = 'none';
 }
 function updateNav() {
   // 只在所有面板都关闭时才显示导航
-  const nav = document.getElementById('nav-float');
-  if(!nav) return;
+  const fab = document.getElementById('fab');
+  if(!fab) return;
   const gamesOpen = document.getElementById('gamesPanel')?.classList.contains('show');
   const pianoOpen = !!document.getElementById('pianoFullscreen');
   const lyricsOpen = typeof lyricsVisible !== 'undefined' && lyricsVisible;
-  nav.style.display = (gamesOpen || pianoOpen || lyricsOpen) ? 'none' : '';
+  fab.style.display = (gamesOpen || pianoOpen || lyricsOpen) ? 'none' : '';
 }
 
 // ============================================================
@@ -4452,8 +4595,8 @@ function showGames() {
   SFX.pop();
   SFX.slide();
   // Direct nav hide — no CSS rules, no updateNav
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = 'none';
+  const fab = document.getElementById('fab');
+  if(fab) fab.style.display = 'none';
   document.getElementById('gamesPanel').classList.add('show');
   document.getElementById('gamesOverlay').classList.add('show');
   switchGame(gameType, document.querySelector('.game-tab.active'));
@@ -4466,8 +4609,8 @@ function hideGames() {
   document.getElementById('gamesPanel').classList.remove('show');
   document.getElementById('gamesOverlay').classList.remove('show');
   // 恢复导航按钮 — 直接操作，不用updateNav
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = '';
+  const fab = document.getElementById('fab');
+  if(fab) fab.style.display = '';
   // Re-render song list to fix any stale DOM after game switching
   setTimeout(() => renderList(), 100);
 }
@@ -7080,8 +7223,8 @@ function closePianoFullscreen() {
   pianoResizeFn = null;
   overlay.remove();
   // 恢复导航按钮 — 直接操作
-  const nav = document.getElementById('nav-float');
-  if(nav) nav.style.display = '';
+  const fab = document.getElementById('fab');
+  if(fab) fab.style.display = '';
 }
 
 function updatePianoUI() {
@@ -7555,27 +7698,151 @@ window.addEventListener('resize', debounce(() => {
 init();
 </script>
 
-<div id="nav-float" style="position:fixed;top:0;left:0;right:0;z-index:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:8px 12px;background:rgba(10,14,26,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06)">
-  <a href="/netease" style="padding:8px 14px;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(233,30,99,0.3)">🎵 网易云</a>
-  <a href="/cookie" style="padding:8px 14px;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(76,175,80,0.3)">🍪 Cookie</a>
-  <a href="/comments" style="padding:8px 14px;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(33,150,243,0.3)">💬 评论</a>
-  <a href="/listen" style="padding:8px 14px;background:linear-gradient(135deg,#9c27b0,#6a1b9a);color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(156,39,176,0.3)">🎧 一起听</a>
+
+<div id="fab">
+  <button id="fab-main" title="菜单">🎵</button>
+  <div id="fab-menu">
+    <a href="/profile" class="fab-item" id="fabProfileItem" style="background:linear-gradient(135deg,#ff9800,#f57c00);">
+      <span id="userNavBtn" style="font-size:inherit;">👤</span>
+      <span class="fab-label">个人中心</span>
+    </a>
+    <a href="/listen" class="fab-item" style="background:linear-gradient(135deg,#9c27b0,#6a1b9a);">
+      🎧
+      <span class="fab-label">一起听</span>
+    </a>
+    <a href="/comments" class="fab-item" style="background:linear-gradient(135deg,#2196f3,#1565c0);">
+      💬
+      <span class="fab-label">评论</span>
+    </a>
+    <a href="/cookie" class="fab-item" style="background:linear-gradient(135deg,#4caf50,#2e7d32);">
+      🍪
+      <span class="fab-label">Cookie</span>
+    </a>
+    <a href="/netease" class="fab-item" style="background:linear-gradient(135deg,#e91e63,#ff5722);">
+      🎵
+      <span class="fab-label">网易云</span>
+    </a>
+  </div>
 </div>
+<div id="fab-backdrop"></div>
 <script>
-// Guard: keep the nav-float that has userNavBtn, remove others
-(function(){
-  const navs = document.querySelectorAll('#nav-float');
-  if(navs.length <= 1) return;
-  // Find the one with userNavBtn
-  let keepIdx = -1;
-  for(let i = 0; i < navs.length; i++) {
-    if(navs[i].querySelector('#userNavBtn')) { keepIdx = i; break; }
+(function() {
+  var fab = document.getElementById('fab');
+  var mainBtn = document.getElementById('fab-main');
+  var backdrop = document.getElementById('fab-backdrop');
+  var isOpen = false;
+  var isDragging = false;
+  var hasMoved = false;
+  var startX, startY, origX, origY;
+
+  // Restore saved position
+  try {
+    var saved = JSON.parse(localStorage.getItem('fab_pos'));
+    if(saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      fab.style.left = saved.x + 'px';
+      fab.style.top = saved.y + 'px';
+    }
+  } catch(e) {}
+
+  function toggleMenu() {
+    if(hasMoved) return;
+    isOpen = !isOpen;
+    fab.classList.toggle('open', isOpen);
   }
-  // If found, remove all others; otherwise keep first
-  for(let i = 0; i < navs.length; i++) {
-    if(i !== (keepIdx >= 0 ? keepIdx : 0)) navs[i].remove();
+
+  function closeMenu() {
+    isOpen = false;
+    fab.classList.remove('open');
   }
+
+  // Pointer events for drag (works for both mouse & touch)
+  function onPointerDown(e) {
+    if(e.target.closest('#fab-menu')) return;
+    isDragging = false;
+    hasMoved = false;
+    var pos = getPos(e);
+    startX = pos.x;
+    startY = pos.y;
+    var rect = fab.getBoundingClientRect();
+    origX = rect.left;
+    origY = rect.top;
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    var pos = getPos(e);
+    var dx = pos.x - startX;
+    var dy = pos.y - startY;
+    if(!isDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      isDragging = true;
+      hasMoved = true;
+      closeMenu();
+    }
+    if(isDragging) {
+      e.preventDefault();
+      var nx = Math.max(0, Math.min(window.innerWidth - 56, origX + dx));
+      var ny = Math.max(0, Math.min(window.innerHeight - 56, origY + dy));
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      fab.style.left = nx + 'px';
+      fab.style.top = ny + 'px';
+    }
+  }
+
+  function onPointerUp(e) {
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    if(isDragging) {
+      // Snap to nearest edge
+      var rect = fab.getBoundingClientRect();
+      var mid = rect.left + 28;
+      var halfW = window.innerWidth / 2;
+      var targetX = mid < halfW ? 12 : window.innerWidth - 68;
+      fab.style.left = targetX + 'px';
+      fab.style.transition = 'left 0.2s cubic-bezier(.4,0,.2,1)';
+      setTimeout(function(){ fab.style.transition = ''; }, 250);
+      try { localStorage.setItem('fab_pos', JSON.stringify({x: targetX, y: rect.top})); } catch(e) {}
+      isDragging = false;
+      // Delay to prevent click
+      setTimeout(function(){ hasMoved = false; }, 100);
+    } else {
+      toggleMenu();
+    }
+  }
+
+  function getPos(e) {
+    if(e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  mainBtn.addEventListener('pointerdown', onPointerDown);
+  backdrop.addEventListener('click', closeMenu);
+
+  // Let auth script's userNavBtn onclick control the profile link
+  var profileItem = document.getElementById('fabProfileItem');
+  if(profileItem) {
+    profileItem.addEventListener('click', function(e) {
+      var btn = document.getElementById('userNavBtn');
+      if(btn && btn.onclick) {
+        e.preventDefault();
+        btn.onclick();
+      }
+    });
+  }
+
+  // Remove server-injected duplicate nav-float
+  var observer = new MutationObserver(function(mutations) {
+    var all = document.querySelectorAll('#nav-float');
+    all.forEach(function(el) { el.remove(); });
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  // Also remove any existing ones
+  document.querySelectorAll('#nav-float').forEach(function(el) { el.remove(); });
 })();
 </script>
+
 </body>
 </html>
