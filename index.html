@@ -6390,13 +6390,14 @@ function startPianoFullscreen(songIdx) {
 
 function updatePianoFsUI() {
   if(!pianoFsState) return;
+  const theme = PIANO_THEMES[pianoFsState.theme] || PIANO_THEMES.sakura;
   const scoreEl = document.getElementById('pianoFsScore');
   const comboEl = document.getElementById('pianoFsCombo');
-  if(scoreEl) scoreEl.textContent = Math.floor(pianoFsState.score);
+  if(scoreEl) { scoreEl.textContent = Math.floor(pianoFsState.score); scoreEl.style.color = theme.accent; }
   if(comboEl) {
     if(pianoFsState.combo > 1) {
       comboEl.textContent = pianoFsState.combo + ' 连击！';
-      comboEl.style.color = pianoFsState.combo >= 10 ? '#ffd700' : 'rgba(255,255,255,0.7)';
+      comboEl.style.color = pianoFsState.combo >= 10 ? '#ffd700' : theme.accent;
     } else {
       comboEl.textContent = '';
     }
