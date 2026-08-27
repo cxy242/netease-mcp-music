@@ -1,0 +1,667 @@
+/* work.css — 打工系统 */
+
+.work-page {
+  background: var(--c-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 经验条 ===== */
+.work-exp-wrap {
+  padding: 10px 20px 12px;
+  background: #fff;
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+
+.work-exp-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 7px;
+}
+
+.work-exp-label-left {
+  font-size: 12px;
+  color: #1a1a1a;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.work-exp-label-right {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3a3a3a;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-exp-track {
+  height: 4px;
+  background: #ededed;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.work-exp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #333 0%, #666 100%);
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== 等级 Badge ===== */
+.work-level-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  display: inline-block;
+}
+
+.level-1 { background: #f4f4f4; color: #606060; }
+.level-2 { background: #eaeef2; color: #606e82; }
+.level-3 { background: #f0ebe3; color: #9a8260; }
+.level-4 { background: #e8e0d4; color: #7a6840; }
+.level-5 { background: #1a1a1a; color: #c8b080; }
+
+/* ===== 标签栏 ===== */
+.work-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+
+.work-tab {
+  flex: 1;
+  height: 42px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-sub);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.work-tab.is-active {
+  color: #1a1a1a;
+  border-bottom-color: #1a1a1a;
+  font-weight: 600;
+}
+
+.work-tab-dim {
+  opacity: 0.45;
+}
+
+/* ===== 滚动内容 ===== */
+.work-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.work-tab-panel {
+  padding-bottom: 40px;
+}
+
+/* ===== 状态卡 ===== */
+.work-status-card {
+  margin: 16px 16px 0;
+  padding: 14px 16px 16px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.04);
+}
+
+.work-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.work-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.work-status-dot.is-active {
+  background: #52c41a;
+  box-shadow: 0 0 0 3px rgba(82,196,26,.18);
+  animation: work-dot-pulse 2s infinite;
+}
+
+.work-status-dot.is-done {
+  background: #f5a623;
+  box-shadow: 0 0 0 3px rgba(245,166,35,.18);
+}
+
+@keyframes work-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(82,196,26,.18); }
+  50%       { box-shadow: 0 0 0 5px rgba(82,196,26,.08); }
+}
+
+.work-status-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+}
+
+.work-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.work-status-badge.badge-active {
+  background: rgba(82,196,26,.1);
+  color: #389e0d;
+}
+
+.work-status-badge.badge-done {
+  background: rgba(245,166,35,.12);
+  color: #d48806;
+}
+
+.work-status-timer {
+  font-size: 13px;
+  color: var(--c-sub);
+  margin-bottom: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-status-track {
+  height: 3px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.work-status-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #52c41a, #73d13d);
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+/* ===== 区块标题 ===== */
+.work-section-label {
+  padding: 18px 20px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* ===== 余额卡片（职场） ===== */
+.work-balance-group {
+  margin: 14px 16px 0;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.045);
+}
+
+.work-balance-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-balance-divider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 0 14px;
+}
+
+.work-balance-icon {
+  color: var(--c-hint);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.work-balance-item-label {
+  flex: 1;
+  color: var(--c-sub);
+}
+
+.work-balance-item-val {
+  font-weight: 500;
+  color: #3a3a3a;
+}
+
+.work-balance-total {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* ===== 职位卡片 ===== */
+.work-job-list {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.work-job-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px 14px 16px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.03), inset 0 0 0 1px rgba(0,0,0,0.04);
+  transition: box-shadow 0.15s;
+}
+
+.work-job-card.is-locked {
+  opacity: 0.5;
+}
+
+.work-job-card.is-active {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06), inset 0 0 0 1.5px rgba(0,0,0,0.08);
+}
+
+/* ===== 图标 ===== */
+.work-job-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.pt-icon    { background: #f4f4f4; color: #606060; }
+.wp-icon-normal { background: #eaeef2; color: #606e82; }
+.wp-icon-pro    { background: #f0ebe3; color: #9a8260; }
+.wp-icon-elite  { background: #1a1a1a; color: #c8b080; }
+
+/* ===== 职位信息 ===== */
+.work-job-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.work-job-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.work-job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.meta-time,
+.meta-income,
+.meta-exp {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--c-sub);
+}
+
+.meta-income { color: #4a8c5a; }
+.meta-exp    { color: #8a7a2a; }
+
+.work-unlock-hint {
+  font-size: 11px;
+  color: var(--c-hint);
+  margin-top: 3px;
+}
+
+/* ===== 等级标签 ===== */
+.work-tier-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+}
+
+.tier-normal { background: #eaeef2; color: #606e82; }
+.tier-pro    { background: #f0ebe3; color: #9a8260; }
+.tier-elite  { background: #1a1a1a; color: #c8b080; }
+
+/* ===== 按钮 ===== */
+.work-job-btn {
+  flex-shrink: 0;
+}
+
+.work-btn {
+  height: 32px;
+  padding: 0 15px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  white-space: nowrap;
+  transition: transform 0.1s, opacity 0.1s;
+}
+
+.work-btn:active:not(:disabled) {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+.work-btn-start {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.work-btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.work-btn-ghost {
+  background: #fff;
+  color: #3a3a3a;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.work-btn-ghost:disabled {
+  opacity: 0.5;
+}
+
+.work-btn-claim {
+  background: #2d6a4f;
+  color: #fff;
+  animation: claim-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes claim-glow {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(45,106,79,.35); }
+  50%       { box-shadow: 0 0 0 4px rgba(45,106,79,.12); }
+}
+
+.work-btn-working,
+.work-btn-busy {
+  background: #f2f2f2;
+  color: #b0b0b0;
+}
+
+.work-lock-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d0d0d0;
+  font-size: 15px;
+}
+
+/* ===== 锁定面板（高级模块未解锁） ===== */
+.work-locked-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px 60px;
+  gap: 12px;
+  text-align: center;
+}
+
+.work-locked-icon {
+  font-size: 44px;
+  color: #d8d8d8;
+}
+
+.work-locked-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #b0b0b0;
+}
+
+.work-locked-hint {
+  font-size: 13px;
+  color: #c8c8c8;
+}
+
+.work-locked-progress {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.work-locked-progress-label {
+  font-size: 11px;
+  color: var(--c-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 老板头部 ===== */
+.work-boss-header {
+  margin: 14px 16px 0;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.045);
+}
+
+.work-boss-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.work-boss-slots {
+  font-size: 12px;
+  color: var(--c-sub);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ===== 雇佣卡片列表 ===== */
+.work-hire-list {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.work-hire-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.03), inset 0 0 0 1px rgba(0,0,0,0.04);
+}
+
+.work-hire-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #eaeef2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #606e82;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.work-hire-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.work-hire-avatar-text {
+  line-height: 1;
+}
+
+.work-hire-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.work-hire-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.work-hire-role {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-sub);
+  background: #f4f4f4;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.work-hire-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.work-hire-progress {
+  margin-top: 6px;
+}
+
+.work-hire-timer {
+  font-size: 11px;
+  color: var(--c-sub);
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-hire-action-btn {
+  flex-shrink: 0;
+}
+
+/* ===== 空状态 ===== */
+.work-hire-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 40px 20px;
+  gap: 12px;
+  text-align: center;
+}
+
+.work-hire-empty-icon {
+  font-size: 36px;
+  color: #d8d8d8;
+}
+
+.work-hire-empty-text {
+  font-size: 13px;
+  color: #c0c0c0;
+}
+
+/* ===== 招聘按钮 ===== */
+.work-hire-action {
+  padding: 20px 16px;
+  text-align: center;
+}
+
+.work-btn-hire {
+  background: #1a1a1a;
+  color: #fff;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===== 招聘 Modal ===== */
+.work-hire-modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.work-hire-modal-actions .work-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.work-hire-modal-body {
+  padding: 0 16px 16px;
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.work-hire-uneval {
+  font-size: 11px;
+  color: var(--c-hint);
+  margin-top: 3px;
+}
+
+.work-hire-modal-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.work-hire-modal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.work-hire-modal-row:last-child {
+  border-bottom: none;
+}
+
+.work-hire-modal-info {
+  flex: 1;
+  min-width: 0;
+}

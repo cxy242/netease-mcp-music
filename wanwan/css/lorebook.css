@@ -1,0 +1,159 @@
+/* lorebook.css — 世界书样式 */
+
+/* 作用域Tab */
+.lb-scope-tabs {
+  display: flex;
+  padding: 8px 16px;
+  gap: 8px;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-bg);
+  flex-shrink: 0;
+}
+
+.scope-tab {
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  color: var(--c-sub);
+  border: 1px solid var(--c-border-m);
+  background: transparent;
+  transition: all var(--dur) var(--ease);
+}
+.scope-tab.active { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+
+/* 书列表 */
+.lb-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 书卡片 */
+.lb-card {
+  background: var(--c-bg);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--dur);
+}
+.lb-card:active { transform: scale(0.98); }
+
+.lb-card-info { flex: 1; min-width: 0; }
+.lb-name { font-size: 15px; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+.lb-scope-tag {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+}
+.tag-global   { background: #f5f5f5; color: #7a7a7a; }
+.tag-personal { background: #fafafa; color: #8a8a8a; }
+
+.lb-entry-count { font-size: 12px; color: var(--c-hint); }
+.lb-toggle { flex-shrink: 0; }
+
+/* 条目列表 */
+.lb-entry-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 条目卡片 */
+.entry-card {
+  background: var(--c-bg);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.entry-card-main { flex: 1; min-width: 0; }
+.entry-title { font-size: 14px; font-weight: 500; color: var(--c-text); margin-bottom: 4px; }
+
+.entry-keywords { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.kw-tag {
+  padding: 2px 8px;
+  background: var(--c-surface-2);
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  color: var(--c-sub);
+}
+.kw-tag.removable { display: inline-flex; align-items: center; gap: 4px; }
+.kw-del {
+  color: var(--c-hint);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.entry-no-kw { font-size: 11px; color: var(--c-accent); }
+.entry-preview { font-size: 12px; color: var(--c-sub); line-height: 1.5; }
+
+.entry-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 条目编辑表单 */
+.entry-edit-form {
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kw-input-wrap { display: flex; flex-direction: column; gap: 6px; }
+.kw-tags-area { display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px; }
+
+.entry-content { min-height: 120px; }
+
+/* header输入框（书名编辑） */
+.header-title-input {
+  padding: 0;
+  font-family: var(--font);
+  color: var(--c-text);
+  font-size: 17px;
+  font-weight: 500;
+  min-width: 0;
+}
+
+/* 绑定角色栏 */
+.lb-binding-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-bg);
+  flex-shrink: 0;
+}
+.lb-binding-tags {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}

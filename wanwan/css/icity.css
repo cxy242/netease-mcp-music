@@ -1,0 +1,1334 @@
+/* icity.css - 日记·iCity 页面样式 */
+
+.icity-header-action {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--c-sub);
+  font-size: 16px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-header-action[hidden] {
+  display: none;
+}
+
+.icity-header-action:active {
+  background: var(--c-surface);
+}
+
+/* ===== 日记·iCity 底栏 ===== */
+.icity-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border-top: 1px solid #ececec;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.icity-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 56px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 第一个图标：首页 */
+.icity-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.icity-tab-icon svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.icity-tab-icon svg path {
+  fill: #b4b8bf;
+  transition: fill 0.15s ease;
+}
+
+.icity-tab-home.active .icity-tab-icon svg path {
+  fill: #85ACDF;
+}
+
+/* 选中时底部的蓝色圆点 */
+.icity-tab-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #85ACDF;
+  visibility: hidden;
+}
+
+.icity-tab-home.active .icity-tab-dot,
+.icity-tab-profile.active .icity-tab-dot {
+  visibility: visible;
+}
+
+/* 第二个图标：圆角矩形底的编辑按钮，常态蓝色 */
+.icity-edit-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 40px;
+  border-radius: 15px;
+  background: #fff;
+  border: 1px solid var(--c-border-m);
+  box-sizing: border-box;
+}
+
+.icity-edit-circle svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.icity-edit-circle svg path {
+  fill: #85ACDF;
+}
+
+/* 第三个图标：头像 */
+.icity-tab-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e7e9ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.icity-tab-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icity-tab-avatar span {
+  font-size: 12px;
+  color: #8a8f99;
+}
+
+/* 选中时一圈白色的框 */
+.icity-tab-profile.active .icity-tab-avatar {
+  border: 2px solid #fff;
+  outline: 1px solid #e3e6ea;
+}
+
+/* ===== 个人主页（点击底栏头像出现） ===== */
+.icity-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 顶部封面 banner：参考朋友圈封面初始底色，3:4，纯灰无遮罩 */
+.icity-home-banner {
+  width: 100%;
+  aspect-ratio: 5 / 2;
+  background: #eeeeee;
+}
+
+/* 与 banner 重叠的圆形头像 */
+.icity-home-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-top: -40px;
+  border: 3px solid #fff;
+  background: #dbe3ee;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.icity-home-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icity-home-avatar span {
+  font-size: 17px;
+  font-weight: 600;
+  color: #7c8aa0;
+}
+
+.icity-home-name {
+  margin-top: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+
+.icity-home-account {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9a9ea6;
+}
+
+.icity-home-bio {
+  margin-top: 12px;
+  padding: 0 24px;
+  font-size: 13px;
+  color: #2a2a2c;
+  text-align: center;
+}
+
+.icity-home-quote {
+  font-size: 11px;
+  color: var(--c-sub);
+}
+
+/* 三个操作按钮：白底 + 灰边框 */
+.icity-home-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.icity-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--c-border-m);
+  box-sizing: border-box;
+  font-size: 13px;
+  color: #3a3a3c;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-home-btn i {
+  font-size: 12px;
+}
+
+.icity-home-btn-icon {
+  padding: 0;
+  width: 32px;
+}
+
+.icity-profile-posts {
+  width: 100%;
+  margin-top: 22px;
+  border-top: 8px solid #f6f7f9;
+}
+
+.icity-profile-posts-title {
+  padding: 14px 18px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5a6472;
+}
+
+.icity-profile-feed {
+  margin-top: 2px;
+}
+
+.icity-profile-empty {
+  margin-top: 22px;
+  border-top: 8px solid #f6f7f9;
+}
+
+.icity-profile-empty i {
+  color: #c2d2e8;
+}
+
+/* ===== AI 生成日记弹窗 ===== */
+.icity-generate-modal {
+  padding: 18px 0 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: min(78vh, 560px);
+}
+
+.icity-generate-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px 14px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.icity-generate-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c-text);
+  text-align: center;
+}
+
+.icity-generate-list {
+  min-height: 132px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.icity-generate-loading {
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-hint);
+  font-size: 18px;
+}
+
+.icity-generate-friend {
+  width: 100%;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 1px solid var(--c-border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-generate-friend.active {
+  background: #f2f7ff;
+}
+
+.icity-generate-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #dbe3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7c8aa0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.icity-generate-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icity-generate-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.icity-generate-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-generate-desc {
+  font-size: 12px;
+  color: var(--c-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-generate-check {
+  flex-shrink: 0;
+  font-size: 17px;
+  color: #c2c5cc;
+}
+
+.icity-generate-friend.active .icity-generate-check {
+  color: #85ACDF !important;
+}
+
+.icity-generate-empty {
+  min-height: 148px;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-align: center;
+  color: var(--c-sub);
+}
+
+.icity-generate-empty i {
+  color: var(--c-hint);
+  font-size: 24px;
+  margin-bottom: 2px;
+}
+
+.icity-generate-empty div {
+  color: var(--c-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.icity-generate-empty span {
+  color: var(--c-hint);
+  font-size: 12px;
+}
+
+.icity-generate-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px 18px 0;
+  border-top: 1px solid var(--c-border);
+}
+
+.icity-generate-cancel,
+.icity-generate-confirm {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border-m);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-generate-cancel {
+  background: #fff;
+  color: var(--c-sub);
+}
+
+.icity-generate-confirm {
+  border-color: #85ACDF;
+  background: #85ACDF;
+  color: #fff;
+}
+
+.icity-generate-confirm:not(:disabled):active {
+  background: #739bd2;
+  border-color: #739bd2;
+}
+
+.icity-generate-confirm:disabled {
+  border-color: #d9e1ec;
+  background: #d9e1ec;
+  color: #fff;
+  cursor: default;
+}
+
+/* ===== 发帖页面（点击底栏编辑按钮出现） ===== */
+.icity-compose-page {
+  background: #fbfcfe;
+  z-index: 60;
+}
+
+.icity-compose-header {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  align-items: center;
+  padding: 16px 16px 12px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0));
+  background: #fff;
+  border-bottom: 1px solid #ececec;
+}
+
+.icity-compose-cancel {
+  justify-self: start;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: #8a8f99;
+  cursor: pointer;
+  padding: 6px 4px;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-compose-title {
+  min-width: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1c1e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-compose-send {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: none;
+  min-width: 54px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: #c2d2e8;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-compose-send-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  fill: currentColor;
+}
+
+.icity-compose-send.is-active {
+  background: #85ACDF;
+}
+
+.icity-compose-send:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+.icity-compose-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.icity-compose-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.icity-compose-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #dbe3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.icity-compose-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icity-compose-avatar span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #7c8aa0;
+}
+
+.icity-compose-userinfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.icity-compose-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1c1c1e;
+}
+
+.icity-compose-account {
+  font-size: 12px;
+  color: #9a9ea6;
+}
+
+.icity-compose-input {
+  flex: 1;
+  min-height: 160px;
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #2a2a2c;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-compose-input::placeholder {
+  color: #b4b8bf;
+}
+
+.icity-compose-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid #f0f0f2;
+  background: #fff;
+}
+
+.icity-compose-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #85ACDF;
+}
+
+.icity-compose-hint i {
+  font-size: 11px;
+}
+
+/* ===== 首页信息流 / 日记帖子 ===== */
+.icity-feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.icity-feed-empty i {
+  color: #c2d2e8;
+}
+
+.icity-post {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+.icity-post-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.icity-post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #dbe3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.icity-post-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icity-post-avatar span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #7c8aa0;
+}
+
+.icity-post-author {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 1px;
+}
+
+.icity-post-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1c1e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-post-account {
+  font-size: 12px;
+  color: #9a9ea6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-post-date {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.icity-post-date-main {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b4b8bf;
+}
+
+.icity-post-date-year {
+  font-size: 12px;
+  color: #c2c5cc;
+}
+
+.icity-post-content {
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #2a2a2c;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.icity-post-actions {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.icity-post-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #b4b8bf;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-post-action svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.icity-post-action svg path {
+  fill: #c2c5cc;
+}
+
+.icity-post-action i {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.icity-post-like.is-liked {
+  color: #e84d5b;
+}
+
+.icity-post-like.is-liked i {
+  color: #e84d5b;
+}
+
+.icity-post-like.is-liked svg path {
+  fill: #e84d5b;
+}
+
+.icity-post-time {
+  cursor: default;
+}
+
+.icity-post-time span {
+  font-size: 12px;
+  color: #b4b8bf;
+}
+
+/* 信息流帖子可点击进入详情 */
+.icity-post {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+}
+
+.icity-post:active {
+  background: #fafbfc;
+}
+
+/* ===== 帖子详情页（点击信息流帖子出现） ===== */
+.icity-detail-body {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.icity-detail-card {
+  padding: 20px 22px 16px;
+}
+
+.icity-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icity-detail-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #dbe3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.icity-detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icity-detail-avatar span {
+  font-size: 17px;
+  font-weight: 600;
+  color: #7c8aa0;
+}
+
+.icity-detail-author {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.icity-detail-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1c1c1e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-detail-account {
+  font-size: 13px;
+  color: #9a9ea6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-detail-content {
+  margin-top: 18px;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #1c1c1e;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.icity-detail-time {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: #b4b8bf;
+}
+
+.icity-detail-time-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.icity-detail-time-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.icity-detail-time-icon svg path {
+  fill: #c2c5cc;
+}
+
+.icity-notes {
+  border-top: 8px solid #f6f7f9;
+  padding: 16px 22px 6px;
+}
+
+.icity-notes-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c1c1e;
+  margin-bottom: 10px;
+}
+
+.icity-notes-empty {
+  padding: 12px 0 18px;
+  font-size: 13px;
+  color: #b4b8bf;
+}
+
+.icity-note {
+  position: relative;
+  padding: 11px 0;
+  border-top: 1px solid #f0f0f2;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.icity-notes-title + .icity-note {
+  border-top: none;
+}
+
+.icity-note-main {
+  min-width: 0;
+}
+
+.icity-note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.icity-note-meta > span {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 550;
+  color: #85ACDF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icity-note-meta .icity-note-reply-word {
+  color: var(--c-sub);
+}
+
+.icity-note-meta button {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+  font-size: 12px;
+  color: #85ACDF;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-note-comment {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #2a2a2c;
+  word-break: break-word;
+  white-space: pre-wrap;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-note-comment:active {
+  background: rgba(0,0,0,0.04);
+}
+
+.icity-note-action-menu {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: min(128px, calc(100vw - 118px));
+  height: 34px;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -100%) scale(0.98);
+  transform-origin: center bottom;
+  transition: opacity 0.14s var(--ease), transform 0.14s var(--ease);
+  overflow: hidden;
+  z-index: 26;
+}
+
+.icity-note.show-note-menu .icity-note-action-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -100%) scale(1);
+}
+
+.icity-note-action-menu button {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  color: var(--c-text);
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-note-action-menu button + button {
+  border-left: 1px solid var(--c-border);
+}
+
+.icity-note-action-menu button:active {
+  background: var(--c-surface);
+}
+
+.icity-note-modal {
+  padding: 18px;
+}
+
+.icity-note-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1c1e;
+  margin-bottom: 12px;
+}
+
+.icity-note-input {
+  width: 100%;
+  min-height: 112px;
+  border: 1px solid var(--c-border-m);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  outline: none;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1c1c1e;
+  font-family: inherit;
+  background: #fbfcfe;
+}
+
+.icity-note-input::placeholder {
+  color: #b4b8bf;
+}
+
+.icity-note-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.icity-note-cancel,
+.icity-note-send {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border-m);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-note-cancel {
+  background: #fff;
+  color: var(--c-sub);
+}
+
+.icity-note-send {
+  border-color: #85ACDF;
+  background: #85ACDF;
+  color: #fff;
+}
+
+.icity-note-send:disabled {
+  border-color: #d9e1ec;
+  background: #d9e1ec;
+  cursor: default;
+}
+
+/* 底部四个操作 */
+.icity-detail-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 14px 8px;
+  border-top: 1px solid #ececec;
+}
+
+.icity-detail-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 14px;
+  color: #9a9ea6;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-detail-action svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
+.icity-detail-action svg path {
+  fill: #b4b8bf;
+}
+
+.icity-detail-action i {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.icity-detail-action.is-liked {
+  color: #e84d5b;
+}
+
+.icity-detail-action.is-liked i {
+  color: #e84d5b;
+}
+
+.icity-detail-action.is-liked svg path {
+  fill: #e84d5b;
+}
+
+.icity-detail-action:active {
+  opacity: 0.6;
+}
+
+.icity-detail-action-more {
+  flex: 0 0 auto;
+  padding: 4px 18px;
+}
+
+.icity-detail-divider {
+  width: 1px;
+  height: 20px;
+  background: #ececec;
+  flex-shrink: 0;
+}
+
+.icity-action-menu {
+  position: fixed;
+  z-index: 500;
+  display: flex;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(44,44,44,0.92);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.16);
+}
+
+.icity-action-menu button {
+  min-width: 62px;
+  height: 42px;
+  padding: 0 14px;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icity-action-menu button:last-child {
+  border-right: none;
+}
+
+.icity-action-menu button:active {
+  background: rgba(255,255,255,0.1);
+}
+
+.icity-action-menu i {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* ===== 顶部 iCity 新消息弹窗 ===== */
+.icity-top-message-popup {
+  position: fixed;
+  z-index: 9999;
+  top: calc(env(safe-area-inset-top) + 10px);
+  left: 50%;
+  width: min(420px, calc(100vw - 24px));
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--c-text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  opacity: 0;
+  transform: translate(-50%, -18px);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  text-align: left;
+  cursor: pointer;
+}
+.icity-top-message-popup.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.icity-top-message-popup.is-hiding {
+  pointer-events: none;
+}
+.icity-top-message-popup:active {
+  transform: translate(-50%, 1px) scale(0.99);
+}
+.icity-top-popup-avatar {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.icity-top-popup-avatar img,
+.icity-top-popup-avatar > span:not(.icity-top-popup-badge) {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.icity-top-popup-avatar img {
+  object-fit: cover;
+  background: var(--c-surface);
+}
+.icity-top-popup-avatar > span:not(.icity-top-popup-badge) {
+  background: #85ACDF;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+}
+.icity-top-popup-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #6f97cf 0%, #c8ddf7 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  color: #fff;
+  font-size: 9px;
+  line-height: 1;
+}
+.icity-top-popup-body {
+  min-width: 0;
+}
+.icity-top-popup-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 2px;
+  color: var(--c-hint);
+  font-size: 12px;
+  line-height: 1.2;
+}
+.icity-top-popup-now,
+.icity-top-popup-title,
+.icity-top-popup-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.icity-top-popup-now {
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+.icity-top-popup-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--c-text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.icity-top-popup-text {
+  margin-top: 2px;
+  color: var(--c-sub);
+  font-size: 13px;
+  line-height: 1.35;
+}

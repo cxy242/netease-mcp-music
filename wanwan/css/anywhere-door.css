@@ -1,0 +1,528 @@
+.door-page {
+  background: var(--c-bg);
+  color: var(--c-text);
+  overflow: hidden;
+}
+
+.door-scroll {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: calc(100% - 56px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  padding: 16px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.door-header-actions,
+.door-card-actions,
+.door-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.door-primary,
+.door-secondary,
+.door-danger {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.door-primary {
+  background: var(--c-text);
+  color: var(--c-bg);
+}
+
+.door-primary:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.door-secondary {
+  color: var(--c-text);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+}
+
+.door-danger {
+  color: var(--c-red);
+  background: rgba(176, 90, 90, .1);
+  border: 1px solid rgba(176, 90, 90, .18);
+}
+
+:root.theme-dark .door-danger {
+  background: rgba(212, 106, 106, .12);
+  border-color: rgba(212, 106, 106, .22);
+}
+
+.door-empty {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px;
+  text-align: center;
+  color: var(--c-sub);
+}
+
+.door-empty i {
+  font-size: 30px;
+  color: var(--c-hint);
+}
+
+.door-empty h2 {
+  margin: 4px 0 0;
+  color: var(--c-text);
+  font-size: 18px;
+}
+
+.door-empty p {
+  max-width: 260px;
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+.door-module-list,
+.door-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.door-section-title {
+  margin: 22px 2px 10px;
+  color: var(--c-sub);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.door-module-card,
+.door-history-card,
+.door-entry-card,
+.door-panel,
+.door-identity {
+  border: 1px solid var(--c-border-m);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.door-entry-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 15px;
+  color: var(--c-text);
+  text-align: left;
+}
+
+.door-entry-card:active {
+  background: var(--c-surface-2);
+}
+
+.door-entry-card .door-card-name,
+.door-entry-card .door-card-meta {
+  display: block;
+}
+
+.door-entry-card .door-card-meta {
+  margin-top: 4px;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.door-entry-arrow {
+  flex: 0 0 auto;
+  color: var(--c-hint);
+  font-size: 18px;
+}
+
+.door-module-card {
+  padding: 15px;
+}
+
+.door-module-card.is-disabled {
+  opacity: .58;
+}
+
+.door-card-top,
+.door-history-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.door-module-icon,
+.door-history-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--c-surface-2);
+  color: var(--c-sub);
+}
+
+.door-card-copy,
+.door-history-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.door-card-name,
+.door-history-title {
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.door-card-meta,
+.door-card-desc,
+.door-history-meta {
+  color: var(--c-sub);
+  font-size: 12px;
+}
+
+.door-card-desc {
+  margin: 10px 0 12px;
+  line-height: 1.55;
+}
+
+.door-card-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.door-card-actions button {
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  color: var(--c-sub);
+  background: var(--c-surface-2);
+}
+
+.door-card-actions .door-delete {
+  color: var(--c-red);
+}
+
+.door-status {
+  padding: 4px 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-surface-2);
+  color: var(--c-sub);
+  font-size: 11px;
+}
+
+.door-status.enabled {
+  color: var(--c-text);
+}
+
+.door-form {
+  display: grid;
+  gap: 15px;
+}
+
+.door-field {
+  display: grid;
+  gap: 7px;
+}
+
+.door-field label {
+  color: var(--c-sub);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.door-field input,
+.door-field textarea,
+.door-field select,
+.door-select {
+  width: 100%;
+  border: 1px solid var(--c-border-m);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  padding: 11px 12px;
+}
+
+.door-field textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.door-field .door-html-editor {
+  min-height: 330px;
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+}
+
+.door-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 2px;
+}
+
+.door-switch-row input {
+  width: 20px;
+  height: 20px;
+}
+
+.door-form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.door-identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 14px;
+  position: sticky;
+  top: -16px;
+  z-index: 3;
+}
+
+.door-identity-amp {
+  text-align: center;
+  color: var(--c-hint);
+  font-weight: 700;
+}
+
+.door-identity select {
+  min-width: 0;
+}
+
+.door-pair-title {
+  padding: 16px 4px 2px;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.door-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 15px;
+  margin-top: 14px;
+}
+
+.door-module-choices {
+  display: grid;
+  gap: 8px;
+}
+
+.door-module-choice {
+  padding: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  text-align: left;
+  color: var(--c-text);
+  background: var(--c-bg);
+}
+
+.door-module-choice.active {
+  border-color: var(--c-text);
+}
+
+.door-module-choice strong,
+.door-module-choice span {
+  display: block;
+}
+
+.door-module-choice span {
+  margin-top: 4px;
+  color: var(--c-sub);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.door-run-button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.door-loading {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: var(--c-sub);
+  text-align: center;
+}
+
+.door-loading i {
+  font-size: 22px;
+}
+
+.anywhere-door-stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(68vh, 620px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+  background: transparent;
+  border-radius: var(--r-sm);
+}
+
+.anywhere-door-scaler {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.anywhere-door-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  border: 0;
+  transform-origin: top left;
+  background: transparent;
+}
+
+.door-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.door-result-name {
+  font-weight: 700;
+}
+
+.door-result-actions {
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+#door-history-result-page .door-result-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+#door-history-result-page .door-result-actions button {
+  width: 100%;
+  min-width: 0;
+  border-radius: 6px;
+}
+
+.door-history-card {
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  color: var(--c-text);
+}
+
+.door-history-card .door-history-delete {
+  padding: 8px;
+  color: var(--c-red);
+}
+
+.door-preview-page .door-scroll {
+  padding: 12px;
+}
+
+.door-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--c-text);
+  background: var(--c-bg);
+}
+
+.door-fullscreen-bar {
+  height: calc(52px + env(safe-area-inset-top));
+  flex: 0 0 calc(52px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 16px 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+  color: var(--c-text);
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.door-fullscreen-bar::before {
+  content: '';
+  width: 28px;
+  height: 28px;
+}
+
+.door-fullscreen-bar strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.door-fullscreen-bar button {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--c-text);
+  background: var(--c-surface-2);
+  font-size: 14px;
+}
+
+#door-fullscreen-frame {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.door-fullscreen .anywhere-door-stage {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  border-radius: 0;
+  background: transparent;
+}

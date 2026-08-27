@@ -1,0 +1,1053 @@
+/* bank.css — 银行系统样式 */
+
+/* ===== 账户总览页 ===== */
+.bank-overview-page {
+  background: #f5f5f5;
+}
+.bank-overview-scroll {
+  height: calc(100% - 57px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+}
+.bank-overview-section-label {
+  padding: 24px 22px 12px;
+  color: #909090;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* 资产卡片 */
+.bank-asset-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 18px 10px;
+  padding: 16px 18px;
+  background: #fff;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    0 2px 8px rgba(0,0,0,0.025);
+  text-align: left;
+  width: calc(100% - 36px);
+}
+.bank-asset-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+button.bank-asset-card {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+button.bank-asset-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.bank-asset-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.bank-asset-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.bank-icon-cash {
+  background: #e8f5e9;
+  color: #66bb6a;
+}
+.bank-icon-checking {
+  background: #eaeef2;
+  color: #606e82;
+}
+.bank-icon-saving {
+  background: #f0ebe3;
+  color: #9a8260;
+}
+.bank-asset-info {
+  display: flex;
+  flex-direction: column;
+}
+.bank-asset-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #232323;
+}
+.bank-asset-sub {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-top: 2px;
+}
+.bank-asset-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bank-asset-amount {
+  font-size: 16px;
+  font-weight: 600;
+  color: #232323;
+  font-variant-numeric: tabular-nums;
+}
+.bank-asset-arrow {
+  color: #c0c0c0;
+  font-size: 14px;
+}
+
+/* ===== 账户详情页（CHECKING / SAVING 共用） ===== */
+.bank-detail-page {
+  background: #f5f5f5;
+}
+.bank-detail-scroll {
+  height: calc(100% - 57px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+}
+
+/* 银行卡视觉 */
+.bank-card-visual {
+  margin: 24px 18px 0;
+  padding: 24px 22px 20px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.7 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.bank-card-visual::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 70%;
+  height: 120%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.bank-card-visual.checking {
+  background: linear-gradient(145deg, #e8e8e8 0%, #f5f5f5 40%, #e0e0e0 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.bank-card-visual.checking::before {
+  background: radial-gradient(ellipse, rgba(160,170,190,0.18) 0%, transparent 70%);
+}
+.bank-card-visual.saving {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 40%, #1a1a1a 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.bank-card-visual.saving::before {
+  background: radial-gradient(ellipse, rgba(180,155,100,0.12) 0%, transparent 70%);
+}
+
+.bank-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bank-card-bank-name {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+.bank-card-visual.checking .bank-card-bank-name {
+  color: #505868;
+}
+.bank-card-visual.saving .bank-card-bank-name {
+  color: #c8b080;
+}
+.bank-card-bank-name i {
+  font-size: 18px;
+}
+.bank-card-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+.bank-card-visual.checking .bank-card-type-badge {
+  color: #606e82;
+  border: 1px solid rgba(96,110,130,0.2);
+  background: rgba(96,110,130,0.06);
+}
+.bank-card-visual.saving .bank-card-type-badge {
+  color: #c8b080;
+  border: 1px solid rgba(200,176,128,0.3);
+  background: rgba(200,176,128,0.08);
+}
+
+.bank-card-chip {
+  width: 38px;
+  height: 28px;
+  border-radius: 5px;
+  margin-top: 4px;
+}
+.bank-card-visual.checking .bank-card-chip {
+  background: linear-gradient(135deg, #b0b8c8 0%, #8890a0 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.1);
+}
+.bank-card-visual.saving .bank-card-chip {
+  background: linear-gradient(135deg, #c8b080 0%, #a08050 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.bank-card-number {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.bank-card-visual.checking .bank-card-number {
+  color: #505050;
+}
+.bank-card-visual.saving .bank-card-number {
+  color: rgba(255,255,255,0.75);
+}
+
+.bank-card-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.bank-card-holder {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.bank-card-visual.checking .bank-card-holder {
+  color: rgba(80,88,104,0.5);
+}
+.bank-card-visual.saving .bank-card-holder {
+  color: rgba(200,176,128,0.6);
+}
+.bank-card-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.bank-card-visual.checking .bank-card-brand {
+  color: rgba(80,88,104,0.4);
+}
+.bank-card-visual.saving .bank-card-brand {
+  color: rgba(200,176,128,0.5);
+}
+
+/* 余额区块 */
+.bank-balance-block {
+  margin: 20px 18px 0;
+  padding: 20px 22px;
+  background: #fff;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    0 2px 8px rgba(0,0,0,0.025);
+}
+.bank-balance-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.bank-balance-label {
+  color: #909090;
+  font-size: 13px;
+}
+.bank-balance-value {
+  margin-top: 8px;
+  color: #232323;
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+/* 区块标题 */
+.bank-section-title {
+  padding: 24px 22px 10px;
+  color: #909090;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* 列表卡片 */
+.bank-list-card {
+  margin: 0 18px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    0 2px 8px rgba(0,0,0,0.025);
+}
+.bank-list-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+
+.bank-empty-hint {
+  padding: 24px 16px;
+  text-align: center;
+  color: #c0c0c0;
+  font-size: 13px;
+}
+
+/* 功能入口行 */
+.bank-feature-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bank-feature-row:active {
+  background: #f7f7f7;
+}
+.bank-feature-row + .bank-feature-row::before {
+  content: '';
+  position: absolute;
+  left: 62px;
+  right: 16px;
+  top: 0;
+  height: 1px;
+  background: var(--c-border);
+}
+.bank-feature-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.bank-feature-icon.huabei {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.bank-feature-icon.jiebei {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+.bank-feature-icon.fund {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.bank-feature-icon.deposit {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+.bank-feature-icon.gold {
+  background: #fff8e1;
+  color: #f9a825;
+}
+.bank-feature-info {
+  flex: 1;
+  min-width: 0;
+}
+.bank-feature-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #232323;
+}
+.bank-feature-sub {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-top: 2px;
+}
+.bank-feature-arrow {
+  color: #c0c0c0;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ===== 账单列表 ===== */
+.bank-bill-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 12px 16px;
+  position: relative;
+}
+.bank-bill-item + .bank-bill-item::before {
+  content: '';
+  position: absolute;
+  left: 58px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--c-border);
+}
+.bank-bill-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.bank-bill-icon.income {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+.bank-bill-icon.expense {
+  background: #fce4ec;
+  color: #e91e63;
+}
+.bank-bill-main {
+  flex: 1;
+  min-width: 0;
+}
+.bank-bill-desc {
+  font-size: 13px;
+  color: #232323;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bank-bill-date {
+  font-size: 11px;
+  color: #a0a0a0;
+  margin-top: 2px;
+}
+.bank-bill-amount {
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.bank-bill-amount.income {
+  color: #4caf50;
+}
+.bank-bill-amount.expense {
+  color: #e91e63;
+}
+.bank-bills-expand {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #909090;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.bank-bills-expand::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 0;
+  height: 1px;
+  background: var(--c-border);
+}
+.bank-bills-expand:active {
+  background: #f7f7f7;
+}
+.bank-bills-expand i {
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+/* ===== 转账 Modal ===== */
+.bank-transfer-info {
+  padding: 16px 20px 8px;
+}
+.bank-transfer-direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #232323;
+  padding: 8px 0;
+}
+.bank-transfer-avail {
+  text-align: center;
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-top: 4px;
+}
+.bank-transfer-input-wrap {
+  display: flex;
+  align-items: center;
+  margin: 16px 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+.bank-transfer-yen {
+  font-size: 22px;
+  font-weight: 600;
+  color: #232323;
+  margin-right: 8px;
+}
+.bank-transfer-input {
+  flex: 1;
+  font-size: 22px;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #232323;
+  -moz-appearance: textfield;
+}
+.bank-transfer-input::-webkit-inner-spin-button,
+.bank-transfer-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.bank-modal-actions {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px 20px;
+}
+.bank-modal-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+.bank-modal-btn-cancel {
+  background: #f2f2f2;
+  color: #606060;
+}
+.bank-modal-btn-confirm {
+  background: #232323;
+  color: #fff;
+}
+.bank-modal-btn-confirm:active {
+  opacity: 0.85;
+}
+
+/* ===== 花呗系统 ===== */
+.huabei-hero {
+  margin: 24px 18px 0;
+  padding: 28px 22px 20px;
+  background: linear-gradient(145deg, #1565c0, #1976d2 40%, #1e88e5);
+  border-radius: 16px;
+  color: #fff;
+}
+.huabei-hero-label {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.huabei-hero-amount {
+  font-size: 34px;
+  font-weight: 700;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.huabei-hero-sub {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+.huabei-progress-track {
+  margin-top: 16px;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.huabei-progress-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.huabei-bill-card {
+  padding: 16px;
+}
+.huabei-bill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+.huabei-bill-label {
+  font-size: 13px;
+  color: #909090;
+}
+.huabei-bill-val {
+  font-size: 14px;
+  font-weight: 500;
+  color: #232323;
+}
+.huabei-bill-val.is-overdue {
+  color: #e91e63;
+}
+.huabei-overdue-badge {
+  font-size: 11px;
+  background: #fce4ec;
+  color: #e91e63;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+.huabei-repay-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.huabei-repay-btn:active {
+  opacity: 0.85;
+}
+
+.huabei-pending-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+.huabei-pending-label {
+  font-size: 13px;
+  color: #909090;
+}
+.huabei-pending-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: #232323;
+}
+
+/* 花呗开通页 */
+.huabei-activate-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1565c0, #1e88e5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+.huabei-activate-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #232323;
+}
+.huabei-activate-desc {
+  font-size: 13px;
+  color: #a0a0a0;
+  margin-top: 4px;
+}
+.huabei-activate-limit {
+  margin-top: 32px;
+  font-size: 13px;
+  color: #909090;
+}
+.huabei-activate-amount {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1976d2;
+  margin-top: 8px;
+}
+.huabei-activate-info {
+  font-size: 12px;
+  color: #b0b0b0;
+  margin-top: 8px;
+}
+.huabei-activate-btn {
+  margin-top: 40px;
+  width: 200px;
+  padding: 13px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.huabei-activate-btn:active {
+  opacity: 0.85;
+}
+
+/* 花呗还款 Modal */
+.huabei-repay-info {
+  padding: 12px 20px;
+}
+.huabei-repay-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #606060;
+}
+.huabei-repay-owed {
+  font-weight: 600;
+  color: #e91e63;
+}
+.huabei-repay-shortcuts {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 8px;
+}
+.huabei-repay-shortcut {
+  flex: 1;
+  padding: 8px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #606060;
+  cursor: pointer;
+}
+.huabei-repay-shortcut:active {
+  background: #e8e8e8;
+}
+
+/* ===== 投资通用 ===== */
+.invest-hero {
+  margin: 24px 18px 0;
+  padding: 28px 22px 20px;
+  background: linear-gradient(145deg, #1a1a1a, #2a2a2a 40%, #1a1a1a);
+  border-radius: 16px;
+  color: #fff;
+  text-align: center;
+}
+.invest-hero-label {
+  font-size: 13px;
+  opacity: 0.6;
+}
+.invest-hero-amount {
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.invest-hero-return {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.invest-hero-return.is-up { color: #4caf50; }
+.invest-hero-return.is-down { color: #e91e63; }
+
+.invest-info-grid {
+  display: flex;
+  margin: 16px 18px 0;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.025);
+}
+.invest-info-cell {
+  flex: 1;
+  padding: 14px 8px;
+  text-align: center;
+}
+.invest-info-cell + .invest-info-cell {
+  border-left: 1px solid var(--c-border, #f0f0f0);
+}
+.invest-info-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: #232323;
+  font-variant-numeric: tabular-nums;
+}
+.invest-info-val.is-up { color: #4caf50; }
+.invest-info-val.is-down { color: #e91e63; }
+.invest-info-label {
+  font-size: 11px;
+  color: #a0a0a0;
+  margin-top: 4px;
+}
+
+.invest-actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px 18px;
+}
+.invest-btn {
+  flex: 1;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.invest-btn:active { opacity: 0.85; }
+.invest-btn:disabled {
+  background: #f2f2f2 !important;
+  color: #c0c0c0 !important;
+  cursor: not-allowed;
+}
+.invest-btn-buy {
+  background: #232323;
+  color: #fff;
+}
+.invest-btn-sell {
+  background: #f2f2f2;
+  color: #232323;
+}
+
+.invest-modal-info {
+  padding: 12px 20px;
+}
+.invest-modal-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+  color: #606060;
+}
+
+/* SVG 图表 */
+.bank-sparkline {
+  width: 100%;
+  height: 80px;
+  display: block;
+}
+.bank-chart-empty {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c0c0;
+  font-size: 13px;
+}
+
+/* ===== 定期存款 ===== */
+.deposit-list {
+  padding: 0 18px;
+}
+.deposit-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.025);
+  position: relative;
+  overflow: hidden;
+}
+.deposit-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.deposit-card.is-matured {
+  border-left: 3px solid #4caf50;
+}
+.deposit-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.deposit-term {
+  font-size: 15px;
+  font-weight: 600;
+  color: #232323;
+}
+.deposit-rate {
+  font-size: 18px;
+  font-weight: 700;
+  color: #7b1fa2;
+}
+.deposit-card-mid {
+  margin-top: 10px;
+}
+.deposit-principal {
+  font-size: 13px;
+  color: #606060;
+}
+.deposit-interest {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-top: 2px;
+}
+.deposit-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.deposit-status {
+  font-size: 12px;
+  color: #a0a0a0;
+}
+.deposit-status.is-matured {
+  color: #4caf50;
+  font-weight: 500;
+}
+.deposit-claim-btn,
+.deposit-withdraw-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.deposit-claim-btn {
+  background: #4caf50;
+  color: #fff;
+}
+.deposit-withdraw-btn {
+  background: #f5f5f5;
+  color: #909090;
+}
+.deposit-claim-btn:active,
+.deposit-withdraw-btn:active {
+  opacity: 0.85;
+}
+
+.deposit-product-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  position: relative;
+}
+.deposit-product-row + .deposit-product-row::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 0;
+  height: 1px;
+  background: var(--c-border, #f0f0f0);
+}
+.deposit-product-term {
+  width: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #232323;
+}
+.deposit-product-rate {
+  width: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7b1fa2;
+}
+.deposit-product-example {
+  flex: 1;
+  text-align: right;
+  font-size: 12px;
+  color: #a0a0a0;
+}
+
+/* 期限选择器 */
+.deposit-term-selector {
+  display: flex;
+  gap: 6px;
+  padding: 8px 20px;
+  flex-wrap: wrap;
+}
+.deposit-term-option {
+  flex: 1;
+  min-width: 56px;
+  padding: 10px 4px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #606060;
+  text-align: center;
+  cursor: pointer;
+  line-height: 1.3;
+}
+.deposit-term-option.is-selected {
+  border-color: #7b1fa2;
+  color: #7b1fa2;
+  background: #f8f0ff;
+}
+.deposit-term-rate {
+  font-size: 11px;
+  font-weight: 600;
+}
+.deposit-preview {
+  padding: 0 20px 8px;
+  font-size: 12px;
+  color: #a0a0a0;
+}
+
+/* ===== 黄金投资 ===== */
+.gold-hero {
+  background: linear-gradient(145deg, #5d4037, #795548 40%, #6d4c41) !important;
+  text-align: left !important;
+}
+.gold-price-now {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gold-price-label {
+  font-size: 13px;
+  opacity: 0.7;
+  width: 100%;
+}
+.gold-price-value {
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gold-price-unit {
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+.gold-price-arrow {
+  font-size: 18px;
+  margin-left: 4px;
+}
+.gold-price-arrow.up { color: #4caf50; }
+.gold-price-arrow.down { color: #e91e63; }
+.gold-countdown {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 12px;
+}

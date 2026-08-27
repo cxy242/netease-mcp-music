@@ -1,0 +1,1226 @@
+/* x-page.css — 仿 X (Twitter) 页面 */
+
+#x-page {
+  background: #000;
+  color: #e7e9ea;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 50;
+  overflow: hidden;
+}
+
+/* ===== 顶部导航栏 ===== */
+.x-topbar {
+  flex-shrink: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #2f3336;
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.x-topbar-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 53px;
+  padding: 0 16px;
+}
+
+.x-topbar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.x-topbar-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.x-topbar-logo {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.x-topbar-logo svg {
+  width: 24px;
+  height: 24px;
+  fill: #e7e9ea;
+}
+
+.x-topbar-right {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-topbar-right i {
+  font-size: 22px;
+  color: #71767b;
+}
+
+/* ===== 标签栏 ===== */
+.x-tabs {
+  display: flex;
+  border-bottom: 1px solid #2f3336;
+}
+
+.x-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 53px;
+  font-size: 15px;
+  color: #71767b;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-tab:active {
+  background: rgba(231, 233, 234, 0.08);
+}
+
+.x-tab.active {
+  color: #e7e9ea;
+  font-weight: 700;
+}
+
+.x-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 48%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 4px;
+  border-radius: 2px;
+  background: #1d9bf0;
+}
+
+.x-tab-arrow {
+  margin-left: 4px;
+  display: inline-flex;
+}
+
+.x-tab-arrow svg {
+  width: 14px;
+  height: 14px;
+  fill: #71767b;
+}
+
+/* ===== 帖子列表 ===== */
+.x-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== 单条帖子 ===== */
+.x-post {
+  display: flex;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2f3336;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.x-post:active {
+  background: rgba(231, 233, 234, 0.03);
+}
+
+.x-post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.x-post-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.x-post-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.x-post-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  line-height: 20px;
+}
+
+.x-post-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #e7e9ea;
+}
+
+.x-post-verified {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.x-post-verified svg {
+  width: 18px;
+  height: 18px;
+  fill: #e8a819;
+}
+
+.x-post-handle,
+.x-post-time {
+  font-size: 15px;
+  color: #71767b;
+  font-weight: 400;
+}
+
+.x-post-dot {
+  color: #71767b;
+  font-size: 15px;
+}
+
+.x-post-more {
+  margin-left: auto;
+  padding: 0 4px;
+  color: #71767b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.x-post-more svg {
+  width: 18.75px;
+  height: 18.75px;
+  fill: #71767b;
+}
+
+.x-post-content {
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #e7e9ea;
+  word-break: break-word;
+}
+
+.x-hashtag {
+  color: #1d9bf0;
+}
+
+/* ===== 帖子底部操作栏 ===== */
+.x-post-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  max-width: 425px;
+  gap: 2px;
+}
+
+.x-post-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #71767b;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+
+.x-post-action svg {
+  width: 18.75px;
+  height: 18.75px;
+  fill: currentColor;
+}
+
+.x-post-action.comment:hover,
+.x-post-action.comment:active {
+  color: #1d9bf0;
+}
+
+.x-post-action.retweet:hover,
+.x-post-action.retweet:active {
+  color: #00ba7c;
+}
+
+.x-post-action.like:hover,
+.x-post-action.like:active {
+  color: #f91880;
+}
+
+.x-post-action.like.liked {
+  color: #f91880;
+}
+
+.x-post-action.views:hover,
+.x-post-action.views:active {
+  color: #1d9bf0;
+}
+
+.x-post-action.bookmark:hover,
+.x-post-action.bookmark:active {
+  color: #1d9bf0;
+}
+
+.x-post-action.share:hover,
+.x-post-action.share:active {
+  color: #1d9bf0;
+}
+
+/* ===== 发帖按钮 (FAB) ===== */
+.x-fab {
+  position: absolute;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px);
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1d9bf0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(29, 155, 240, 0.3);
+  cursor: pointer;
+  z-index: 5;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.x-fab:active {
+  background: #1a8cd8;
+}
+
+.x-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: #fff;
+}
+
+.x-fab i {
+  font-size: 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== 底部导航栏 ===== */
+.x-bottombar {
+  flex-shrink: 0;
+  background: #000;
+  border-top: 1px solid #2f3336;
+  display: flex;
+  align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  z-index: 10;
+}
+
+.x-bottombar-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 53px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.x-bottombar-item:active {
+  background: rgba(231, 233, 234, 0.08);
+}
+
+.x-bottombar-item svg {
+  width: 26px;
+  height: 26px;
+  fill: #e7e9ea;
+  transition: fill 0.15s;
+}
+
+.x-bottombar-item .icon-default {
+  display: block;
+}
+
+.x-bottombar-item .icon-active {
+  display: none;
+}
+
+.x-bottombar-item.active .icon-default {
+  display: none;
+}
+
+.x-bottombar-item.active .icon-active {
+  display: block;
+}
+
+.x-bottombar-item.active svg {
+  fill: #1d9bf0;
+  color: #1d9bf0;
+}
+
+/* ===== 发帖页面 (Compose) ===== */
+.x-compose-page {
+  background: #000;
+  color: #e7e9ea;
+  z-index: 60;
+}
+
+.x-compose-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  min-height: 56px;
+  flex-shrink: 0;
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.x-compose-cancel {
+  background: none;
+  border: none;
+  color: #e7e9ea;
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-compose-publish {
+  background: #1d9bf0;
+  border: none;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 7px 18px;
+  cursor: pointer;
+  opacity: 0.5;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-compose-body {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.x-compose-input {
+  padding-top: 6px;
+}
+
+.x-compose-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.x-compose-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.x-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1d9bf0;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.x-compose-input {
+  flex: 1;
+  font-size: 20px;
+  line-height: 1.4;
+  color: #e7e9ea;
+  outline: none;
+  min-height: 80px;
+  word-break: break-word;
+}
+
+.x-compose-input:empty::before {
+  content: attr(data-placeholder);
+  color: #71767b;
+  pointer-events: none;
+}
+
+.x-compose-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid #2f3336;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+}
+
+.x-compose-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.x-compose-tool {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-compose-tool i {
+  font-size: 18px;
+  color: #1d9bf0;
+}
+
+/* ===== 返回桌面按钮 ===== */
+.x-back-btn {
+  display: none;
+}
+
+/* ===== X 登录页 ===== */
+.x-login-page {
+  background: #000;
+  color: #e7e9ea;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.x-login-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 0));
+  left: 12px;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #e7e9ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-login-close:active {
+  background: rgba(231, 233, 234, 0.1);
+}
+
+.x-login-shell {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(58px + env(safe-area-inset-top, 0)) 32px calc(32px + env(safe-area-inset-bottom, 0));
+}
+
+.x-login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 34px;
+}
+
+.x-login-logo svg {
+  width: 34px;
+  height: 34px;
+  fill: #e7e9ea;
+}
+
+.x-login-title {
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.x-login-subtitle {
+  color: #71767b;
+  font-size: 15px;
+  line-height: 1.45;
+  margin-bottom: 28px;
+}
+
+.x-login-wechat {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 999px;
+  border: 1px solid #536471;
+  background: #eff3f4;
+  color: #0f1419;
+  font-size: 15px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 18px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-login-wechat:active {
+  background: #dfe4e7;
+}
+
+.x-login-wechat-svg {
+  width: 22px;
+  height: 22px;
+  fill: #07c160;
+  flex-shrink: 0;
+}
+
+.x-login-users {
+  margin-top: 18px;
+  border-top: 1px solid #2f3336;
+  max-height: min(320px, 38vh);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.x-login-user {
+  width: 100%;
+  min-height: 66px;
+  border: 0;
+  border-bottom: 1px solid #2f3336;
+  background: transparent;
+  color: #e7e9ea;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-login-user:active {
+  background: rgba(231, 233, 234, 0.06);
+}
+
+.x-login-user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.x-login-user-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.x-login-user-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.x-login-user-name {
+  color: #e7e9ea;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.x-login-user-account {
+  color: #71767b;
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.x-login-user i {
+  color: #71767b;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.x-login-loading,
+.x-login-empty {
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #71767b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.x-login-empty span {
+  font-size: 12px;
+  color: #536471;
+}
+
+/* ===== X 个人主页 ===== */
+.x-profile-page {
+  background: #000;
+  color: #e7e9ea;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.x-profile-cover {
+  position: relative;
+  height: min(28vh, 188px);
+  min-height: 154px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #1d9bf0;
+  background-size: cover;
+  background-position: center;
+}
+
+.x-profile-circle-btn {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top, 0));
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(15, 43, 67, 0.88);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.x-profile-circle-btn:active {
+  background: rgba(15, 43, 67, 0.72);
+}
+
+.x-profile-circle-btn i {
+  font-size: 18px;
+}
+
+.x-profile-back {
+  left: 14px;
+}
+
+.x-profile-edit {
+  right: 58px;
+}
+
+.x-profile-switch {
+  right: 14px;
+}
+
+.x-profile-edit i {
+  font-size: 17px;
+}
+
+.x-profile-switch i {
+  font-size: 16px;
+}
+
+.x-profile-main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  padding: 58px 20px 28px;
+}
+
+.x-profile-avatar {
+  position: absolute;
+  top: -34px;
+  left: 20px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 6px solid #000;
+  background: #1d9bf0;
+}
+
+.x-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.x-profile-avatar span {
+  background: #1d9bf0;
+}
+
+.x-profile-name {
+  color: #f4f6f8;
+  font-size: 24px;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: 0;
+  word-break: break-word;
+}
+
+.x-profile-handle {
+  margin-top: 5px;
+  color: #71767b;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.x-profile-joined {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #71767b;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.x-profile-joined i {
+  color: #71767b;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.x-profile-joined .fa-angle-right {
+  margin-left: 2px;
+  font-size: 15px;
+}
+
+.x-profile-stats {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  color: #71767b;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.x-profile-stats strong {
+  color: #e7e9ea;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+@media (max-width: 380px) {
+  .x-profile-cover {
+    min-height: 146px;
+  }
+
+  .x-profile-main {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .x-profile-avatar {
+    left: 18px;
+    width: 82px;
+    height: 82px;
+  }
+
+  .x-profile-name {
+    font-size: 23px;
+  }
+
+  .x-profile-handle,
+  .x-profile-stats,
+  .x-profile-stats strong {
+    font-size: 14px;
+  }
+
+  .x-profile-joined {
+    font-size: 13px;
+  }
+}
+
+/* ===== X 个人主页编辑页 ===== */
+.x-profile-edit-page {
+  background: #000;
+  color: #e7e9ea;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 61;
+  overflow: hidden;
+}
+
+.x-profile-edit-header {
+  min-height: 56px;
+  padding: calc(10px + env(safe-area-inset-top, 0)) 14px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #2f3336;
+  flex-shrink: 0;
+}
+
+.x-profile-edit-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #e7e9ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.x-profile-edit-back:active {
+  background: rgba(231, 233, 234, 0.1);
+}
+
+.x-profile-edit-back i {
+  font-size: 18px;
+}
+
+.x-profile-edit-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.x-profile-edit-save {
+  min-width: 58px;
+  height: 34px;
+  border-radius: 999px;
+  background: #eff3f4;
+  color: #0f1419;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+.x-profile-edit-save:active {
+  background: #dfe4e7;
+}
+
+.x-profile-edit-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 18px calc(28px + env(safe-area-inset-bottom, 0));
+}
+
+.x-profile-edit-cover {
+  width: 100%;
+  height: 132px;
+  border-radius: 8px;
+  background: #1d9bf0;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.x-profile-edit-cover span {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(15, 43, 67, 0.78);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.x-profile-edit-avatar {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 5px solid #000;
+  background: #1d9bf0;
+  overflow: hidden;
+  margin: -34px 0 16px 12px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.x-profile-edit-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.x-profile-edit-avatar span {
+  background: #1d9bf0;
+}
+
+.x-profile-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #71767b;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.x-profile-edit-field .input-field {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 8px;
+  border: 1px solid #2f3336;
+  background: #000;
+  color: #e7e9ea;
+  font-size: 15px;
+  padding: 0 12px;
+}
+
+.x-profile-edit-field .input-field:focus {
+  border-color: #1d9bf0;
+}
+
+.x-profile-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 380px) {
+  .x-profile-edit-scroll {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .x-profile-edit-grid {
+    gap: 10px;
+  }
+}
+
+/* ===== 亮/暗主题 ===== */
+:root {
+  --x-bg: #ffffff;
+  --x-text: #0f1419;
+  --x-strong: #0f1419;
+  --x-sub: #536471;
+  --x-muted: #71767b;
+  --x-border: #eff3f4;
+  --x-border-strong: #cfd9de;
+  --x-hover: rgba(15, 20, 25, 0.06);
+  --x-topbar: rgba(255, 255, 255, 0.82);
+  --x-pill-bg: #0f1419;
+  --x-pill-text: #ffffff;
+  --x-inverse-bg: #eff3f4;
+  --x-inverse-text: #0f1419;
+}
+
+:root.theme-dark {
+  --x-bg: #000000;
+  --x-text: #e7e9ea;
+  --x-strong: #f4f6f8;
+  --x-sub: #71767b;
+  --x-muted: #71767b;
+  --x-border: #2f3336;
+  --x-border-strong: #536471;
+  --x-hover: rgba(231, 233, 234, 0.08);
+  --x-topbar: rgba(0, 0, 0, 0.65);
+  --x-pill-bg: #eff3f4;
+  --x-pill-text: #0f1419;
+  --x-inverse-bg: #eff3f4;
+  --x-inverse-text: #0f1419;
+}
+
+#x-page,
+.x-compose-page,
+.x-login-page,
+.x-profile-page,
+.x-profile-edit-page {
+  background: var(--x-bg);
+  color: var(--x-text);
+}
+
+.x-topbar {
+  background: var(--x-topbar);
+  border-bottom-color: var(--x-border);
+}
+
+.x-tabs,
+.x-post,
+.x-compose-footer,
+.x-login-users,
+.x-login-user,
+.x-profile-edit-header {
+  border-color: var(--x-border);
+}
+
+.x-bottombar {
+  background: var(--x-bg);
+  border-top-color: var(--x-border);
+}
+
+.x-topbar-logo svg,
+.x-bottombar-item svg,
+.x-login-logo svg {
+  fill: var(--x-text);
+}
+
+.x-tab.active,
+.x-post-name,
+.x-post-content,
+.x-compose-cancel,
+.x-compose-input,
+.x-login-close,
+.x-login-user,
+.x-login-user-name,
+.x-profile-stats strong,
+.x-profile-edit-back {
+  color: var(--x-text);
+}
+
+.x-profile-name {
+  color: var(--x-strong);
+}
+
+.x-topbar-right i,
+.x-tab,
+.x-tab-arrow svg,
+.x-post-handle,
+.x-post-time,
+.x-post-dot,
+.x-post-more,
+.x-post-more svg,
+.x-post-action,
+.x-compose-input:empty::before,
+.x-login-subtitle,
+.x-login-user-account,
+.x-login-user i,
+.x-login-loading,
+.x-login-empty,
+.x-profile-handle,
+.x-profile-joined,
+.x-profile-joined i,
+.x-profile-stats,
+.x-profile-edit-field {
+  color: var(--x-sub);
+  fill: var(--x-sub);
+}
+
+.x-post:active,
+.x-tab:active,
+.x-bottombar-item:active,
+.x-login-close:active,
+.x-login-user:active,
+.x-profile-edit-back:active {
+  background: var(--x-hover);
+}
+
+.x-login-wechat,
+.x-profile-edit-save {
+  background: var(--x-pill-bg);
+  color: var(--x-pill-text);
+}
+
+.x-login-wechat-svg {
+  fill: var(--x-pill-text);
+}
+
+.x-login-wechat:active,
+.x-profile-edit-save:active {
+  opacity: 0.88;
+}
+
+.x-login-users,
+.x-profile-main {
+  background: var(--x-bg);
+}
+
+.x-profile-avatar,
+.x-profile-edit-avatar {
+  border-color: var(--x-bg);
+}
+
+.x-profile-edit-field .input-field {
+  background: var(--x-bg);
+  border-color: var(--x-border);
+  color: var(--x-text);
+}

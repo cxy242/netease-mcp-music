@@ -1,0 +1,435 @@
+/* ins-page.css — Instagram 页面兼容样式入口 + Reels 播放页 */
+
+/* ===== Reels 模式：顶栏/底栏翻转为黑色主题 ===== */
+#ig-page.igr-mode .ig-topbar,
+#ig-page.igr-mode .ig-bottombar {
+  background: #000;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+#ig-page.igr-mode .ig-topbar-title,
+#ig-page.igr-mode .ig-topbar-btn {
+  color: #fff;
+}
+
+#ig-page.igr-mode .ig-topbar-btn svg,
+#ig-page.igr-mode .ig-topbar-icon {
+  fill: #fff;
+  color: #fff;
+}
+
+#ig-page.igr-mode .ig-bottombar-item svg {
+  color: #fff;
+}
+
+#ig-page.igr-mode .ig-bottombar-item.active svg {
+  color: #fff;
+}
+
+#ig-page.igr-mode .ig-bottombar-item.active .ig-bottombar-avatar {
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+/* ===== Reels 标签页（渲染进 .ig-main，与首页/个人页一致切换）===== */
+.igr-tab {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* 黑色"视频"舞台 */
+.igr-stage {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 56px;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.igr-watermark {
+  position: absolute;
+  top: 27%;
+  right: 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.3px;
+  pointer-events: none;
+}
+
+/* 屏幕上描述视频的文字（分镜字幕） */
+.igr-caption-text {
+  max-width: 78%;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 500;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.igr-caption-text.show {
+  animation: igrCaptionIn 0.5s ease forwards;
+}
+
+@keyframes igrCaptionIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 暂停时显示的播放三角 */
+.igr-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
+  color: #fff;
+  font-size: 60px;
+  line-height: 1;
+}
+
+.igr-tab.is-paused .igr-play-overlay {
+  opacity: 0.92;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* 右侧竖列操作 */
+.igr-rail {
+  position: absolute;
+  right: 8px;
+  bottom: 86px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  z-index: 5;
+}
+
+.igr-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.igr-action {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
+}
+
+.igr-action svg {
+  width: 28px;
+  height: 28px;
+}
+
+.igr-action.igr-like.liked {
+  color: #ed4956;
+}
+
+.igr-action-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+/* 旋转唱片（账号头像，圆形） */
+.igr-rail-disc {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-top: 4px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  animation: igrSpin 6s linear infinite;
+}
+
+.igr-rail-disc.is-paused {
+  animation-play-state: paused;
+}
+
+.igr-rail-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@keyframes igrSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* 左下角发帖人信息 */
+.igr-footer {
+  position: absolute;
+  left: 12px;
+  right: 76px;
+  bottom: 18px;
+  z-index: 5;
+}
+
+.igr-author {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.igr-author-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #fff;
+  flex-shrink: 0;
+}
+
+.igr-author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.igr-author-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+.igr-follow {
+  margin-left: 6px;
+  height: 28px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.igr-follow.is-following {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.igr-caption {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.igr-hashtag {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 底部进度条 */
+.igr-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  z-index: 6;
+}
+
+.igr-progress-fill {
+  width: 0;
+  height: 100%;
+  background: #fff;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ===== 发布 Reels：分镜行列表（其余字段复用 .igc-*）===== */
+.igrc-scenes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.igrc-scene-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.igrc-scene-input {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  border: 1px solid #dbdbdb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #262626;
+  background: #fafafa;
+  font-family: inherit;
+}
+
+.igrc-scene-input:focus {
+  outline: none;
+  border-color: #a8a8a8;
+  background: #fff;
+}
+
+.igrc-scene-remove {
+  flex-shrink: 0;
+  width: 40px;
+  border: 1px solid #efdcdc;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #ed4956;
+  cursor: pointer;
+}
+
+.igrc-add-scene {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px dashed #c7c7c7;
+  border-radius: 10px;
+  background: #fff;
+  color: #0095f6;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ===== 个人页 Reels 九宫格 ===== */
+.ig-profile-reels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.ig-profile-reel-thumb {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border: 0;
+  padding: 12px;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.ig-profile-reel-text {
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.ig-profile-reel-play {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.92);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}
+
+/* ===== Reels 标签页：竖向滑动 feed ===== */
+.igr-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  background: #000;
+}
+
+.igr-slide {
+  height: 100%;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 发布页 / 全屏播放器：层级对齐 IG 子页（#ig-compose-page 同款 10000）===== */
+#ig-reels-compose-page,
+#ig-reel-player-page {
+  z-index: 10000;
+}
+
+/* ===== Reels 全屏播放器：返回按钮 ===== */
+.igr-player {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 全屏播放器：底部操作栏/作者信息避开 Home 指示条安全区 */
+.igr-player .igr-rail {
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+}
+
+.igr-player .igr-footer {
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.igr-player .igr-progress {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.igr-player-back {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  left: 10px;
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.5));
+}

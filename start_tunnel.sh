@@ -21,6 +21,8 @@ cloudflared tunnel --url http://localhost:3000 --no-autoupdate 2>&1 | while read
                 --connect-timeout 5 \
                 && echo "[$(date)] Server notified OK" \
                 || echo "[$(date)] Server notify failed (will retry on next health check)"
+            # 自动同步到 Railway
+            bash /opt/netease-mcp/update_railway_tunnel.sh "$URL"
         fi
     fi
 done

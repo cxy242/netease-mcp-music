@@ -1,0 +1,263 @@
+/* tutorial-chatgenerator.css — 教程页聊天美化生成器 */
+
+.cbg-generator {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cbg-card {
+  overflow: visible;
+}
+
+.cbg-section-head {
+  min-height: 50px;
+  padding: 10px 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cbg-section-head .section-title {
+  padding: 0;
+}
+
+.cbg-section-sub {
+  margin-top: 3px;
+  color: var(--c-sub);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cbg-section-body {
+  padding: 4px 16px 16px;
+}
+
+.cbg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px 12px;
+}
+
+.cbg-field {
+  min-width: 0;
+}
+
+.cbg-field-wide {
+  grid-column: 1 / -1;
+}
+
+.cbg-field-label {
+  min-height: 18px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--c-text);
+  font-size: 12px;
+}
+
+.cbg-value-badge {
+  color: var(--c-accent-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.cbg-generator input[type="range"] {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--c-accent);
+}
+
+.cbg-select {
+  min-height: 38px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.cbg-color {
+  width: 100%;
+  height: 38px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+
+.cbg-divider {
+  height: 1px;
+  margin: 16px 0 13px;
+  background: var(--c-border);
+}
+
+.cbg-subhead {
+  margin-bottom: 10px;
+  color: var(--c-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cbg-subhead-space {
+  margin-top: 16px;
+}
+
+.cbg-image-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+}
+
+.cbg-image-url {
+  min-width: 0;
+  height: 38px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.cbg-mini-btn {
+  min-width: 46px;
+  height: 38px;
+  padding: 0 8px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
+
+.cbg-icon-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.cbg-icon-name {
+  color: var(--c-text);
+  font-size: 12px;
+}
+
+.cbg-icon-row .cbg-select {
+  width: 76px;
+  padding-left: 7px;
+  padding-right: 7px;
+  font-size: 12px;
+}
+
+.cbg-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+
+.cbg-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cbg-switch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--c-border-m);
+  transition: background .18s var(--ease);
+}
+
+.cbg-switch span::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+  transition: transform .18s var(--ease);
+}
+
+.cbg-switch input:checked + span {
+  background: var(--c-accent);
+}
+
+.cbg-switch input:checked + span::after {
+  transform: translateX(18px);
+}
+
+.cbg-disabled {
+  opacity: .42;
+  pointer-events: none;
+}
+
+.cbg-output-head {
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cbg-output-label {
+  color: var(--c-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cbg-output-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.cbg-output-actions button {
+  min-height: 32px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
+
+.cbg-code-output {
+  width: 100%;
+  min-height: 300px;
+  box-sizing: border-box;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.cbg-primary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.cbg-primary-actions button {
+  margin: 0;
+}
+
+@media (max-width: 390px) {
+  .cbg-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cbg-field-wide {
+    grid-column: auto;
+  }
+
+  .cbg-icon-row {
+    grid-template-columns: 44px minmax(0, 1fr) 70px;
+    gap: 6px;
+  }
+
+  .cbg-icon-row .cbg-select {
+    width: 70px;
+  }
+
+  .cbg-mini-btn {
+    min-width: 42px;
+    padding: 0 6px;
+  }
+}

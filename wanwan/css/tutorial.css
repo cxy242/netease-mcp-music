@@ -1,0 +1,251 @@
+/* tutorial.css — 教程 App */
+
+.tutorial-scroll {
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.tutorial-hero {
+  padding: 22px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.tutorial-hero-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.tutorial-hero-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tutorial-hero-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.tutorial-hero-desc {
+  max-width: 300px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--c-sub);
+}
+
+.tutorial-tip {
+  margin: 4px 16px 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-sub);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tutorial-steps {
+  padding: 6px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutorial-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.tutorial-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-accent-light);
+  color: var(--c-accent-dark);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tutorial-step-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--c-text);
+  min-width: 0;
+}
+
+.tutorial-code {
+  margin: 8px 16px 16px;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: 12px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.tutorial-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px 0 16px;
+}
+
+.tutorial-section-head .section-title {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.tutorial-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  color: var(--c-accent);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.tutorial-copy-btn:active {
+  background: var(--c-accent-light);
+}
+
+.tutorial-code-block {
+  max-width: 100%;
+  max-height: 320px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tutorial-class-list {
+  padding: 6px 16px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tutorial-class-list code {
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.tutorial-term-list {
+  padding: 6px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tutorial-term {
+  padding: 11px 12px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+
+.tutorial-term-title {
+  color: var(--c-text);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.tutorial-term-desc {
+  color: var(--c-sub);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.tutorial-converter-card,
+.tutorial-example-block {
+  margin: 8px 16px 16px;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+
+.tutorial-field-label,
+.tutorial-example-title {
+  display: block;
+  color: var(--c-text);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.tutorial-textarea,
+.tutorial-regex-output {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg);
+  color: var(--c-text);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.tutorial-textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.tutorial-regex-output {
+  min-height: 72px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.tutorial-converter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.tutorial-converter-head .tutorial-field-label {
+  margin-bottom: 0;
+}
+
+.tutorial-converter-status {
+  margin-top: 8px;
+  color: var(--c-sub);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tutorial-example-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}

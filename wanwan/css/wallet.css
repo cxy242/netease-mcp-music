@@ -1,0 +1,852 @@
+/* wallet.css — 微信支付页面样式 */
+
+/* ===== 主容器 ===== */
+.wechat-wallet-page {
+  background: var(--c-bg);
+}
+.wallet-scroll {
+  height: calc(100% - 57px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+}
+
+/* ===== 零钱卡片 ===== */
+.wallet-balance-card {
+  margin: 20px 18px 0;
+  padding: 24px 22px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    inset -1px -1px 0 0 rgba(255,255,255,0.2),
+    0 2px 8px rgba(0,0,0,0.025);
+  position: relative;
+  overflow: hidden;
+}
+.wallet-balance-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.wallet-balance-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #909090;
+  font-size: 13px;
+  font-weight: 400;
+}
+.wallet-balance-label i {
+  font-size: 16px;
+  color: #b0b0b0;
+}
+.wallet-balance-amount {
+  margin-top: 10px;
+  font-size: 34px;
+  font-weight: 600;
+  color: #232323;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.wallet-balance-amount .wallet-currency {
+  font-size: 16px;
+  font-weight: 500;
+  margin-right: 2px;
+  vertical-align: baseline;
+}
+.wallet-balance-placeholder {
+  margin-top: 10px;
+  color: #c0c0c0;
+  font-size: 15px;
+}
+.wallet-balance-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.wallet-balance-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform var(--dur), opacity var(--dur);
+}
+.wallet-balance-btn:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+.wallet-btn-primary {
+  background: #1d1d1d;
+  color: #fff;
+}
+.wallet-btn-secondary {
+  background: #f4f4f4;
+  color: #4b4b4b;
+}
+
+/* ===== 银行卡区域 ===== */
+.wallet-section-title {
+  padding: 24px 22px 10px;
+  color: #909090;
+  font-size: 13px;
+  font-weight: 500;
+}
+.wallet-cards-list {
+  margin: 0 18px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    inset -1px -1px 0 0 rgba(255,255,255,0.2),
+    0 2px 8px rgba(0,0,0,0.025);
+}
+.wallet-cards-list::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.wallet-card-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background var(--dur);
+  position: relative;
+  text-align: left;
+}
+.wallet-card-row:active {
+  background: #f7f7f7;
+}
+.wallet-card-row + .wallet-card-row::before {
+  content: '';
+  position: absolute;
+  left: 62px;
+  right: 16px;
+  top: 0;
+  height: 1px;
+  background: var(--c-border);
+}
+.wallet-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.wallet-card-icon.saving {
+  background: #f0ebe3;
+  color: #9a8260;
+}
+.wallet-card-icon.checking {
+  background: #eaeef2;
+  color: #606e82;
+}
+.wallet-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.wallet-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #232323;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wallet-card-type-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.wallet-card-type-tag.saving {
+  background: #f0ebe3;
+  color: #9a8260;
+}
+.wallet-card-type-tag.checking {
+  background: #eaeef2;
+  color: #606e82;
+}
+.wallet-card-number {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.wallet-card-arrow {
+  color: #c0c0c0;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ===== 生成余额按钮 ===== */
+.wallet-generate-section {
+  margin: 24px 18px 0;
+}
+.wallet-generate-btn {
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  background: #f4f4f4;
+  color: #4b4b4b;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform var(--dur), background var(--dur);
+}
+.wallet-generate-btn:active {
+  transform: scale(0.98);
+  background: #ebebeb;
+}
+.wallet-generate-btn.is-loading {
+  pointer-events: none;
+  color: #a0a0a0;
+}
+.wallet-generate-btn i {
+  font-size: 15px;
+}
+
+/* ===== 银行卡详情页 ===== */
+.wechat-bank-detail-page {
+  background: #f5f5f5;
+}
+.bank-detail-scroll {
+  height: calc(100% - 57px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+}
+
+/* 银行卡主卡片 — 黑金/白金风格 */
+.bank-detail-card {
+  margin: 24px 18px 0;
+  padding: 24px 22px 20px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.7 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.bank-detail-card::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 70%;
+  height: 120%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.bank-detail-card.saving {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 40%, #1a1a1a 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.bank-detail-card.saving::before {
+  background: radial-gradient(ellipse, rgba(180,155,100,0.12) 0%, transparent 70%);
+}
+.bank-detail-card.checking {
+  background: linear-gradient(145deg, #e8e8e8 0%, #f5f5f5 40%, #e0e0e0 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.bank-detail-card.checking::before {
+  background: radial-gradient(ellipse, rgba(160,170,190,0.18) 0%, transparent 70%);
+}
+.bank-detail-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bank-detail-bank-name {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+.bank-detail-card.saving .bank-detail-bank-name {
+  color: #c8b080;
+}
+.bank-detail-card.checking .bank-detail-bank-name {
+  color: #505868;
+}
+.bank-detail-bank-name i {
+  font-size: 18px;
+}
+.bank-detail-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+.bank-detail-card.saving .bank-detail-type-badge {
+  color: #c8b080;
+  border: 1px solid rgba(200,176,128,0.3);
+  background: rgba(200,176,128,0.08);
+}
+.bank-detail-card.checking .bank-detail-type-badge {
+  color: #606e82;
+  border: 1px solid rgba(96,110,130,0.2);
+  background: rgba(96,110,130,0.06);
+}
+.bank-detail-chip {
+  width: 38px;
+  height: 28px;
+  border-radius: 5px;
+  margin-top: 4px;
+}
+.bank-detail-card.saving .bank-detail-chip {
+  background: linear-gradient(135deg, #c8b080 0%, #a08050 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.3);
+}
+.bank-detail-card.checking .bank-detail-chip {
+  background: linear-gradient(135deg, #b0b8c8 0%, #8890a0 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.1);
+}
+.bank-detail-number {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.bank-detail-card.saving .bank-detail-number {
+  color: rgba(255,255,255,0.75);
+}
+.bank-detail-card.checking .bank-detail-number {
+  color: #505050;
+}
+.bank-detail-card-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.bank-detail-holder {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.bank-detail-card.saving .bank-detail-holder {
+  color: rgba(200,176,128,0.6);
+}
+.bank-detail-card.checking .bank-detail-holder {
+  color: rgba(80,88,104,0.5);
+}
+.bank-detail-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.bank-detail-card.saving .bank-detail-brand {
+  color: rgba(200,176,128,0.5);
+}
+.bank-detail-card.checking .bank-detail-brand {
+  color: rgba(80,88,104,0.4);
+}
+
+/* 余额区块 — 卡片下方独立 */
+.bank-detail-balance-card {
+  margin: 20px 18px 0;
+  padding: 20px 22px;
+  background: #fff;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    inset -1px -1px 0 0 rgba(255,255,255,0.2),
+    0 2px 8px rgba(0,0,0,0.025);
+}
+.bank-detail-balance-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.bank-detail-balance-label {
+  color: #909090;
+  font-size: 13px;
+  font-weight: 400;
+}
+.bank-detail-balance-value {
+  margin-top: 8px;
+  color: #232323;
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+.bank-detail-balance-value .bank-currency {
+  font-size: 16px;
+  font-weight: 500;
+  margin-right: 2px;
+}
+.bank-detail-balance-placeholder {
+  margin-top: 8px;
+  color: #c0c0c0;
+  font-size: 15px;
+}
+
+/* 银行卡信息列表 */
+.bank-detail-info {
+  margin: 16px 18px 0;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    inset -1px -1px 0 0 rgba(255,255,255,0.2),
+    0 2px 8px rgba(0,0,0,0.025);
+}
+.bank-detail-info::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.bank-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  position: relative;
+}
+.bank-info-row + .bank-info-row::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 0;
+  height: 1px;
+  background: var(--c-border);
+}
+.bank-info-label {
+  color: #909090;
+  font-size: 13px;
+}
+.bank-info-value {
+  color: #232323;
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   钱迹 App — 独立桌面应用
+   ======================================== */
+
+/* ===== 密码验证页 ===== */
+.wallet-password-page {
+  background: var(--c-bg);
+}
+
+/* 整体纵向布局，内容居中 */
+.wallet-pass-body {
+  height: calc(100% - 57px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 32px;
+}
+
+/* 头像 + 姓名区 */
+.wallet-pass-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 20px 0;
+}
+.wallet-pass-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: #666;
+}
+.wallet-pass-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wallet-pass-name {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #232323;
+}
+
+/* 提示文字 */
+.wallet-pass-label {
+  margin-top: 28px;
+  font-size: 14px;
+  color: #606060;
+}
+
+/* 6个圆点 */
+.wallet-pass-dots {
+  display: flex;
+  gap: 16px;
+  margin-top: 18px;
+}
+.wallet-pass-dots span {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid #c8c8c8;
+  background: transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+.wallet-pass-dots span.filled {
+  background: #232323;
+  border-color: #232323;
+}
+.wallet-pass-dots.shake {
+  animation: wallet-shake 0.36s ease;
+}
+@keyframes wallet-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
+}
+
+/* 错误提示 */
+.wallet-pass-error {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #e74c3c;
+  text-align: center;
+}
+
+/* ===== iOS 圆形数字键盘 ===== */
+.wallet-ios-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 68px);
+  grid-template-rows: repeat(4, 68px);
+  gap: 10px;
+  margin-top: 28px;
+  justify-content: center;
+}
+
+/* 单个圆形按键 */
+.wallet-ios-key {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  user-select: none;
+}
+.wallet-ios-key:active {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* 数字 */
+.wik-num {
+  font-size: 24px;
+  font-weight: 300;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+/* 字母副标题 */
+.wik-sub {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: #1a1a1a;
+  margin-top: 2px;
+}
+
+/* 空格占位（左下角） */
+.wallet-ios-key--blank {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none;
+}
+
+/* 删除键（右下角） */
+.wallet-ios-key--del {
+  font-size: 19px;
+  color: #1a1a1a;
+}
+
+/* ===== 钱迹主页 ===== */
+.wallet-main-page {
+  background: var(--c-bg);
+}
+.wallet-main-scroll {
+  height: calc(100% - 57px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+}
+
+.wallet-main-user-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 22px 20px;
+}
+.wallet-main-user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+}
+.wallet-main-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wallet-main-user-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: #232323;
+}
+
+.wallet-main-modules {
+  padding: 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wallet-module-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 18px 28px;
+  background: #fff;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    0 2px 10px rgba(0,0,0,0.03);
+}
+.wallet-module-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  pointer-events: none;
+}
+.wallet-module-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.wallet-module-work .wallet-module-icon {
+  background: #f0ebe3;
+  color: #9a8260;
+}
+.wallet-module-bank .wallet-module-icon {
+  background: #eaeef2;
+  color: #606e82;
+}
+.wallet-module-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #232323;
+  margin-top: 14px;
+}
+.wallet-module-desc {
+  font-size: 12px;
+  color: #909090;
+  margin-top: 5px;
+}
+button.wallet-module-card {
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+button.wallet-module-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* ===== 零钱账单 ===== */
+.wallet-bills-list {
+  margin: 0 18px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255,255,255,0.55),
+    inset -1px -1px 0 0 rgba(255,255,255,0.2),
+    0 2px 8px rgba(0,0,0,0.025);
+}
+.wallet-bills-list::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.035);
+  pointer-events: none;
+}
+.wallet-bills-empty,
+.wallet-bills-loading {
+  padding: 20px 16px;
+  text-align: center;
+  color: #c0c0c0;
+  font-size: 13px;
+}
+.wallet-bill-item {
+  position: relative;
+  overflow: hidden;
+}
+.wallet-bill-item + .wallet-bill-item::before {
+  content: '';
+  position: absolute;
+  left: 58px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--c-border);
+  z-index: 1;
+}
+.wallet-bill-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 12px 16px;
+  transform: translateX(0);
+  transition: transform 0.25s ease;
+  will-change: transform;
+  background: #fff;
+  position: relative;
+  z-index: 0;
+}
+.wallet-bill-item.swiped .wallet-bill-inner {
+  transform: translateX(-72px);
+}
+.wallet-bill-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.wallet-bill-icon.income {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+.wallet-bill-icon.expense {
+  background: #fce4ec;
+  color: #e91e63;
+}
+.wallet-bill-main {
+  flex: 1;
+  min-width: 0;
+}
+.wallet-bill-desc {
+  font-size: 13px;
+  color: #232323;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wallet-bill-date {
+  font-size: 11px;
+  color: #a0a0a0;
+  margin-top: 2px;
+}
+.wallet-bill-amount {
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.wallet-bill-amount.income {
+  color: #4caf50;
+}
+.wallet-bill-amount.expense {
+  color: #e91e63;
+}
+.wallet-bill-delete {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 72px;
+  background: #ff3b30;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transform: translateX(72px);
+  transition: transform 0.25s ease, background 0.15s;
+}
+.wallet-bill-item.swiped .wallet-bill-delete {
+  transform: translateX(0);
+}
+.wallet-bill-delete:active {
+  background: #d0281e;
+}

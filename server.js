@@ -370,6 +370,24 @@ fastify.get('/admin', async (request, reply) => {
   return readFileSync(join(__dirname, 'admin.html'), 'utf-8');
 });
 
+// ─── 弯弯 APP ──────────────────────────────────────────────────────
+fastify.get('/wanwan', async (request, reply) => {
+  reply.type('text/html; charset=utf-8');
+  return readFileSync(join(__dirname, 'wanwan', 'index.html'), 'utf-8');
+});
+fastify.get('/wanwan/*', async (request, reply) => {
+  const reqPath = request.url.split('?')[0].replace('/wanwan/', '');
+  const filePath = join(__dirname, 'wanwan', reqPath);
+  if (existsSync(filePath) && !filePath.includes('..')) {
+    const ext = filePath.split('.').pop();
+    const mimeMap = {html:'text/html',css:'text/css',js:'application/javascript',json:'application/json',png:'image/png',jpg:'image/jpeg',gif:'image/gif',svg:'image/svg+xml',mp3:'audio/mpeg',wav:'audio/wav',flac:'audio/flac',ico:'image/x-icon'};
+    reply.type(mimeMap[ext] || 'application/octet-stream');
+    return createReadStream(filePath);
+  }
+  reply.code(404);
+  return 'Not Found';
+});
+
 fastify.get('/', async (request, reply) => {
   reply.type('text/html; charset=utf-8');
   reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
